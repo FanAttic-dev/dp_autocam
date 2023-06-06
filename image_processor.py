@@ -84,8 +84,9 @@ def draw_mask(img, pts):
 
 
 def process_frame(src, coords, bgSubtractor=None):
-    # cv2.namedWindow(WINDOW_NAME + 'original', cv2.WINDOW_NORMAL)
-    # cv2.imshow(WINDOW_NAME + 'original', src)
+    src = cv2.GaussianBlur(src, (5, 5), 1)
+    cv2.namedWindow(WINDOW_NAME + 'original', cv2.WINDOW_NORMAL)
+    cv2.imshow(WINDOW_NAME + 'original', src)
 
     dst = src
     # dst = rescale(src, 1)

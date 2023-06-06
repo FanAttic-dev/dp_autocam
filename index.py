@@ -40,14 +40,15 @@ with open(videos_path / f"coords_{video_name.stem}.json", 'r') as f:
 bgSubtractor = BackgroundSubtractor()
 # bgSubtractor.init(cap)
 
-
 while True:
     # ret, frame = get_frame_at(cap, 27)
     ret, frame = get_next_frame(cap)
-    if ret:
-        proceed = process_frame(frame, coords)
-        if not proceed:
-            break
+    if not ret:
+        break
+
+    proceed = process_frame(frame, coords, bgSubtractor)
+    if not proceed:
+        break
 
 cap.release()
 cv2.destroyAllWindows()
