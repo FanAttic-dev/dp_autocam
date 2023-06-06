@@ -78,6 +78,8 @@ def draw_lines(img, pts):
 def draw_mask(img, pts):
     mask = np.zeros(img.shape[:2], dtype=np.uint8)
     cv2.fillPoly(mask, pts=[pts], color=(255, 255, 255))
+    se = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+    mask = cv2.dilate(mask, se, iterations=10)
     return cv2.bitwise_and(img, img, mask=mask)
 
 
@@ -93,7 +95,7 @@ def process_frame(src, coords, bgSubtractor=None):
 
     pts = coords_to_pts(coords)
     dst = draw_mask(dst, pts)
-    dst = draw_lines(dst, pts)
+    # dst = draw_lines(dst, pts)
 
     if bgSubtractor is not None:
         dst = bgSubtractor.apply(dst)
