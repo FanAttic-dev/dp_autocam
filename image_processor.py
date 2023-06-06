@@ -11,8 +11,9 @@ yolo_args = {
     'device': 0,  # 0 if gpu else 'cpu'
     'imgsz': 960,
     'classes': None,  # [0] for ball only, None for all
-    'conf': 0.15,
-    'iou': 0.85
+    'conf': 0.05,
+    'max_det': 3,
+    'iou': 0.7
 }
 
 
@@ -66,6 +67,12 @@ def detect_players(img):
     return model.predict(img, **yolo_args)
 
 
+def detect_ball(img):
+    model_path = Path(f"./weights/yolov8_{yolo_args['imgsz']}_ball.pt")
+    model = YOLO(model_path)
+    return model.track(img, **yolo_args, tracker="bytetrack.yaml")
+
+
 def coords_to_pts(coords):
     pts = np.array([[v["x"], v["y"]] for v in coords.values()], np.int32)
     return pts.reshape((-1, 1, 2))
@@ -78,25 +85,26 @@ def draw_lines(img, pts):
 def draw_mask(img, pts):
     mask = np.zeros(img.shape[:2], dtype=np.uint8)
     cv2.fillPoly(mask, pts=[pts], color=(255, 255, 255))
-    se = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-    mask = cv2.dilate(mask, se, iterations=10)
+    # se = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+    # mask = cv2.dilate(mask, se, iterations=10)
     return cv2.bitwise_and(img, img, mask=mask)
 
 
 def process_frame(src, coords, bgSubtractor=None):
-    src = cv2.GaussianBlur(src, (5, 5), 1)
-    cv2.namedWindow(WINDOW_NAME + 'original', cv2.WINDOW_NORMAL)
-    cv2.imshow(WINDOW_NAME + 'original', src)
+    # src = cv2.GaussianBlur(src, (5, 5), 1)
+    # cv2.namedWindow(WINDOW_NAME + 'original', cv2.WINDOW_NORMAL)
+    # cv2.imshow(WINDOW_NAME + 'original', src)
 
     dst = src
+    pts = coords_to_pts(coords)
+    dst = draw_mask(dst, pts)
     # dst = rescale(src, 1)
-    # dst = roi(src, 3000, 400, 4200, 800)
+    dst = roi(dst, 3000, 400, 3960, 816)
     # dst = roi_16_9(src, 2500, 400, 1000)
     # dst = detect_players(dst)[0].plot()
 
-    pts = coords_to_pts(coords)
-    dst = draw_mask(dst, pts)
     # dst = draw_lines(dst, pts)
+    dst = detect_ball(dst)[0].plot()
 
     if bgSubtractor is not None:
         dst = bgSubtractor.apply(dst)
