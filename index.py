@@ -48,22 +48,31 @@ img_processor = ImageProcessor()
 ret, frame = get_next_frame(cap)
 camera = FixedHeightCamera(frame)
 
+centers = [0.2, 0.4, 0.6, 0.8]
+
+i = 0
 while True:
     ret, frame = get_next_frame(cap)
     if not ret:
         break
 
+    h, w, _ = frame.shape
     show_frame(frame, window_name=f"{WINDOW_NAME} original")
 
     frame = img_processor.process_frame(frame, coords)
     frame = camera.get_frame(frame)
-    camera.pan(-10)
+
+    center_x = int(centers[i % len(centers)] * w)
+    camera.set_center_x(center_x)
+
     if frame is not None:
         show_frame(frame)
 
     key = cv2.waitKey(0)
     if key == ord('q'):
         break
+
+    i += 1
 
 
 cap.release()

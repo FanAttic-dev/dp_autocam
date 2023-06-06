@@ -12,14 +12,14 @@ class FixedHeightCamera(Camera):
     def check_bounds(self, x):
         return x >= 0 and x+self.w < self.full_img_w
 
-    def get_frame_x(self):
-        return self.center_x - self.w // 2
+    def get_frame_x(self, center_x):
+        return center_x - self.w // 2
 
     def get_frame(self, full_img):
         if full_img is None:
             return None
 
-        x = self.get_frame_x()
+        x = self.get_frame_x(self.center_x)
         if not self.check_bounds(x):
             return None
 
@@ -27,3 +27,11 @@ class FixedHeightCamera(Camera):
 
     def pan(self, dx):
         self.center_x += dx
+
+    def set_center_x(self, center_x):
+        x = self.get_frame_x(center_x)
+        if not self.check_bounds(x):
+            return False
+
+        self.center_x = center_x
+        return True
