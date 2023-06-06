@@ -1,7 +1,7 @@
 from pathlib import Path
 import cv2
 
-from image_processor import process_frame
+from image_processor import BackgroundSubtractor, process_frame
 
 
 def get_frame_at(cap, seconds):
@@ -33,10 +33,16 @@ img_path = Path("/home/atti/source/datasets/videos/sample_wide.mp4")
 
 cap = cv2.VideoCapture(str(img_path))
 
-# ret, frame = get_next_frame(cap)
-ret, frame = get_frame_at(cap, 27)
-if ret:
-    process_frame(frame)
+bgSubtractor = BackgroundSubtractor()
+bgSubtractor.init(cap)
+
+while True:
+    # ret, frame = get_frame_at(cap, 27)
+    ret, frame = get_next_frame(cap)
+    if ret:
+        proceed = process_frame(frame, bgSubtractor)
+        if not proceed:
+            break
 
 cap.release()
 cv2.destroyAllWindows()

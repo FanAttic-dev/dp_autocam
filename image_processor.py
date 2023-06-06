@@ -2,10 +2,10 @@ import cv2
 import numpy as np
 from ultralytics import YOLO
 from pathlib import Path
+from tqdm import tqdm
 
 WINDOW_NAME = 'frame'
-WINDOW_FLAGS = cv2.WINDOW_AUTOSIZE
-
+WINDOW_FLAGS = cv2.WINDOW_NORMAL  # cv2.WINDOW_AUTOSIZE
 
 yolo_args = {
     'device': 0,  # 0 if gpu else 'cpu'
@@ -46,18 +46,44 @@ def detect_players(img):
     return model.predict(img, **yolo_args)
 
 
-def process_frame(src):
-    print(src.shape)
+class BackgroundSubtractor:
+    def __init__(self):
+        # self.model = cv2.createBackgroundSubtractorMOG2()
+        self.model = cv2.createBackgroundSubtractorKNN()
+
+    def init(self, cap, iterations=10):
+        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+
+        for _ in tqdm(range(iterations)):
+            ret, frame = cap.read()
+            if not ret:
+                return
+            self.apply(frame)
+
+        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+
+    def apply(self, img):
+        return self.model.apply(img)
+
+
+def process_frame(src, bgSubtractor=None):
     cv2.namedWindow(WINDOW_NAME + 'original', cv2.WINDOW_NORMAL)
     cv2.imshow(WINDOW_NAME + 'original', src)
 
+    dst = src
     # dst = rescale(src, 1)
-    # dst = roi(src, 3050, 400, 3950, 800)
-    dst = roi_16_9(src, 2900, 400, 1000)
+    # dst = roi(src, 3000, 400, 4200, 800)
+    # dst = roi_16_9(src, 2500, 400, 1000)
+    # dst = detect_players(dst)[0].plot()
 
-    dst = detect_players(dst)[0].plot()
+    if bgSubtractor is not None:
+        dst = bgSubtractor.apply(dst)
+
     cv2.namedWindow(WINDOW_NAME, WINDOW_FLAGS)
     cv2.imshow(WINDOW_NAME, dst)
 
-    while cv2.waitKey(0) != ord('q'):
-        ...
+    key = cv2.waitKey(0)
+    if key == ord('q'):
+        return False
+
+    return True
