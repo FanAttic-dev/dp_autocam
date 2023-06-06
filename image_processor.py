@@ -20,7 +20,7 @@ yolo_args = {
 class BackgroundSubtractor:
     def __init__(self):
         # self.model = cv2.createBackgroundSubtractorMOG2()
-        self.model = cv2.createBackgroundSubtractorKNN()
+        self.model = cv2.createBackgroundSubtractorKNN(history=1)
 
     def init(self, cap, iterations=10):
         cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
@@ -90,24 +90,40 @@ def draw_mask(img, pts):
     return cv2.bitwise_and(img, img, mask=mask)
 
 
+def draw_bounding_boxes(mask, dst):
+    contours, _ = cv2.findContours(
+        mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    # cv2.drawContours(dst, contours, -1, (0, 255, 0), 1)
+    for i, contour in enumerate(contours):
+        x, y, w, h = cv2.boundingRect(contour)
+        # roi = img[y:y+h, x:x+w]
+        cv2.rectangle(dst, (x, y), (x+w, y+h), (0, 255, 255), 2)
+
+    return dst
+
+
 def process_frame(src, coords, bgSubtractor=None):
-    # src = cv2.GaussianBlur(src, (5, 5), 1)
+    src = cv2.GaussianBlur(src, (3, 3), 1)
     # cv2.namedWindow(WINDOW_NAME + 'original', cv2.WINDOW_NORMAL)
     # cv2.imshow(WINDOW_NAME + 'original', src)
 
     dst = src
     pts = coords_to_pts(coords)
     dst = draw_mask(dst, pts)
+    src = draw_mask(src, pts)
     # dst = rescale(src, 1)
-    dst = roi(dst, 3000, 400, 3960, 816)
+    # dst = roi(dst, 3000, 400, 3960, 816)
     # dst = roi_16_9(src, 2500, 400, 1000)
     # dst = detect_players(dst)[0].plot()
+    # dst = detect_ball(dst)[0].plot()
 
     # dst = draw_lines(dst, pts)
-    dst = detect_ball(dst)[0].plot()
 
     if bgSubtractor is not None:
         dst = bgSubtractor.apply(dst)
+        se = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+        dst = cv2.morphologyEx(dst, cv2.MORPH_CLOSE, se, iterations=10)
+        dst = draw_bounding_boxes(mask=dst, dst=src)
 
     if dst is not None:
         cv2.namedWindow(WINDOW_NAME, WINDOW_FLAGS)
