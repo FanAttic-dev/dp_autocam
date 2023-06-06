@@ -66,10 +66,19 @@ def detect_players(img):
     return model.predict(img, **yolo_args)
 
 
-def draw_lines(img, coords):
+def coords_to_pts(coords):
     pts = np.array([[v["x"], v["y"]] for v in coords.values()], np.int32)
-    pts = pts.reshape((-1, 1, 2))
-    cv2.polylines(img, [pts], isClosed=True, color=(0, 255, 255), thickness=5)
+    return pts.reshape((-1, 1, 2))
+
+
+def draw_lines(img, pts):
+    return cv2.polylines(img, [pts], isClosed=True, color=(0, 255, 255), thickness=5)
+
+
+def draw_mask(img, pts):
+    mask = np.zeros(img.shape[:2], dtype=np.uint8)
+    cv2.fillPoly(mask, pts=[pts], color=(255, 255, 255))
+    return cv2.bitwise_and(img, img, mask=mask)
 
 
 def process_frame(src, coords, bgSubtractor=None):
@@ -82,7 +91,9 @@ def process_frame(src, coords, bgSubtractor=None):
     # dst = roi_16_9(src, 2500, 400, 1000)
     # dst = detect_players(dst)[0].plot()
 
-    draw_lines(dst, coords)
+    pts = coords_to_pts(coords)
+    dst = draw_mask(dst, pts)
+    dst = draw_lines(dst, pts)
 
     if bgSubtractor is not None:
         dst = bgSubtractor.apply(dst)
