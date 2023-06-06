@@ -16,6 +16,26 @@ yolo_args = {
 }
 
 
+class BackgroundSubtractor:
+    def __init__(self):
+        # self.model = cv2.createBackgroundSubtractorMOG2()
+        self.model = cv2.createBackgroundSubtractorKNN()
+
+    def init(self, cap, iterations=10):
+        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+
+        for _ in tqdm(range(iterations)):
+            ret, frame = cap.read()
+            if not ret:
+                return
+            self.apply(frame)
+
+        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+
+    def apply(self, img):
+        return self.model.apply(img)
+
+
 def rescale(img, scale):
     h, w, _ = img.shape
     h, w = int(h * scale), int(w * scale)
@@ -46,29 +66,15 @@ def detect_players(img):
     return model.predict(img, **yolo_args)
 
 
-class BackgroundSubtractor:
-    def __init__(self):
-        # self.model = cv2.createBackgroundSubtractorMOG2()
-        self.model = cv2.createBackgroundSubtractorKNN()
-
-    def init(self, cap, iterations=10):
-        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-
-        for _ in tqdm(range(iterations)):
-            ret, frame = cap.read()
-            if not ret:
-                return
-            self.apply(frame)
-
-        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-
-    def apply(self, img):
-        return self.model.apply(img)
+def draw_lines(img, coords):
+    pts = np.array([[v["x"], v["y"]] for v in coords.values()], np.int32)
+    pts = pts.reshape((-1, 1, 2))
+    cv2.polylines(img, [pts], isClosed=True, color=(0, 255, 255), thickness=5)
 
 
-def process_frame(src, bgSubtractor=None):
-    cv2.namedWindow(WINDOW_NAME + 'original', cv2.WINDOW_NORMAL)
-    cv2.imshow(WINDOW_NAME + 'original', src)
+def process_frame(src, coords, bgSubtractor=None):
+    # cv2.namedWindow(WINDOW_NAME + 'original', cv2.WINDOW_NORMAL)
+    # cv2.imshow(WINDOW_NAME + 'original', src)
 
     dst = src
     # dst = rescale(src, 1)
@@ -76,11 +82,14 @@ def process_frame(src, bgSubtractor=None):
     # dst = roi_16_9(src, 2500, 400, 1000)
     # dst = detect_players(dst)[0].plot()
 
+    draw_lines(dst, coords)
+
     if bgSubtractor is not None:
         dst = bgSubtractor.apply(dst)
 
-    cv2.namedWindow(WINDOW_NAME, WINDOW_FLAGS)
-    cv2.imshow(WINDOW_NAME, dst)
+    if dst is not None:
+        cv2.namedWindow(WINDOW_NAME, WINDOW_FLAGS)
+        cv2.imshow(WINDOW_NAME, dst)
 
     key = cv2.waitKey(0)
     if key == ord('q'):

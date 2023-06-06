@@ -1,5 +1,6 @@
 from pathlib import Path
 import cv2
+import json
 
 from image_processor import BackgroundSubtractor, process_frame
 
@@ -29,18 +30,22 @@ def play_video(cap):
             break
 
 
-img_path = Path("/home/atti/source/datasets/videos/sample_wide.mp4")
+videos_path = Path("/home/atti/source/datasets/videos/")
+video_name = Path("sample_wide.mp4")
 
-cap = cv2.VideoCapture(str(img_path))
+cap = cv2.VideoCapture(str(videos_path / video_name))
+with open(videos_path / f"coords_{video_name.stem}.json", 'r') as f:
+    coords = json.load(f)
 
 bgSubtractor = BackgroundSubtractor()
-bgSubtractor.init(cap)
+# bgSubtractor.init(cap)
+
 
 while True:
     # ret, frame = get_frame_at(cap, 27)
     ret, frame = get_next_frame(cap)
     if ret:
-        proceed = process_frame(frame, bgSubtractor)
+        proceed = process_frame(frame, coords)
         if not proceed:
             break
 
