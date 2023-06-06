@@ -46,7 +46,7 @@ while True:
     if not ret:
         break
 
-    proceed = process_frame(frame, coords)
+    proceed = process_frame(frame, coords, bgSubtractor)
     if not proceed:
         break
 
