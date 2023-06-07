@@ -35,3 +35,17 @@ class FixedHeightCamera(Camera):
 
         self.center_x = center_x
         return True
+
+    def update_by_bbs(self, bbs):
+        bb_centers = []
+        for bb in bbs:
+            x, y, w, h = bb
+            bb_center_x = x + w//2
+            bb_center_y = y + h//2
+            bb_centers.append((bb_center_x, bb_center_y))
+
+        center_x = sum(map(
+            lambda bb_center: bb_center[0], bb_centers)) // len(bb_centers)
+        print(center_x)
+        if self.check_bounds(self.get_frame_x(center_x)):
+            self.center_x = center_x

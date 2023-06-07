@@ -4,7 +4,7 @@ from ultralytics import YOLO
 from pathlib import Path
 from tqdm import tqdm
 
-from constants import WINDOW_NAME
+from constants import GAUSS_SIGMA, MORPH_CLOSE_ITERATIONS, WINDOW_NAME
 
 yolo_args = {
     'device': 0,  # 0 if gpu else 'cpu'
@@ -90,18 +90,21 @@ class ImageProcessor:
         contours, _ = cv2.findContours(
             mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
         # cv2.drawContours(dst, contours, -1, (0, 255, 0), 1)
+        bbs = []
         for i, contour in enumerate(contours):
-            x, y, w, h = cv2.boundingRect(contour)
+            bb = cv2.boundingRect(contour)
+            x, y, w, h = bb
             # roi = img[y:y+h, x:x+w]
             cv2.rectangle(dst, (x, y), (x+w, y+h), (0, 255, 255), 2)
+            bbs.append(bb)
 
-        return dst
+        return dst, bbs
 
-    def process_frame(self, src, coords, bgSubtractor=None):
-        dst = src
-        # pts = self.coords_to_pts(coords)
-        # dst = self.draw_mask(dst, pts)
-        # src = self.draw_mask(src, pts)
+    def process_frame(self, src, coords):
+        dst = cv2.GaussianBlur(src, (3, 3), GAUSS_SIGMA)
+
+        pts = self.coords_to_pts(coords)
+        dst = self.draw_mask(dst, pts)
         # dst = self.rescale(src, 1)
         # dst = self.roi(dst, 3000, 400, 3960, 816)
         # dst = self.roi_16_9(src, 2500, 400, 1000)
@@ -109,10 +112,10 @@ class ImageProcessor:
         # dst = self.detect_ball(dst)[0].plot()
         # dst = self.draw_lines(dst, pts)
 
-        if bgSubtractor is not None:
-            dst = bgSubtractor.apply(dst)
-            se = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-            dst = cv2.morphologyEx(dst, cv2.MORPH_CLOSE, se, iterations=10)
-            dst = self.draw_bounding_boxes(mask=dst, dst=src)
+        mask = self.bgSubtractor.apply(dst)
+        se = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE,
+                                se, iterations=MORPH_CLOSE_ITERATIONS)
+        dst, bbs = self.draw_bounding_boxes(mask=mask, dst=src)
 
-        return dst
+        return dst, mask, bbs

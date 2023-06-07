@@ -2,7 +2,7 @@ from pathlib import Path
 import cv2
 import json
 from camera import FixedHeightCamera
-from constants import WINDOW_FLAGS, WINDOW_NAME
+from constants import PAN_DX, WINDOW_FLAGS, WINDOW_NAME
 
 from image_processor import ImageProcessor
 
@@ -48,8 +48,6 @@ img_processor = ImageProcessor()
 ret, frame = get_next_frame(cap)
 camera = FixedHeightCamera(frame)
 
-centers = [0.2, 0.4, 0.6, 0.8]
-
 i = 0
 while True:
     ret, frame = get_next_frame(cap)
@@ -57,19 +55,21 @@ while True:
         break
 
     h, w, _ = frame.shape
-    show_frame(frame, window_name=f"{WINDOW_NAME} original")
 
-    frame = img_processor.process_frame(frame, coords)
+    frame, mask, bbs = img_processor.process_frame(frame, coords)
+    camera.update_by_bbs(bbs)
     frame = camera.get_frame(frame)
-
-    center_x = int(centers[i % len(centers)] * w)
-    camera.set_center_x(center_x)
+    show_frame(mask, window_name=f"{WINDOW_NAME} original")
 
     if frame is not None:
         show_frame(frame)
 
     key = cv2.waitKey(0)
-    if key == ord('q'):
+    if key == ord('d'):
+        camera.pan(PAN_DX)
+    elif key == ord('a'):
+        camera.pan(-PAN_DX)
+    elif key == ord('q'):
         break
 
     i += 1
