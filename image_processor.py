@@ -5,6 +5,7 @@ from pathlib import Path
 from tqdm import tqdm
 
 from constants import GAUSS_SIGMA, MORPH_CLOSE_ITERATIONS, WINDOW_NAME
+from utils import coords_to_pts
 
 yolo_args = {
     'device': 0,  # 0 if gpu else 'cpu'
@@ -72,10 +73,6 @@ class ImageProcessor:
         model = YOLO(model_path)
         return model.track(img, **yolo_args, tracker="bytetrack.yaml")
 
-    def coords_to_pts(self, coords):
-        pts = np.array([[v["x"], v["y"]] for v in coords.values()], np.int32)
-        return pts.reshape((-1, 1, 2))
-
     def draw_lines(self, img, pts):
         return cv2.polylines(img, [pts], isClosed=True, color=(0, 255, 255), thickness=5)
 
@@ -103,7 +100,7 @@ class ImageProcessor:
     def process_frame(self, src, coords):
         dst = cv2.GaussianBlur(src, (3, 3), GAUSS_SIGMA)
 
-        pts = self.coords_to_pts(coords)
+        pts = coords_to_pts(coords)
         dst = self.draw_mask(dst, pts)
         # dst = self.rescale(src, 1)
         # dst = self.roi(dst, 3000, 400, 3960, 816)

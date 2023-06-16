@@ -5,6 +5,8 @@ from camera import FixedHeightCamera
 from constants import PAN_DX, WINDOW_FLAGS, WINDOW_NAME
 
 from image_processor import ImageProcessor
+from top_down import TopDown
+from utils import coords_to_pts
 
 
 def get_frame_at(cap, seconds):
@@ -42,11 +44,12 @@ video_name = Path("sample_wide.mp4")
 
 cap = cv2.VideoCapture(str(videos_path / video_name))
 with open(videos_path / f"coords_{video_name.stem}.json", 'r') as f:
-    coords = json.load(f)
+    video_pitch_coords = json.load(f)
 
 img_processor = ImageProcessor()
 ret, frame = get_next_frame(cap)
 camera = FixedHeightCamera(frame)
+top_down = TopDown(video_pitch_coords)
 
 i = 0
 while True:
@@ -56,13 +59,16 @@ while True:
 
     h, w, _ = frame.shape
 
-    frame, mask, bbs = img_processor.process_frame(frame, coords)
-    camera.update_by_bbs(bbs)
-    frame = camera.get_frame(frame)
-    show_frame(mask, window_name=f"{WINDOW_NAME} original")
+    frame, mask, bbs = img_processor.process_frame(frame, video_pitch_coords)
+    frame_warped = top_down.warp_frame(frame)
+    show_frame(frame_warped, "warped")
 
-    if frame is not None:
-        show_frame(frame)
+    # camera.update_by_bbs(bbs)
+    # frame = camera.get_frame(frame)
+    # show_frame(mask, window_name=f"{WINDOW_NAME} mask")
+
+    # if frame is not None:
+    # show_frame(frame)
 
     key = cv2.waitKey(0)
     if key == ord('d'):
