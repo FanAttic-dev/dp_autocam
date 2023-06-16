@@ -1,7 +1,8 @@
 import json
 from pathlib import Path
 import cv2
-from utils import coords_to_pts
+import numpy as np
+from utils import coords_to_pts, bbs_to_pts
 
 from constants import WINDOW_NAME
 
@@ -21,3 +22,38 @@ class TopDown:
     def warp_frame(self, frame):
         return cv2.warpPerspective(
             frame, self.H, (self.pitch_model.shape[1], self.pitch_model.shape[0]))
+
+    def apply_H(self, x, y):
+        v = np.array([x, y, 1])
+        v = self.H.dot(v)
+        x = v[0] / v[2]
+        y = v[1] / v[2]
+        return x, y
+
+    def warp_bbs(self, bbs):
+        pts = bbs_to_pts(bbs)
+        res = []
+        for pt in pts:
+            x1, y1, x2, y2 = pt
+            x1, y1 = self.apply_H(x1, y1)
+            x2, y2 = self.apply_H(x2, y2)
+            center_x = int((x1 + x2) / 2)
+            center_y = int(y2)
+
+            res.append((center_x, center_y))
+        return res
+
+    def check_bounds(self, x, y):
+        h, w, _ = self.pitch_model.shape
+        return x >= 0 and x < w and y >= 0 and y < h
+
+    def draw_points(self, pts):
+        pitch_model = self.pitch_model.copy()
+        for pt in pts:
+            x, y = pt
+            if not self.check_bounds(x, y):
+                print(x, y)
+                continue
+            cv2.circle(
+                pitch_model, (x, y), radius=10, color=(0, 0, 255), thickness=-1)
+        return pitch_model

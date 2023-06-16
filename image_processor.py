@@ -83,17 +83,18 @@ class ImageProcessor:
         # mask = cv2.dilate(mask, se, iterations=10)
         return cv2.bitwise_and(img, img, mask=mask)
 
-    def draw_bounding_boxes(self, mask, dst):
+    def get_bounding_boxes(self, mask):
         contours, _ = cv2.findContours(
             mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-        # cv2.drawContours(dst, contours, -1, (0, 255, 0), 1)
-        bbs = []
-        for i, contour in enumerate(contours):
-            bb = cv2.boundingRect(contour)
+
+        return [cv2.boundingRect(contour) for contour in contours]
+
+    def draw_bounding_boxes(self, mask, dst):
+        bbs = self.get_bounding_boxes(mask)
+
+        for bb in bbs:
             x, y, w, h = bb
-            # roi = img[y:y+h, x:x+w]
             cv2.rectangle(dst, (x, y), (x+w, y+h), (0, 255, 255), 2)
-            bbs.append(bb)
 
         return dst, bbs
 

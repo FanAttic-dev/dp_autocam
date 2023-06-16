@@ -60,15 +60,19 @@ while True:
     h, w, _ = frame.shape
 
     frame, mask, bbs = img_processor.process_frame(frame, video_pitch_coords)
-    frame_warped = top_down.warp_frame(frame)
-    show_frame(frame_warped, "warped")
+    # frame_warped = top_down.warp_frame(frame)
+    # show_frame(frame_warped, "warped")
+
+    bb_pts = top_down.warp_bbs(bbs)
+    top_down_frame = top_down.draw_points(bb_pts)
+    show_frame(top_down_frame, "top down")
 
     # camera.update_by_bbs(bbs)
     # frame = camera.get_frame(frame)
     # show_frame(mask, window_name=f"{WINDOW_NAME} mask")
 
-    # if frame is not None:
-    # show_frame(frame)
+    if frame is not None:
+        show_frame(frame)
 
     key = cv2.waitKey(0)
     if key == ord('d'):
