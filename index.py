@@ -88,12 +88,11 @@ while True:
     detector.draw_bounding_boxes_(frame_joined, bbs_joined)
     show_frame(frame_joined)
 
-    # bb_pts = top_down.warp_bbs(bbs_joined)
-    # top_down_frame = top_down.draw_points(bb_pts)
-    # show_frame(top_down_frame, "top down")
+    bb_pts = top_down.warp_bbs(bbs_joined)
+    top_down_frame = top_down.draw_points(bb_pts)
+    show_frame(top_down_frame, "top down")
 
     # camera.update_by_bbs(bbs)
-    # show_frame(mask, window_name=f"{WINDOW_NAME} mask")
 
     key = cv2.waitKey(0)
     if key == ord('d'):
