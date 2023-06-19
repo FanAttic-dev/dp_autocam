@@ -23,7 +23,7 @@ class Detector:
 class YoloDetector(Detector):
     args = {
         'device': 0,  # 0 if gpu else 'cpu'
-        'imgsz': 640,
+        'imgsz': 960,
         'classes': None,  # [0] for ball only, None for all
         'conf': 0.5,
         'max_det': 50,

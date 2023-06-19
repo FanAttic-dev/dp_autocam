@@ -7,6 +7,7 @@ import random
 from detector import BgDetector, YoloPlayerDetector
 
 from top_down import TopDown
+from utils import split_frame
 
 
 def get_frame_at(cap, seconds):
@@ -48,7 +49,8 @@ def get_random_file(dir):
 videos_dir = Path("/home/atti/source/datasets/SoccerTrack/wide_view/videos")
 coords_path = videos_dir / "../../coords.json"
 # video_name = get_random_file(videos_dir)
-video_name = videos_dir / "F_20200220_1_0180_0210.mp4"
+# video_name = videos_dir / "F_20200220_1_0180_0210.mp4"
+video_name = videos_dir / "F_20200220_1_0480_0510.mp4"
 print(f"Video: {video_name}")
 
 cap = cv2.VideoCapture(str(video_name.absolute()))
@@ -76,13 +78,16 @@ while True:
     # show_frame(top_down_frame, "top down")
 
     frame = detector.preprocess(frame)
-    frame = camera.get_frame(frame)
-    bbs, frame = detector.detect(frame)
+    # frame = camera.get_frame(frame)
+    frames = split_frame(frame)
+    for i, frame in enumerate(frames):
+        bbs, frame = detector.detect(frame)
+        show_frame(frame, f"frame {i}")
     # camera.update_by_bbs(bbs)
     # show_frame(mask, window_name=f"{WINDOW_NAME} mask")
 
-    if frame is not None:
-        show_frame(frame)
+    # if frame is not None:
+    #     show_frame(frame)
 
     key = cv2.waitKey(0)
     if key == ord('d'):
