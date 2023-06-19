@@ -6,7 +6,6 @@ from constants import PAN_DX, WINDOW_FLAGS, WINDOW_NAME
 import random
 from detector import BgDetector, YoloPlayerDetector
 
-from image_processor import ImageProcessor
 from top_down import TopDown
 
 
@@ -48,7 +47,9 @@ def get_random_file(dir):
 
 videos_dir = Path("/home/atti/source/datasets/SoccerTrack/wide_view/videos")
 coords_path = videos_dir / "../../coords.json"
-video_name = get_random_file(videos_dir)
+# video_name = get_random_file(videos_dir)
+video_name = videos_dir / "F_20200220_1_0180_0210.mp4"
+print(f"Video: {video_name}")
 
 cap = cv2.VideoCapture(str(video_name.absolute()))
 with open(coords_path, 'r') as f:
@@ -58,7 +59,6 @@ ret, frame = get_next_frame(cap)
 camera = FixedHeightCamera(frame)
 top_down = TopDown(pitch_coords)
 detector = YoloPlayerDetector(pitch_coords)
-# detector = BgDetector(pitch_coords)
 
 i = 0
 while True:
@@ -68,8 +68,6 @@ while True:
 
     h, w, _ = frame.shape
 
-    bbs, frame = detector.detect(frame)
-
     # frame_warped = top_down.warp_frame(frame)
     # show_frame(frame_warped, "warped")
 
@@ -77,8 +75,10 @@ while True:
     # top_down_frame = top_down.draw_points(bb_pts)
     # show_frame(top_down_frame, "top down")
 
+    frame = detector.preprocess(frame)
+    frame = camera.get_frame(frame)
+    bbs, frame = detector.detect(frame)
     # camera.update_by_bbs(bbs)
-    # frame = camera.get_frame(frame)
     # show_frame(mask, window_name=f"{WINDOW_NAME} mask")
 
     if frame is not None:
@@ -94,6 +94,6 @@ while True:
 
     i += 1
 
-
+print(f"Video: {video_name}")
 cap.release()
 cv2.destroyAllWindows()

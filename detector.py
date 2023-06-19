@@ -23,10 +23,10 @@ class Detector:
 class YoloDetector(Detector):
     args = {
         'device': 0,  # 0 if gpu else 'cpu'
-        'imgsz': 960,
+        'imgsz': 640,
         'classes': None,  # [0] for ball only, None for all
-        'conf': 0.05,
-        'max_det': 3,
+        'conf': 0.5,
+        'max_det': 50,
         'iou': 0.7
     }
 
@@ -35,10 +35,14 @@ class YoloDetector(Detector):
         self.model = YOLO(self.__class__.model_path)
 
     def res2bbs(self, res):
-        return [bb.xywh[0] for bb in res[0].boxes if len(bb.xywh) > 0]
+        return [bb.xywh[0].cpu().numpy().astype(int) for bb in res[0].boxes if len(bb.xywh) > 0]
 
     def plot(self, res):
         return res[0].plot()
+
+    def preprocess(self, img):
+        img = ImageProcessor.draw_mask(img, self.pitch_coords, margin=5)
+        return img
 
 
 class YoloBallDetector(YoloDetector):
@@ -56,7 +60,7 @@ class YoloPlayerDetector(YoloDetector):
         f"./weights/yolov8_{YoloDetector.args['imgsz']}.pt")
 
     def detect(self, img):
-        res = self.model.predict(img, **YoloPlayerDetector.args)[0]
+        res = self.model.predict(img, **YoloPlayerDetector.args)
         return self.res2bbs(res), self.plot(res)
 
 
