@@ -1,20 +1,11 @@
 import cv2
 import numpy as np
-from ultralytics import YOLO
+
 from pathlib import Path
 from utils import coords_to_pts
 
-yolo_args = {
-    'device': 0,  # 0 if gpu else 'cpu'
-    'imgsz': 960,
-    'classes': None,  # [0] for ball only, None for all
-    'conf': 0.05,
-    'max_det': 3,
-    'iou': 0.7
-}
 
-
-class ImageProcessor:
+class ImagePreprocessor:
     GAUSS_SIGMA = 1
 
     def __init__(self):
@@ -41,16 +32,6 @@ class ImageProcessor:
             raise "roi_16_9: height too large, cannot keep 16:9 aspect ratio"
         return self.roi(img, x1, y1, x2, y2)
 
-    def detect_players(self, img):
-        model_path = Path(f"./weights/yolov8_{yolo_args['imgsz']}.pt")
-        model = YOLO(model_path)
-        return model.predict(img, **yolo_args)
-
-    def detect_ball(self, img):
-        model_path = Path(f"./weights/yolov8_{yolo_args['imgsz']}_ball.pt")
-        model = YOLO(model_path)
-        return model.track(img, **yolo_args, tracker="bytetrack.yaml")
-
     def draw_lines(self, img, pts):
         return cv2.polylines(img, [pts], isClosed=True, color=(0, 255, 255), thickness=5)
 
@@ -63,11 +44,11 @@ class ImageProcessor:
 
     def draw_bounding_boxes(self, img, bbs):
         for bb in bbs:
-            x, y, w, h = bb
+            x, y, w, h = bb.cpu().numpy().astype(int)
             cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 255), 2)
 
     def process_frame(self, src, coords):
-        dst = cv2.GaussianBlur(src, (3, 3), ImageProcessor.GAUSS_SIGMA)
+        dst = cv2.GaussianBlur(src, (3, 3), ImagePreprocessor.GAUSS_SIGMA)
 
         pts = coords_to_pts(coords)
         dst = self.draw_mask(dst, pts)

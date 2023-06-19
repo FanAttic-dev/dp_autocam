@@ -4,9 +4,9 @@ import json
 from camera import FixedHeightCamera
 from constants import PAN_DX, WINDOW_FLAGS, WINDOW_NAME
 import random
-from detector import BgDetector, Detector
+from detector import BgDetector, YoloPlayerDetector
 
-from image_processor import ImageProcessor
+from image_preprocessor import ImagePreprocessor
 from top_down import TopDown
 
 
@@ -42,7 +42,7 @@ def show_frame(frame, window_name=WINDOW_NAME):
 
 def get_random_file(dir):
     files = list(dir.iterdir())
-    idx = random.randint(0, len(files))
+    idx = random.randint(0, len(files)-1)
     return files[idx]
 
 
@@ -54,11 +54,11 @@ cap = cv2.VideoCapture(str(video_name.absolute()))
 with open(coords_path, 'r') as f:
     video_pitch_coords = json.load(f)
 
-img_processor = ImageProcessor()
+img_processor = ImagePreprocessor()
 ret, frame = get_next_frame(cap)
 camera = FixedHeightCamera(frame)
 top_down = TopDown(video_pitch_coords)
-detector = BgDetector()
+detector = YoloPlayerDetector()
 
 i = 0
 while True:

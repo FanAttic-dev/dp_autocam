@@ -1,5 +1,7 @@
+from pathlib import Path
 import cv2
 import tqdm
+from ultralytics import YOLO
 
 
 class Detector:
@@ -8,6 +10,37 @@ class Detector:
 
     def detect(frame):
         ...
+
+
+class YoloDetector(Detector):
+    args = {
+        'device': 0,  # 0 if gpu else 'cpu'
+        'imgsz': 960,
+        'classes': None,  # [0] for ball only, None for all
+        'conf': 0.05,
+        'max_det': 3,
+        'iou': 0.7
+    }
+
+    def __init__(self):
+        self.model = YOLO(self.__class__.model_path)
+
+
+class YoloBallDetector(YoloDetector):
+    model_path = Path(
+        f"./weights/yolov8_{YoloDetector.args['imgsz']}_ball.pt")
+
+    def detect(self, img):
+        return self.model.track(img, **YoloBallDetector.args, tracker="bytetrack.yaml")[0]
+
+
+class YoloPlayerDetector(YoloDetector):
+    model_path = Path(
+        f"./weights/yolov8_{YoloDetector.args['imgsz']}.pt")
+
+    def detect(self, img):
+        res = self.model.predict(img, **YoloPlayerDetector.args)
+        return [bb.xywh[0] for bb in res[0].boxes if len(bb.xywh) > 0]
 
 
 class BgDetector(Detector):
