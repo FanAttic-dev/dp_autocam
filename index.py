@@ -3,10 +3,10 @@ import cv2
 import json
 from camera import FixedHeightCamera
 from constants import PAN_DX, WINDOW_FLAGS, WINDOW_NAME
+import random
 
 from image_processor import ImageProcessor
 from top_down import TopDown
-from utils import coords_to_pts
 
 
 def get_frame_at(cap, seconds):
@@ -39,11 +39,18 @@ def show_frame(frame, window_name=WINDOW_NAME):
     cv2.imshow(window_name, frame)
 
 
-videos_path = Path("/home/atti/source/datasets/videos/")
-video_name = Path("sample_wide.mp4")
+def get_random_file(dir):
+    files = list(dir.iterdir())
+    idx = random.randint(0, len(files))
+    return files[idx]
 
-cap = cv2.VideoCapture(str(videos_path / video_name))
-with open(videos_path / f"coords_{video_name.stem}.json", 'r') as f:
+
+videos_dir = Path("/home/atti/source/datasets/SoccerTrack/wide_view/videos")
+coords_path = videos_dir / "../../coords.json"
+video_name = get_random_file(videos_dir)
+
+cap = cv2.VideoCapture(str(video_name.absolute()))
+with open(coords_path, 'r') as f:
     video_pitch_coords = json.load(f)
 
 img_processor = ImageProcessor()
