@@ -6,7 +6,7 @@ from constants import PAN_DX, WINDOW_FLAGS, WINDOW_NAME
 import random
 from detector import BgDetector, YoloPlayerDetector
 
-from image_preprocessor import ImagePreprocessor
+from image_processor import ImageProcessor
 from top_down import TopDown
 
 
@@ -52,13 +52,13 @@ video_name = get_random_file(videos_dir)
 
 cap = cv2.VideoCapture(str(video_name.absolute()))
 with open(coords_path, 'r') as f:
-    video_pitch_coords = json.load(f)
+    pitch_coords = json.load(f)
 
-img_processor = ImagePreprocessor()
 ret, frame = get_next_frame(cap)
 camera = FixedHeightCamera(frame)
-top_down = TopDown(video_pitch_coords)
-detector = YoloPlayerDetector()
+top_down = TopDown(pitch_coords)
+detector = YoloPlayerDetector(pitch_coords)
+# detector = BgDetector(pitch_coords)
 
 i = 0
 while True:
@@ -68,9 +68,7 @@ while True:
 
     h, w, _ = frame.shape
 
-    frame = img_processor.process_frame(frame, video_pitch_coords)
-    bbs = detector.detect(frame)
-    img_processor.draw_bounding_boxes(frame, bbs)
+    bbs, frame = detector.detect(frame)
 
     # frame_warped = top_down.warp_frame(frame)
     # show_frame(frame_warped, "warped")

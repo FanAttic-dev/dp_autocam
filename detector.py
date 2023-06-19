@@ -3,12 +3,20 @@ import cv2
 import tqdm
 from ultralytics import YOLO
 
+from image_processor import ImageProcessor
+
 
 class Detector:
-    def __init__(self):
+    def __init__(self, pitch_coords):
+        self.pitch_coords = pitch_coords
+
+    def preprocess(self, img):
         ...
 
-    def detect(frame):
+    def detect(self, frame):
+        ...
+
+    def plot(self, bbs):
         ...
 
 
@@ -22,8 +30,15 @@ class YoloDetector(Detector):
         'iou': 0.7
     }
 
-    def __init__(self):
+    def __init__(self, pitch_coords):
+        super().__init__(pitch_coords)
         self.model = YOLO(self.__class__.model_path)
+
+    def res2bbs(self, res):
+        return [bb.xywh[0] for bb in res[0].boxes if len(bb.xywh) > 0]
+
+    def plot(self, res):
+        return res[0].plot()
 
 
 class YoloBallDetector(YoloDetector):
@@ -31,7 +46,9 @@ class YoloBallDetector(YoloDetector):
         f"./weights/yolov8_{YoloDetector.args['imgsz']}_ball.pt")
 
     def detect(self, img):
-        return self.model.track(img, **YoloBallDetector.args, tracker="bytetrack.yaml")[0]
+        res = self.model.track(
+            img, **YoloBallDetector.args, tracker="bytetrack.yaml")
+        return self.res2bbs(res), self.plot(res)
 
 
 class YoloPlayerDetector(YoloDetector):
@@ -39,8 +56,8 @@ class YoloPlayerDetector(YoloDetector):
         f"./weights/yolov8_{YoloDetector.args['imgsz']}.pt")
 
     def detect(self, img):
-        res = self.model.predict(img, **YoloPlayerDetector.args)
-        return [bb.xywh[0] for bb in res[0].boxes if len(bb.xywh) > 0]
+        res = self.model.predict(img, **YoloPlayerDetector.args)[0]
+        return self.res2bbs(res), self.plot(res)
 
 
 class BgDetector(Detector):
@@ -64,8 +81,19 @@ class BgDetector(Detector):
         def apply(self, img):
             return self.model.apply(img)
 
-    def __init__(self):
+    def __init__(self, pitch_coords):
+        super().__init__(pitch_coords)
         self.bgSubtractor = BgDetector.BackgroundSubtractor()
+
+    def preprocess(self, img):
+        img = ImageProcessor.draw_mask(img, self.pitch_coords, margin=0)
+        img = ImageProcessor.gaussian_blur(img, 1)
+        return img
+
+    def draw_bounding_boxes(self, img, bbs):
+        for bb in bbs:
+            x, y, w, h = bb
+            cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 255), 2)
 
     def get_bounding_boxes(self, mask):
         contours, _ = cv2.findContours(
@@ -74,6 +102,7 @@ class BgDetector(Detector):
         return [cv2.boundingRect(contour) for contour in contours]
 
     def detect(self, img):
+        img = self.preprocess(img)
         mask = self.bgSubtractor.apply(img)
 
         se = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
@@ -81,4 +110,6 @@ class BgDetector(Detector):
                                 se, iterations=BgDetector.MORPH_CLOSE_ITERATIONS)
 
         bbs = self.get_bounding_boxes(mask)
-        return bbs
+        plotted = img.copy()
+        self.draw_bounding_boxes(plotted, bbs)
+        return bbs, plotted
