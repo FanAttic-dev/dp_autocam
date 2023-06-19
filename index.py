@@ -79,9 +79,9 @@ while True:
 
     frame = detector.preprocess(frame)
     # frame = camera.get_frame(frame)
-    frames = split_frame(frame)
+    frames = split_frame(frame, detector.pitch_coords)
+    bbs, frames = detector.detect(frames)
     for i, frame in enumerate(frames):
-        bbs, frame = detector.detect(frame)
         show_frame(frame, f"frame {i}")
     # camera.update_by_bbs(bbs)
     # show_frame(mask, window_name=f"{WINDOW_NAME} mask")

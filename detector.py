@@ -35,10 +35,17 @@ class YoloDetector(Detector):
         self.model = YOLO(self.__class__.model_path)
 
     def res2bbs(self, res):
-        return [bb.xywh[0].cpu().numpy().astype(int) for bb in res[0].boxes if len(bb.xywh) > 0]
+        bbs = []
+        for i in range(len(res)):
+            bb = [bb.xywh[0].cpu().numpy().astype(int)
+                  for bb in res[i].boxes if len(bb.xywh) > 0]
+            bbs.append(bb)
+        return bbs
 
     def plot(self, res):
-        return res[0].plot()
+        for i in range(len(res)):
+            res[i] = res[i].plot()
+        return res
 
     def preprocess(self, img):
         img = ImageProcessor.draw_mask(img, self.pitch_coords, margin=5)
