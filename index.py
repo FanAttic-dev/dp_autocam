@@ -4,6 +4,7 @@ import json
 from camera import FixedHeightCamera
 from constants import PAN_DX, WINDOW_FLAGS, WINDOW_NAME
 import random
+from detector import BgDetector, Detector
 
 from image_processor import ImageProcessor
 from top_down import TopDown
@@ -57,6 +58,7 @@ img_processor = ImageProcessor()
 ret, frame = get_next_frame(cap)
 camera = FixedHeightCamera(frame)
 top_down = TopDown(video_pitch_coords)
+detector = BgDetector()
 
 i = 0
 while True:
@@ -66,13 +68,16 @@ while True:
 
     h, w, _ = frame.shape
 
-    frame, mask, bbs = img_processor.process_frame(frame, video_pitch_coords)
+    frame = img_processor.process_frame(frame, video_pitch_coords)
+    bbs = detector.detect(frame)
+    img_processor.draw_bounding_boxes(frame, bbs)
+
     # frame_warped = top_down.warp_frame(frame)
     # show_frame(frame_warped, "warped")
 
-    bb_pts = top_down.warp_bbs(bbs)
-    top_down_frame = top_down.draw_points(bb_pts)
-    show_frame(top_down_frame, "top down")
+    # bb_pts = top_down.warp_bbs(bbs)
+    # top_down_frame = top_down.draw_points(bb_pts)
+    # show_frame(top_down_frame, "top down")
 
     # camera.update_by_bbs(bbs)
     # frame = camera.get_frame(frame)

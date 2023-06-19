@@ -2,9 +2,6 @@ import cv2
 import numpy as np
 from ultralytics import YOLO
 from pathlib import Path
-from tqdm import tqdm
-
-from constants import GAUSS_SIGMA, MORPH_CLOSE_ITERATIONS, WINDOW_NAME
 from utils import coords_to_pts
 
 yolo_args = {
@@ -17,30 +14,11 @@ yolo_args = {
 }
 
 
-class BackgroundSubtractor:
-    def __init__(self):
-        # self.model = cv2.createBackgroundSubtractorMOG2()
-        self.model = cv2.createBackgroundSubtractorKNN(history=1)
-
-    def init(self, cap, iterations=10):
-        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-
-        for _ in tqdm(range(iterations)):
-            ret, frame = cap.read()
-            if not ret:
-                return
-            self.apply(frame)
-
-        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-
-    def apply(self, img):
-        return self.model.apply(img)
-
-
 class ImageProcessor:
+    GAUSS_SIGMA = 1
+
     def __init__(self):
-        self.bgSubtractor = BackgroundSubtractor()
-        # bgSubtractor.init(cap)
+        ...
 
     def rescale(self, img, scale):
         h, w, _ = img.shape
@@ -79,27 +57,17 @@ class ImageProcessor:
     def draw_mask(self, img, pts):
         mask = np.zeros(img.shape[:2], dtype=np.uint8)
         cv2.fillPoly(mask, pts=[pts], color=(255, 255, 255))
-        # se = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-        # mask = cv2.dilate(mask, se, iterations=10)
+        se = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+        mask = cv2.dilate(mask, se, iterations=10)
         return cv2.bitwise_and(img, img, mask=mask)
 
-    def get_bounding_boxes(self, mask):
-        contours, _ = cv2.findContours(
-            mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-
-        return [cv2.boundingRect(contour) for contour in contours]
-
-    def draw_bounding_boxes(self, mask, dst):
-        bbs = self.get_bounding_boxes(mask)
-
+    def draw_bounding_boxes(self, img, bbs):
         for bb in bbs:
             x, y, w, h = bb
-            cv2.rectangle(dst, (x, y), (x+w, y+h), (0, 255, 255), 2)
-
-        return dst, bbs
+            cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 255), 2)
 
     def process_frame(self, src, coords):
-        dst = cv2.GaussianBlur(src, (3, 3), GAUSS_SIGMA)
+        dst = cv2.GaussianBlur(src, (3, 3), ImageProcessor.GAUSS_SIGMA)
 
         pts = coords_to_pts(coords)
         dst = self.draw_mask(dst, pts)
@@ -110,10 +78,4 @@ class ImageProcessor:
         # dst = self.detect_ball(dst)[0].plot()
         # dst = self.draw_lines(dst, pts)
 
-        mask = self.bgSubtractor.apply(dst)
-        se = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE,
-                                se, iterations=MORPH_CLOSE_ITERATIONS)
-        dst, bbs = self.draw_bounding_boxes(mask=mask, dst=src)
-
-        return dst, mask, bbs
+        return dst
