@@ -5,9 +5,11 @@ from camera import FixedHeightCamera
 from constants import PAN_DX, WINDOW_FLAGS, WINDOW_NAME
 import random
 from detector import BgDetector, YoloPlayerDetector
+from frame_splitter import FrameSplitter
 
 from top_down import TopDown
-from utils import split_frame
+
+colors = [(0, 255, 255), (255, 255, 0), (255, 0, 255)]
 
 
 def get_frame_at(cap, seconds):
@@ -48,46 +50,50 @@ def get_random_file(dir):
 
 videos_dir = Path("/home/atti/source/datasets/SoccerTrack/wide_view/videos")
 coords_path = videos_dir / "../../coords.json"
-# video_name = get_random_file(videos_dir)
+video_name = get_random_file(videos_dir)
 # video_name = videos_dir / "F_20200220_1_0180_0210.mp4"
-video_name = videos_dir / "F_20200220_1_0480_0510.mp4"
+# video_name = videos_dir / "F_20200220_1_0480_0510.mp4"
+video_name = videos_dir / "F_20220220_1_1920_1950.mp4"
 print(f"Video: {video_name}")
 
 cap = cv2.VideoCapture(str(video_name.absolute()))
 with open(coords_path, 'r') as f:
     pitch_coords = json.load(f)
 
-ret, frame = get_next_frame(cap)
-camera = FixedHeightCamera(frame)
+ret, frame_orig = get_next_frame(cap)
+camera = FixedHeightCamera(frame_orig)
 top_down = TopDown(pitch_coords)
 detector = YoloPlayerDetector(pitch_coords)
+frame_splitter = FrameSplitter(pitch_coords)
 
 i = 0
 while True:
-    ret, frame = get_next_frame(cap)
+    ret, frame_orig = get_next_frame(cap)
     if not ret:
         break
 
-    h, w, _ = frame.shape
+    h, w, _ = frame_orig.shape
 
     # frame_warped = top_down.warp_frame(frame)
     # show_frame(frame_warped, "warped")
 
-    # bb_pts = top_down.warp_bbs(bbs)
+    frame_orig = detector.preprocess(frame_orig)
+    frames = frame_splitter.split(frame_orig)
+    frame_bbs, frames_detected = detector.detect(frames)
+    for i, frame in enumerate(frames_detected):
+        show_frame(frame, f"frame {i}")
+
+    frame_joined = frame_splitter.join(frames)
+    bbs_joined = frame_splitter.join_bbs(frame_bbs)
+    detector.draw_bounding_boxes_(frame_joined, bbs_joined)
+    show_frame(frame_joined)
+
+    # bb_pts = top_down.warp_bbs(bbs_joined)
     # top_down_frame = top_down.draw_points(bb_pts)
     # show_frame(top_down_frame, "top down")
 
-    frame = detector.preprocess(frame)
-    # frame = camera.get_frame(frame)
-    frames = split_frame(frame, detector.pitch_coords)
-    bbs, frames = detector.detect(frames)
-    for i, frame in enumerate(frames):
-        show_frame(frame, f"frame {i}")
     # camera.update_by_bbs(bbs)
     # show_frame(mask, window_name=f"{WINDOW_NAME} mask")
-
-    # if frame is not None:
-    #     show_frame(frame)
 
     key = cv2.waitKey(0)
     if key == ord('d'):

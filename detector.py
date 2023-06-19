@@ -1,5 +1,6 @@
 from pathlib import Path
 import cv2
+import numpy as np
 import tqdm
 from ultralytics import YOLO
 
@@ -25,7 +26,7 @@ class YoloDetector(Detector):
         'device': 0,  # 0 if gpu else 'cpu'
         'imgsz': 960,
         'classes': None,  # [0] for ball only, None for all
-        'conf': 0.5,
+        'conf': 0.35,
         'max_det': 50,
         'iou': 0.7
     }
@@ -37,10 +38,15 @@ class YoloDetector(Detector):
     def res2bbs(self, res):
         bbs = []
         for i in range(len(res)):
-            bb = [bb.xywh[0].cpu().numpy().astype(int)
+            bb = [bb.xyxy[0].cpu().numpy().astype(int)
                   for bb in res[i].boxes if len(bb.xywh) > 0]
             bbs.append(bb)
         return bbs
+
+    def draw_bounding_boxes_(self, img, bbs, color=(0, 255, 255)):
+        for bb in bbs:
+            x1, y1, x2, y2 = bb
+            cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
 
     def plot(self, res):
         for i in range(len(res)):
@@ -110,7 +116,16 @@ class BgDetector(Detector):
         contours, _ = cv2.findContours(
             mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
 
-        return [cv2.boundingRect(contour) for contour in contours]
+        bbs = [cv2.boundingRect(contour) for contour in contours]
+        return self.bbs2pts(bbs)
+
+    def bbs2pts(self, bbs):
+        pts = []
+        for bb in bbs:
+            x, y, w, h = bb
+            pts.append([x, y, x+w, y+h])
+        pts = np.array(pts, np.float32)
+        return pts
 
     def detect(self, img):
         img = self.preprocess(img)
