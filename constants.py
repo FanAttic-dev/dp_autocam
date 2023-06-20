@@ -1,0 +1,10 @@
+import cv2
+
+WINDOW_NAME = 'frame'
+WINDOW_FLAGS = cv2.WINDOW_NORMAL  # cv2.WINDOW_AUTOSIZE
+
+PAN_DX = 5
+
+# Image preprocessing params
+MORPH_CLOSE_ITERATIONS = 10
+GAUSS_SIGMA = 1
