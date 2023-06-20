@@ -2,6 +2,23 @@ class Camera:
     def __init__(self):
         ...
 
+    def get_frame(self, full_img):
+        ...
+
+    def pan(self, dx):
+        ...
+
+
+class PerspectiveCamera(Camera):
+    def __init__(self, full_img):
+        self.full_img_h, self.full_img_w, _ = full_img.shape
+
+    def get_frame(self, full_img):
+        return full_img
+
+    def pan(self, dx):
+        ...  # TODO
+
 
 class FixedHeightCamera(Camera):
     def __init__(self, full_img):

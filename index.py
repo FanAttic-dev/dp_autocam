@@ -74,25 +74,23 @@ while True:
 
     h, w, _ = frame_orig.shape
 
-    # frame_warped = top_down.warp_frame(frame)
-    # show_frame(frame_warped, "warped")
-
     frame_orig = detector.preprocess(frame_orig)
     frames = frame_splitter.split(frame_orig)
     frame_bbs, frames_detected = detector.detect(frames)
-    for i, frame in enumerate(frames_detected):
-        show_frame(frame, f"frame {i}")
-
     frame_joined = frame_splitter.join(frames)
     bbs_joined = frame_splitter.join_bbs(frame_bbs)
     detector.draw_bounding_boxes_(frame_joined, bbs_joined)
-    show_frame(frame_joined)
+
+    # frame_warped = top_down.warp_frame(frame_joined)
+    # show_frame(frame_warped, "warped")
 
     bb_pts = top_down.warp_bbs(bbs_joined)
     top_down_frame = top_down.draw_points(bb_pts)
     show_frame(top_down_frame, "top down")
 
     # camera.update_by_bbs(bbs)
+    frame = camera.get_frame(frame_joined)
+    show_frame(frame)
 
     key = cv2.waitKey(0)
     if key == ord('d'):
