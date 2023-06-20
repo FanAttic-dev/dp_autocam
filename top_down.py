@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 import cv2
 import numpy as np
-from utils import coords_to_pts, bbs_to_pts
+from utils import coords_to_pts
 
 from constants import WINDOW_NAME
 
@@ -31,10 +31,9 @@ class TopDown:
         return x, y
 
     def warp_bbs(self, bbs):
-        pts = bbs_to_pts(bbs)
         res = []
-        for pt in pts:
-            x1, y1, x2, y2 = pt
+        for bb in bbs:
+            x1, y1, x2, y2 = bb
             x1, y1 = self.apply_H(x1, y1)
             x2, y2 = self.apply_H(x2, y2)
             center_x = int((x1 + x2) / 2)

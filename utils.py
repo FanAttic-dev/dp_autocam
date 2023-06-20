@@ -6,10 +6,25 @@ def coords_to_pts(coords):
     return pts.reshape((-1, 1, 2))
 
 
-def bbs_to_pts(bbs):
-    pts = []
-    for bb in bbs:
-        x, y, w, h = bb
-        pts.append([x, y, x+w, y+h])
-    pts = np.array(pts, np.float32)
-    return pts
+def iou(bb1, bb2):
+    bb1_x1, bb1_y1, bb1_x2, bb1_y2 = bb1
+    bb2_x1, bb2_y1, bb2_x2, bb2_y2 = bb2
+
+    bb1_w = bb1_x2 - bb1_x1 + 1
+    bb1_h = bb1_y2 - bb1_y1 + 1
+
+    bb2_w = bb2_x2 - bb2_x1 + 1
+    bb2_h = bb2_y2 - bb2_y1 + 1
+
+    bb1_area = bb1_w * bb1_h
+    bb2_area = bb2_w * bb2_h
+
+    inner_x1 = max(bb1_x1, bb2_x1)
+    inner_y1 = max(bb1_y1, bb2_y1)
+    inner_x2 = min(bb1_x2, bb2_x2)
+    inner_y2 = min(bb1_y2, bb2_y2)
+
+    intersection = max(0, inner_x2 - inner_x1 + 1) * \
+        max(0, inner_y2 - inner_y1 + 1)
+
+    return intersection / float(bb1_area + bb2_area - intersection)
