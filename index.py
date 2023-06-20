@@ -3,8 +3,10 @@ import cv2
 import json
 from camera import FixedHeightCamera
 from constants import PAN_DX, WINDOW_FLAGS, WINDOW_NAME
+import random
 
 from image_processor import ImageProcessor
+from top_down import TopDown
 
 
 def get_frame_at(cap, seconds):
@@ -37,16 +39,24 @@ def show_frame(frame, window_name=WINDOW_NAME):
     cv2.imshow(window_name, frame)
 
 
-videos_path = Path("/home/atti/source/datasets/videos/")
-video_name = Path("sample_wide.mp4")
+def get_random_file(dir):
+    files = list(dir.iterdir())
+    idx = random.randint(0, len(files))
+    return files[idx]
 
-cap = cv2.VideoCapture(str(videos_path / video_name))
-with open(videos_path / f"coords_{video_name.stem}.json", 'r') as f:
-    coords = json.load(f)
+
+videos_dir = Path("/home/atti/source/datasets/SoccerTrack/wide_view/videos")
+coords_path = videos_dir / "../../coords.json"
+video_name = get_random_file(videos_dir)
+
+cap = cv2.VideoCapture(str(video_name.absolute()))
+with open(coords_path, 'r') as f:
+    video_pitch_coords = json.load(f)
 
 img_processor = ImageProcessor()
 ret, frame = get_next_frame(cap)
 camera = FixedHeightCamera(frame)
+top_down = TopDown(video_pitch_coords)
 
 i = 0
 while True:
@@ -56,10 +66,17 @@ while True:
 
     h, w, _ = frame.shape
 
-    frame, mask, bbs = img_processor.process_frame(frame, coords)
-    camera.update_by_bbs(bbs)
-    frame = camera.get_frame(frame)
-    show_frame(mask, window_name=f"{WINDOW_NAME} original")
+    frame, mask, bbs = img_processor.process_frame(frame, video_pitch_coords)
+    # frame_warped = top_down.warp_frame(frame)
+    # show_frame(frame_warped, "warped")
+
+    bb_pts = top_down.warp_bbs(bbs)
+    top_down_frame = top_down.draw_points(bb_pts)
+    show_frame(top_down_frame, "top down")
+
+    # camera.update_by_bbs(bbs)
+    # frame = camera.get_frame(frame)
+    # show_frame(mask, window_name=f"{WINDOW_NAME} mask")
 
     if frame is not None:
         show_frame(frame)
