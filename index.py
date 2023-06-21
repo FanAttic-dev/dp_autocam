@@ -1,8 +1,8 @@
 from pathlib import Path
 import cv2
 import json
-from camera import FixedHeightCamera
-from constants import PAN_DX, WINDOW_FLAGS, WINDOW_NAME
+from camera import FixedHeightCamera, PerspectiveCamera
+from constants import PAN_DX, TILT_DY, WINDOW_FLAGS, WINDOW_NAME
 import random
 from detector import BgDetector, YoloPlayerDetector
 from frame_splitter import FrameSplitter
@@ -61,7 +61,7 @@ with open(coords_path, 'r') as f:
     pitch_coords = json.load(f)
 
 ret, frame_orig = get_next_frame(cap)
-camera = FixedHeightCamera(frame_orig)
+camera = PerspectiveCamera(frame_orig)
 top_down = TopDown(pitch_coords)
 detector = YoloPlayerDetector(pitch_coords)
 frame_splitter = FrameSplitter(pitch_coords)
@@ -74,22 +74,23 @@ while True:
 
     h, w, _ = frame_orig.shape
 
-    frame_orig = detector.preprocess(frame_orig)
-    frames = frame_splitter.split(frame_orig)
-    frame_bbs, frames_detected = detector.detect(frames)
-    frame_joined = frame_splitter.join(frames)
-    bbs_joined = frame_splitter.join_bbs(frame_bbs)
-    detector.draw_bounding_boxes_(frame_joined, bbs_joined)
+    # Split, detect & merge
+    # frame_orig = detector.preprocess(frame_orig)
+    # frames = frame_splitter.split(frame_orig)
+    # frame_bbs, frames_detected = detector.detect(frames)
+    # frame_joined = frame_splitter.join(frames)
+    # bbs_joined = frame_splitter.join_bbs(frame_bbs)
+    # detector.draw_bounding_boxes_(frame_joined, bbs_joined)
 
     # frame_warped = top_down.warp_frame(frame_joined)
     # show_frame(frame_warped, "warped")
 
-    bb_pts = top_down.warp_bbs(bbs_joined)
-    top_down_frame = top_down.draw_points(bb_pts)
-    show_frame(top_down_frame, "top down")
+    # bb_pts = top_down.warp_bbs(bbs_joined)
+    # top_down_frame = top_down.draw_points(bb_pts)
+    # show_frame(top_down_frame, "top down")
 
     # camera.update_by_bbs(bbs)
-    frame = camera.get_frame(frame_joined)
+    frame = camera.get_frame(frame_orig)
     show_frame(frame)
 
     key = cv2.waitKey(0)
@@ -97,6 +98,10 @@ while True:
         camera.pan(PAN_DX)
     elif key == ord('a'):
         camera.pan(-PAN_DX)
+    elif key == ord('w'):
+        camera.tilt(-TILT_DY)
+    elif key == ord('s'):
+        camera.tilt(TILT_DY)
     elif key == ord('q'):
         break
 
