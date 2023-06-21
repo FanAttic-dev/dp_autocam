@@ -53,7 +53,7 @@ coords_path = videos_dir / "../../coords.json"
 video_name = get_random_file(videos_dir)
 # video_name = videos_dir / "F_20200220_1_0180_0210.mp4"
 # video_name = videos_dir / "F_20200220_1_0480_0510.mp4"
-video_name = videos_dir / "F_20220220_1_1920_1950.mp4"
+# video_name = videos_dir / "F_20220220_1_1920_1950.mp4"
 print(f"Video: {video_name}")
 
 cap = cv2.VideoCapture(str(video_name.absolute()))
@@ -91,7 +91,10 @@ while True:
 
     # camera.update_by_bbs(bbs)
     frame = camera.get_frame(frame_orig)
-    show_frame(frame)
+    show_frame(frame, "ROI")
+
+    camera.draw_roi_(frame_orig)
+    show_frame(frame_orig, "Original")
 
     key = cv2.waitKey(0)
     if key == ord('d'):
