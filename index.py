@@ -2,7 +2,7 @@ from pathlib import Path
 import cv2
 import json
 from camera import FixedHeightCamera, PerspectiveCamera
-from constants import PAN_DX, TILT_DY, WINDOW_FLAGS, WINDOW_NAME
+from constants import PAN_DX, TILT_DY, WINDOW_FLAGS, WINDOW_NAME, ZOOM_DZ
 import random
 from detector import BgDetector, YoloPlayerDetector
 from frame_splitter import FrameSplitter
@@ -102,6 +102,10 @@ while True:
         camera.tilt(-TILT_DY)
     elif key == ord('s'):
         camera.tilt(TILT_DY)
+    elif key == ord('p'):
+        camera.zoom(-ZOOM_DZ)
+    elif key == ord('m'):
+        camera.zoom(ZOOM_DZ)
     elif key == ord('q'):
         break
 
