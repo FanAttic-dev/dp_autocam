@@ -1,8 +1,8 @@
 from pathlib import Path
 import cv2
 import json
-from camera import FixedHeightCamera
-from constants import PAN_DX, WINDOW_FLAGS, WINDOW_NAME
+from camera import FixedHeightCamera, PerspectiveCamera
+from constants import PAN_DX, TILT_DY, WINDOW_FLAGS, WINDOW_NAME, ZOOM_DZ
 import random
 from detector import BgDetector, YoloPlayerDetector
 from frame_splitter import FrameSplitter
@@ -53,7 +53,7 @@ coords_path = videos_dir / "../../coords.json"
 video_name = get_random_file(videos_dir)
 # video_name = videos_dir / "F_20200220_1_0180_0210.mp4"
 # video_name = videos_dir / "F_20200220_1_0480_0510.mp4"
-video_name = videos_dir / "F_20220220_1_1920_1950.mp4"
+# video_name = videos_dir / "F_20220220_1_1920_1950.mp4"
 print(f"Video: {video_name}")
 
 cap = cv2.VideoCapture(str(video_name.absolute()))
@@ -61,7 +61,7 @@ with open(coords_path, 'r') as f:
     pitch_coords = json.load(f)
 
 ret, frame_orig = get_next_frame(cap)
-camera = FixedHeightCamera(frame_orig)
+camera = PerspectiveCamera(frame_orig)
 top_down = TopDown(pitch_coords)
 detector = YoloPlayerDetector(pitch_coords)
 frame_splitter = FrameSplitter(pitch_coords)
@@ -74,31 +74,41 @@ while True:
 
     h, w, _ = frame_orig.shape
 
-    # frame_warped = top_down.warp_frame(frame)
+    # Split, detect & merge
+    # frame_orig = detector.preprocess(frame_orig)
+    # frames = frame_splitter.split(frame_orig)
+    # frame_bbs, frames_detected = detector.detect(frames)
+    # frame_joined = frame_splitter.join(frames)
+    # bbs_joined = frame_splitter.join_bbs(frame_bbs)
+    # detector.draw_bounding_boxes_(frame_joined, bbs_joined)
+
+    # frame_warped = top_down.warp_frame(frame_joined)
     # show_frame(frame_warped, "warped")
 
-    frame_orig = detector.preprocess(frame_orig)
-    frames = frame_splitter.split(frame_orig)
-    frame_bbs, frames_detected = detector.detect(frames)
-    for i, frame in enumerate(frames_detected):
-        show_frame(frame, f"frame {i}")
-
-    frame_joined = frame_splitter.join(frames)
-    bbs_joined = frame_splitter.join_bbs(frame_bbs)
-    detector.draw_bounding_boxes_(frame_joined, bbs_joined)
-    show_frame(frame_joined)
-
-    bb_pts = top_down.warp_bbs(bbs_joined)
-    top_down_frame = top_down.draw_points(bb_pts)
-    show_frame(top_down_frame, "top down")
+    # bb_pts = top_down.warp_bbs(bbs_joined)
+    # top_down_frame = top_down.draw_points(bb_pts)
+    # show_frame(top_down_frame, "top down")
 
     # camera.update_by_bbs(bbs)
+    frame = camera.get_frame(frame_orig)
+    show_frame(frame, "ROI")
+
+    camera.draw_roi_(frame_orig)
+    show_frame(frame_orig, "Original")
 
     key = cv2.waitKey(0)
     if key == ord('d'):
         camera.pan(PAN_DX)
     elif key == ord('a'):
         camera.pan(-PAN_DX)
+    elif key == ord('w'):
+        camera.tilt(-TILT_DY)
+    elif key == ord('s'):
+        camera.tilt(TILT_DY)
+    elif key == ord('p'):
+        camera.zoom(ZOOM_DZ)
+    elif key == ord('m'):
+        camera.zoom(-ZOOM_DZ)
     elif key == ord('q'):
         break
 
