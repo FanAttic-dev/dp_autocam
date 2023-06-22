@@ -91,7 +91,7 @@ class PerspectiveCamera(Camera):
             [frame_w-1, frame_h-1]
         ], dtype=np.uint16)
         H, _ = cv2.findHomography(src, dst)
-        return cv2.warpPerspective(full_img, H, (frame_w, frame_h))
+        return cv2.warpPerspective(full_img, H, (frame_w, frame_h), flags=cv2.INTER_NEAREST)
 
     def pan(self, dx):
         pan_deg = self.pan_deg + dx
