@@ -14,16 +14,28 @@ class Camera:
 
 
 class PerspectiveCamera(Camera):
-    def __init__(self, full_img, fov_horiz_deg=35, fov_vert_deg=15):
+    SENSOR_W = 500
+
+    def __init__(self, full_img, fov_deg=20):
         self.full_img_h, self.full_img_w, _ = full_img.shape
-        self.fov_horiz_deg = fov_horiz_deg
-        self.fov_vert_deg = fov_vert_deg
-        # self.f = width_px / (2 * np.tan(np.deg2rad(self.fov_horiz_deg / 2)))
+        self.fov_deg = fov_deg
         self.center_x = self.full_img_w // 2
         self.center_y = self.full_img_h // 2
         self.pan_deg = 0
         self.tilt_deg = 0
-        self.f = 1000
+
+    @staticmethod
+    def get_focal_length(fov_deg):
+        return PerspectiveCamera.SENSOR_W / \
+            (2 * np.tan(np.deg2rad(fov_deg) / 2))
+
+    @property
+    def f(self):
+        return PerspectiveCamera.get_focal_length(self.fov_deg)
+
+    @property
+    def fov_vert_deg(self):
+        return self.fov_deg / 16 * 9
 
     def shift_coords(self, x, y):
         x = x + self.center_x
@@ -38,12 +50,9 @@ class PerspectiveCamera(Camera):
         y = np.tan(phi_rad) * np.sqrt(f**2 + x**2)
         return self.shift_coords(x, y)
 
-    def check_coord_bounds(self, x, y):
-        return x >= 0 and x < self.full_img_w and y >= 0 and y < self.full_img_h
-
     def get_corner_coords(self, pan_deg, tilt_deg, f):
         pts = []
-        for theta_deg in [-self.fov_horiz_deg // 2, self.fov_horiz_deg // 2]:
+        for theta_deg in [-self.fov_deg // 2, self.fov_deg // 2]:
             for phi_deg in [-self.fov_vert_deg // 2, self.fov_vert_deg // 2]:
                 x, y = self.get_coords(
                     pan_deg + theta_deg,
@@ -53,12 +62,15 @@ class PerspectiveCamera(Camera):
                 pts.append([x, y])
         return pts
 
+    def check_coord_bounds(self, x, y):
+        return x >= 0 and x < self.full_img_w and y >= 0 and y < self.full_img_h
+
     def check_ptz_bounds(self, pan_deg, tilt_deg, f):
         coords = self.get_corner_coords(pan_deg, tilt_deg, f)
         return all([self.check_coord_bounds(x, y) for x, y in coords])
 
     def draw_roi_(self, full_img):
-        for theta_deg in range(-self.fov_horiz_deg // 2, self.fov_horiz_deg // 2):
+        for theta_deg in range(-self.fov_deg // 2, self.fov_deg // 2):
             for phi_deg in [-self.fov_vert_deg // 2, self.fov_vert_deg // 2]:
                 x, y = self.get_coords(
                     self.pan_deg + theta_deg,
@@ -93,10 +105,12 @@ class PerspectiveCamera(Camera):
         self.tilt_deg = tilt_deg
 
     def zoom(self, dz):
-        f = self.f + dz
+        fov_deg = self.fov_deg + dz
+        f = PerspectiveCamera.get_focal_length(fov_deg)
         if not self.check_ptz_bounds(self.pan_deg, self.tilt_deg, f):
             return
-        self.f = f
+        print(fov_deg)
+        self.fov_deg = fov_deg
 
 
 class FixedHeightCamera(Camera):

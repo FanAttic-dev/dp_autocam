@@ -106,9 +106,9 @@ while True:
     elif key == ord('s'):
         camera.tilt(TILT_DY)
     elif key == ord('p'):
-        camera.zoom(-ZOOM_DZ)
-    elif key == ord('m'):
         camera.zoom(ZOOM_DZ)
+    elif key == ord('m'):
+        camera.zoom(-ZOOM_DZ)
     elif key == ord('q'):
         break
 
