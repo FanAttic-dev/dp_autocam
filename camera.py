@@ -14,45 +14,44 @@ class Camera:
 
 
 class PerspectiveCamera(Camera):
-    SENSOR_W = 500
+    SENSOR_W = 10
+    CYLLINDER_RADIUS = 1000
+    FRAME_W = 1920
+    FRAME_ASPECT_RATIO = 16/9
 
-    def __init__(self, full_img, fov_deg=20):
+    def __init__(self, full_img):
         self.full_img_h, self.full_img_w, _ = full_img.shape
-        self.fov_deg = fov_deg
         self.center_x = self.full_img_w // 2
         self.center_y = self.full_img_h // 2
         self.pan_deg = 0
         self.tilt_deg = 0
-
-    @staticmethod
-    def get_focal_length(fov_deg):
-        return PerspectiveCamera.SENSOR_W / \
-            (2 * np.tan(np.deg2rad(fov_deg) / 2))
+        self.f = 12
 
     @property
-    def f(self):
-        return PerspectiveCamera.get_focal_length(self.fov_deg)
+    def fov_horiz_deg(self):
+        return np.rad2deg(2 * np.arctan(PerspectiveCamera.SENSOR_W / (2 * self.f)))
 
     @property
     def fov_vert_deg(self):
-        return self.fov_deg / 16 * 9
+        return self.fov_horiz_deg / 16 * 9
 
     def shift_coords(self, x, y):
         x = x + self.center_x
         y = y + self.center_y
-        return int(x), int(y)
+        return x, y
 
     def get_coords(self, theta_deg, phi_deg, f):
         theta_rad = np.deg2rad(theta_deg)
-        x = np.tan(theta_rad) * f
+        x = np.tan(theta_rad) * PerspectiveCamera.CYLLINDER_RADIUS
 
         phi_rad = np.deg2rad(phi_deg)
-        y = np.tan(phi_rad) * np.sqrt(f**2 + x**2)
+        y = np.tan(phi_rad) * \
+            np.sqrt(PerspectiveCamera.CYLLINDER_RADIUS**2 + x**2)
         return self.shift_coords(x, y)
 
     def get_corner_coords(self, pan_deg, tilt_deg, f):
         pts = []
-        for theta_deg in [-self.fov_deg // 2, self.fov_deg // 2]:
+        for theta_deg in [-self.fov_horiz_deg // 2, self.fov_horiz_deg // 2]:
             for phi_deg in [-self.fov_vert_deg // 2, self.fov_vert_deg // 2]:
                 x, y = self.get_coords(
                     pan_deg + theta_deg,
@@ -70,27 +69,29 @@ class PerspectiveCamera(Camera):
         return all([self.check_coord_bounds(x, y) for x, y in coords])
 
     def draw_roi_(self, full_img):
-        for theta_deg in range(-self.fov_deg // 2, self.fov_deg // 2):
-            for phi_deg in [-self.fov_vert_deg // 2, self.fov_vert_deg // 2]:
+        for theta_deg in range(-int(self.fov_horiz_deg) // 2, int(self.fov_horiz_deg) // 2):
+            for phi_deg in [-self.fov_vert_deg / 2, self.fov_vert_deg / 2]:
                 x, y = self.get_coords(
                     self.pan_deg + theta_deg,
                     self.tilt_deg + phi_deg,
                     self.f
                 )
-                cv2.circle(full_img, (x, y), radius=10,
+                cv2.circle(full_img, (int(x), int(y)), radius=10,
                            color=(0, 255, 255), thickness=-1)
 
     def get_frame(self, full_img):
         src = np.array(self.get_corner_coords(
             self.pan_deg, self.tilt_deg, self.f), dtype=np.uint16)
+        frame_w = PerspectiveCamera.FRAME_W
+        frame_h = int(frame_w / PerspectiveCamera.FRAME_ASPECT_RATIO)
         dst = np.array([
             [0, 0],
-            [0, 1080-1],
-            [1920-1, 0],
-            [1920-1, 1080-1]
+            [0, frame_h-1],
+            [frame_w-1, 0],
+            [frame_w-1, frame_h-1]
         ], dtype=np.uint16)
         H, _ = cv2.findHomography(src, dst)
-        return cv2.warpPerspective(full_img, H, (1920, 1080))
+        return cv2.warpPerspective(full_img, H, (frame_w, frame_h))
 
     def pan(self, dx):
         pan_deg = self.pan_deg + dx
@@ -105,12 +106,12 @@ class PerspectiveCamera(Camera):
         self.tilt_deg = tilt_deg
 
     def zoom(self, dz):
-        fov_deg = self.fov_deg + dz
-        f = PerspectiveCamera.get_focal_length(fov_deg)
+        f = self.f + dz
         if not self.check_ptz_bounds(self.pan_deg, self.tilt_deg, f):
             return
-        print(fov_deg)
-        self.fov_deg = fov_deg
+        print(f"f = {f}")
+        print(f"fov_horiz = {self.fov_horiz_deg}")
+        self.f = f
 
 
 class FixedHeightCamera(Camera):
