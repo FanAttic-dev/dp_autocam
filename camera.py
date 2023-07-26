@@ -18,14 +18,13 @@ class PerspectiveCamera(Camera):
     CYLLINDER_RADIUS = 1000
     FRAME_W = 1920
     FRAME_ASPECT_RATIO = 16/9
+    FOCAL_LENGTH = 12
 
     def __init__(self, full_img):
         self.full_img_h, self.full_img_w, _ = full_img.shape
         self.center_x = self.full_img_w // 2
         self.center_y = self.full_img_h // 2
-        self.pan_deg = 0
-        self.tilt_deg = 0
-        self.f = 12
+        self.reset()
 
     @property
     def fov_horiz_deg(self):
@@ -34,6 +33,11 @@ class PerspectiveCamera(Camera):
     @property
     def fov_vert_deg(self):
         return self.fov_horiz_deg / 16 * 9
+
+    def reset(self):
+        self.pan_deg = 0
+        self.tilt_deg = 0
+        self.f = PerspectiveCamera.FOCAL_LENGTH
 
     def shift_coords(self, x, y):
         x = x + self.center_x
@@ -91,7 +95,7 @@ class PerspectiveCamera(Camera):
             [frame_w-1, frame_h-1]
         ], dtype=np.uint16)
         H, _ = cv2.findHomography(src, dst)
-        return cv2.warpPerspective(full_img, H, (frame_w, frame_h), flags=cv2.INTER_NEAREST)
+        return cv2.warpPerspective(full_img, H, (frame_w, frame_h), flags=cv2.INTER_LINEAR)
 
     def pan(self, dx):
         pan_deg = self.pan_deg + dx

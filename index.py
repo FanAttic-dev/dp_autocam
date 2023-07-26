@@ -108,6 +108,8 @@ while True:
         camera.zoom(ZOOM_DZ)
     elif key == ord('m'):
         camera.zoom(-ZOOM_DZ)
+    elif key == ord('r'):
+        camera.reset()
     elif key == ord('q'):
         break
 
