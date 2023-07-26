@@ -91,6 +91,7 @@ while True:
     # camera.update_by_bbs(bbs)
     frame = camera.get_frame(frame_orig)
     show_frame(frame, "ROI")
+    camera.print()
 
     camera.draw_roi_(frame_orig)
     show_frame(frame_orig, "Original")

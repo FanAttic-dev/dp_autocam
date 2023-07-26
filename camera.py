@@ -38,6 +38,14 @@ class PerspectiveCamera(Camera):
         self.tilt_deg = 0
         self.f = 12
 
+    def print(self):
+        print(f"pan_deg = {self.pan_deg}")
+        print(f"tilt_deg = {self.tilt_deg}")
+        print(f"f = {self.f}")
+        print(f"fov_horiz = {self.fov_horiz_deg}")
+        print(f"fov_vert = {self.fov_vert_deg}")
+        print()
+
     def shift_coords(self, x, y):
         x = x + self.center_x
         y = y + self.center_y
@@ -112,8 +120,6 @@ class PerspectiveCamera(Camera):
         f = self.f + dz
         if not self.check_ptz_bounds(self.pan_deg, self.tilt_deg, f):
             return
-        print(f"f = {f}")
-        print(f"fov_horiz = {self.fov_horiz_deg}")
         self.f = f
 
 
