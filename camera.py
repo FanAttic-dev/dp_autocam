@@ -18,7 +18,6 @@ class PerspectiveCamera(Camera):
     CYLLINDER_RADIUS = 1000
     FRAME_W = 1920
     FRAME_ASPECT_RATIO = 16/9
-    FOCAL_LENGTH = 12
 
     def __init__(self, full_img):
         self.full_img_h, self.full_img_w, _ = full_img.shape
@@ -37,7 +36,7 @@ class PerspectiveCamera(Camera):
     def reset(self):
         self.pan_deg = 0
         self.tilt_deg = 0
-        self.f = PerspectiveCamera.FOCAL_LENGTH
+        self.f = 12
 
     def shift_coords(self, x, y):
         x = x + self.center_x
