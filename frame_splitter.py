@@ -1,9 +1,36 @@
 import numpy as np
+from camera import PerspectiveCamera
 
 from utils import iou
 
 
 class FrameSplitter:
+    def __init__(self):
+        ...
+
+    def split(self, frame):
+        ...
+
+
+class PerspectiveFrameSplitter(FrameSplitter):
+    def __init__(self, frame):
+        self.cameras = [
+            PerspectiveCamera(frame, pan_deg=-29, tilt_deg=9),
+            PerspectiveCamera(frame, pan_deg=11, tilt_deg=9),
+            PerspectiveCamera(frame, pan_deg=49, tilt_deg=9),
+        ]
+
+    def split(self, frame):
+        frames = [camera.get_frame(frame) for camera in self.cameras]
+        return frames
+
+    def join_bbs(self, bbs):
+        ...
+        # for camera, frame_bbs in zip(self.cameras, bbs):
+        #     camera.
+
+
+class LinearFrameSplitter(FrameSplitter):
     def __init__(self, coords, margin_horiz=200, margin_vert=50, overlap_px=100):
         self.center_x = (coords["left top"]["x"] +
                          coords["right top"]["x"]) // 2

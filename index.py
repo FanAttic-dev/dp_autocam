@@ -4,12 +4,11 @@ from camera import FixedHeightCamera, PerspectiveCamera
 from constants import PAN_DX, TILT_DY, WINDOW_FLAGS, WINDOW_NAME, ZOOM_DZ
 import random
 from detector import BgDetector, YoloPlayerDetector
-from frame_splitter import FrameSplitter
+from frame_splitter import FrameSplitter, LinearFrameSplitter, PerspectiveFrameSplitter
+from utils import colors
 
 from top_down import TopDown
 from utils import load_json
-
-colors = [(0, 255, 255), (255, 255, 0), (255, 0, 255)]
 
 
 def get_frame_at(cap, seconds):
@@ -59,11 +58,11 @@ print(f"Video: {video_name}")
 pitch_coords = load_json(coords_path)
 top_down = TopDown(pitch_coords)
 detector = YoloPlayerDetector(pitch_coords)
-frame_splitter = FrameSplitter(pitch_coords)
 
 cap = cv2.VideoCapture(str(video_name.absolute()))
 ret, frame_orig = get_next_frame(cap)
 camera = PerspectiveCamera(frame_orig)
+frame_splitter = PerspectiveFrameSplitter(frame_orig)
 
 i = 0
 while True:
@@ -75,14 +74,16 @@ while True:
     h, w, _ = frame_orig.shape
 
     # Split, detect & merge
-    # frames = frame_splitter.split(frame_orig)
+    frames = frame_splitter.split(frame_orig)
     # frame_joined = frame_splitter.join(frames)
-    # for i, frame in enumerate(frames):
-    #     show_frame(frame, f"Frame {i}")
 
-    # frame_bbs, frames_detected = detector.detect(frames)
-    # bbs_joined = frame_splitter.join_bbs(frame_bbs)
-    # detector.draw_bounding_boxes_(frame_joined, bbs_joined)
+    bbs, frames_detected = detector.detect(frames)
+    for i, frame in enumerate(frames_detected):
+        frame_splitter.cameras[i].draw_roi_(frame_orig, color=colors[i])
+        # show_frame(frame, f"Frame {i}")
+
+    # bbs_joined = frame_splitter.join_bbs(bbs)
+    # detector.draw_bounding_boxes_(frame_orig, bbs_joined)
 
     # frame_warped = top_down.warp_frame(frame_joined)
     # show_frame(frame_warped, "warped")
@@ -92,11 +93,11 @@ while True:
     # show_frame(top_down_frame, "top down")
 
     # camera.update_by_bbs(bbs)
-    frame = camera.get_frame(frame_orig)
-    show_frame(frame, "ROI")
+    # frame = camera.get_frame(frame_orig)
+    # show_frame(frame, "ROI")
     camera.print()
 
-    camera.draw_roi_(frame_orig)
+    # camera.draw_roi_(frame_orig)
     show_frame(frame_orig, "Original")
 
     key = cv2.waitKey(0)

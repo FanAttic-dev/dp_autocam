@@ -6,7 +6,7 @@ class Camera:
     def __init__(self):
         ...
 
-    def get_frame(self, full_img):
+    def get_frame(self, frame_orig):
         ...
 
     def pan(self, dx):
@@ -16,18 +16,25 @@ class Camera:
 class PerspectiveCamera(Camera):
     SENSOR_W = 10
     CYLLINDER_RADIUS = 1000
-    FRAME_W = 1920
-    FRAME_ASPECT_RATIO = 16/9
     MAX_PAN_DEG = 65
     MIN_PAN_DEG = -60
     MAX_TILT_DEG = 38
     MIN_TILT_DEG = -16
+    FRAME_ASPECT_RATIO = 16/9
+    FRAME_W = 1920
+    FRAME_H = int(FRAME_W / FRAME_ASPECT_RATIO)
+    FRAME_CORNERS = np.array([
+        [0, 0],
+        [0, FRAME_H-1],
+        [FRAME_W-1, FRAME_H-1],
+        [FRAME_W-1, 0]
+    ], dtype=np.int16)
 
-    def __init__(self, full_img):
-        self.full_img_h, self.full_img_w, _ = full_img.shape
-        self.center_x = self.full_img_w // 2
-        self.center_y = self.full_img_h // 2
-        self.reset()
+    def __init__(self, frame_orig, pan_deg=0, tilt_deg=0):
+        h, w, _ = frame_orig.shape
+        self.center_x = w // 2
+        self.center_y = h // 2
+        self.set(pan_deg, tilt_deg)
 
     @property
     def fov_horiz_deg(self):
@@ -37,10 +44,22 @@ class PerspectiveCamera(Camera):
     def fov_vert_deg(self):
         return self.fov_horiz_deg / 16 * 9
 
+    @property
+    def corners_ang(self):
+        return {
+            "left top": [-self.fov_horiz_deg / 2, -self.fov_vert_deg / 2],
+            "left bottom": [-self.fov_horiz_deg / 2, self.fov_vert_deg / 2],
+            "right bottom": [self.fov_horiz_deg / 2, self.fov_vert_deg / 2],
+            "right top": [self.fov_horiz_deg / 2, -self.fov_vert_deg / 2],
+        }
+
+    def set(self, pan_deg, tilt_deg, f=12):
+        self.pan_deg = pan_deg
+        self.tilt_deg = tilt_deg
+        self.f = f
+
     def reset(self):
-        self.pan_deg = 0
-        self.tilt_deg = 0
-        self.f = 12
+        self.set(0, 0)
 
     def print(self):
         print(f"pan_deg = {self.pan_deg}")
@@ -64,17 +83,16 @@ class PerspectiveCamera(Camera):
             np.sqrt(PerspectiveCamera.CYLLINDER_RADIUS**2 + x**2)
         return self.shift_coords(x, y)
 
-    def get_corner_coords(self, pan_deg, tilt_deg, f):
+    def get_corners_pts(self):
         pts = []
-        for theta_deg in [-self.fov_horiz_deg // 2, self.fov_horiz_deg // 2]:
-            for phi_deg in [-self.fov_vert_deg // 2, self.fov_vert_deg // 2]:
-                x, y = self.get_coords(
-                    pan_deg + theta_deg,
-                    tilt_deg + phi_deg,
-                    f
-                )
-                pts.append([x, y])
-        return pts
+        for pan_deg, tilt_deg in self.corners_ang.values():
+            x, y = self.get_coords(
+                self.pan_deg + pan_deg,
+                self.tilt_deg + tilt_deg,
+                self.f
+            )
+            pts.append([x, y])
+        return np.array(pts, dtype=np.int32)
 
     def check_ptz_bounds(self, pan_deg, tilt_deg, f):
         return pan_deg <= PerspectiveCamera.MAX_PAN_DEG and \
@@ -82,31 +100,20 @@ class PerspectiveCamera(Camera):
             tilt_deg <= PerspectiveCamera.MAX_TILT_DEG and \
             tilt_deg >= PerspectiveCamera.MIN_TILT_DEG
 
-    def draw_roi_(self, full_img):
-        for theta_deg in range(-int(self.fov_horiz_deg) // 2, int(self.fov_horiz_deg) // 2):
-            for phi_deg in [-self.fov_vert_deg / 2, self.fov_vert_deg / 2]:
-                x, y = self.get_coords(
-                    self.pan_deg + theta_deg,
-                    self.tilt_deg + phi_deg,
-                    self.f
-                )
-                cv2.circle(full_img, (int(x), int(y)), radius=10,
-                           color=(0, 255, 255), thickness=-1)
+    def draw_roi_(self, frame_orig, color=(0, 255, 255)):
+        pts = self.get_corners_pts()
+        cv2.polylines(frame_orig, [pts], True, color, thickness=10)
 
-    def get_frame(self, full_img):
-        src = np.array(self.get_corner_coords(
-            self.pan_deg, self.tilt_deg, self.f), dtype=np.int16)
-        frame_w = PerspectiveCamera.FRAME_W
-        frame_h = int(frame_w / PerspectiveCamera.FRAME_ASPECT_RATIO)
-        dst = np.array([
-            [0, 0],
-            [0, frame_h-1],
-            [frame_w-1, 0],
-            [frame_w-1, frame_h-1]
-        ], dtype=np.int16)
+    def get_frame(self, frame_orig):
+        src = self.get_corners_pts()
+        dst = PerspectiveCamera.FRAME_CORNERS
+
         H, _ = cv2.findHomography(src, dst)
-        print(src)
-        return cv2.warpPerspective(full_img, H, (frame_w, frame_h), flags=cv2.INTER_LINEAR)
+        return cv2.warpPerspective(
+            frame_orig,
+            H,
+            (PerspectiveCamera.FRAME_W, PerspectiveCamera.FRAME_H),
+            flags=cv2.INTER_LINEAR)
 
     def pan(self, dx):
         pan_deg = self.pan_deg + dx

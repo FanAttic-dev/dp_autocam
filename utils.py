@@ -1,6 +1,8 @@
 import numpy as np
 import json
 
+colors = [(0, 255, 255), (255, 255, 0), (255, 0, 255)]
+
 
 def coords_to_pts(coords):
     pts = np.array([[v["x"], v["y"]] for v in coords.values()], np.int32)
