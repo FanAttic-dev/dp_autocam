@@ -1,6 +1,5 @@
 from pathlib import Path
 import cv2
-import json
 from camera import FixedHeightCamera, PerspectiveCamera
 from constants import PAN_DX, TILT_DY, WINDOW_FLAGS, WINDOW_NAME, ZOOM_DZ
 import random
@@ -8,6 +7,7 @@ from detector import BgDetector, YoloPlayerDetector
 from frame_splitter import FrameSplitter
 
 from top_down import TopDown
+from utils import load_json
 
 colors = [(0, 255, 255), (255, 255, 0), (255, 0, 255)]
 
@@ -56,10 +56,9 @@ video_name = get_random_file(videos_dir)
 # video_name = videos_dir / "F_20220220_1_1920_1950.mp4"
 print(f"Video: {video_name}")
 
-cap = cv2.VideoCapture(str(video_name.absolute()))
-with open(coords_path, 'r') as f:
-    pitch_coords = json.load(f)
+pitch_coords = load_json(coords_path)
 
+cap = cv2.VideoCapture(str(video_name.absolute()))
 ret, frame_orig = get_next_frame(cap)
 camera = PerspectiveCamera(frame_orig)
 top_down = TopDown(pitch_coords)

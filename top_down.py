@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 import cv2
 import numpy as np
-from utils import coords_to_pts
+from utils import coords_to_pts, load_json
 
 from constants import WINDOW_NAME
 
@@ -14,8 +14,7 @@ class TopDown:
 
     def __init__(self, video_pitch_coords):
         self.pitch_model = cv2.imread(str(TopDown.pitch_model_path))
-        with open(TopDown.pitch_coords_path, 'r') as f:
-            self.pitch_coords = json.load(f)
+        self.pitch_coords = load_json(TopDown.pitch_coords_path)
         self.H, _ = cv2.findHomography(coords_to_pts(video_pitch_coords),
                                        coords_to_pts(self.pitch_coords))
 
