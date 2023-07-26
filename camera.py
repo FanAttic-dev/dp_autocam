@@ -18,6 +18,10 @@ class PerspectiveCamera(Camera):
     CYLLINDER_RADIUS = 1000
     FRAME_W = 1920
     FRAME_ASPECT_RATIO = 16/9
+    MAX_PAN_DEG = 65
+    MIN_PAN_DEG = -60
+    MAX_TILT_DEG = 38
+    MIN_TILT_DEG = -16
 
     def __init__(self, full_img):
         self.full_img_h, self.full_img_w, _ = full_img.shape
@@ -72,12 +76,11 @@ class PerspectiveCamera(Camera):
                 pts.append([x, y])
         return pts
 
-    def check_coord_bounds(self, x, y):
-        return x >= 0 and x < self.full_img_w and y >= 0 and y < self.full_img_h
-
     def check_ptz_bounds(self, pan_deg, tilt_deg, f):
-        coords = self.get_corner_coords(pan_deg, tilt_deg, f)
-        return all([self.check_coord_bounds(x, y) for x, y in coords])
+        return pan_deg <= PerspectiveCamera.MAX_PAN_DEG and \
+            pan_deg >= PerspectiveCamera.MIN_PAN_DEG and \
+            tilt_deg <= PerspectiveCamera.MAX_TILT_DEG and \
+            tilt_deg >= PerspectiveCamera.MIN_TILT_DEG
 
     def draw_roi_(self, full_img):
         for theta_deg in range(-int(self.fov_horiz_deg) // 2, int(self.fov_horiz_deg) // 2):
@@ -92,7 +95,7 @@ class PerspectiveCamera(Camera):
 
     def get_frame(self, full_img):
         src = np.array(self.get_corner_coords(
-            self.pan_deg, self.tilt_deg, self.f), dtype=np.uint16)
+            self.pan_deg, self.tilt_deg, self.f), dtype=np.int16)
         frame_w = PerspectiveCamera.FRAME_W
         frame_h = int(frame_w / PerspectiveCamera.FRAME_ASPECT_RATIO)
         dst = np.array([
@@ -100,8 +103,9 @@ class PerspectiveCamera(Camera):
             [0, frame_h-1],
             [frame_w-1, 0],
             [frame_w-1, frame_h-1]
-        ], dtype=np.uint16)
+        ], dtype=np.int16)
         H, _ = cv2.findHomography(src, dst)
+        print(src)
         return cv2.warpPerspective(full_img, H, (frame_w, frame_h), flags=cv2.INTER_LINEAR)
 
     def pan(self, dx):

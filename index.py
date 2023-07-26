@@ -57,13 +57,13 @@ video_name = get_random_file(videos_dir)
 print(f"Video: {video_name}")
 
 pitch_coords = load_json(coords_path)
+top_down = TopDown(pitch_coords)
+detector = YoloPlayerDetector(pitch_coords)
+frame_splitter = FrameSplitter(pitch_coords)
 
 cap = cv2.VideoCapture(str(video_name.absolute()))
 ret, frame_orig = get_next_frame(cap)
 camera = PerspectiveCamera(frame_orig)
-top_down = TopDown(pitch_coords)
-detector = YoloPlayerDetector(pitch_coords)
-frame_splitter = FrameSplitter(pitch_coords)
 
 i = 0
 while True:
@@ -71,13 +71,16 @@ while True:
     if not ret:
         break
 
+    frame_orig = detector.preprocess(frame_orig)
     h, w, _ = frame_orig.shape
 
     # Split, detect & merge
-    # frame_orig = detector.preprocess(frame_orig)
     # frames = frame_splitter.split(frame_orig)
-    # frame_bbs, frames_detected = detector.detect(frames)
     # frame_joined = frame_splitter.join(frames)
+    # for i, frame in enumerate(frames):
+    #     show_frame(frame, f"Frame {i}")
+
+    # frame_bbs, frames_detected = detector.detect(frames)
     # bbs_joined = frame_splitter.join_bbs(frame_bbs)
     # detector.draw_bounding_boxes_(frame_joined, bbs_joined)
 
