@@ -92,14 +92,14 @@ class PerspectiveCamera(Camera):
         return self.shift_coords(x, y)
 
     def get_corner_pts(self):
-        pts = []
-        for pan_deg, tilt_deg in self.corners_ang.values():
-            x, y = self.get_coords(
+        pts = [
+            self.get_coords(
                 self.pan_deg + pan_deg,
                 self.tilt_deg + tilt_deg,
-                self.f
-            )
-            pts.append([x, y])
+                self.f)
+            for pan_deg, tilt_deg in self.corners_ang.values()
+        ]
+
         return np.array(pts, dtype=np.int32)
 
     def check_ptz_bounds(self, pan_deg, tilt_deg, f):
@@ -117,7 +117,8 @@ class PerspectiveCamera(Camera):
             frame_orig,
             self.H,
             (PerspectiveCamera.FRAME_W, PerspectiveCamera.FRAME_H),
-            flags=cv2.INTER_LINEAR)
+            flags=cv2.INTER_LINEAR
+        )
 
     def pan(self, dx):
         pan_deg = self.pan_deg + dx

@@ -38,8 +38,10 @@ class YoloDetector(Detector):
     def res2bbs(self, res):
         bbs = []
         for i in range(len(res)):
-            bb = [bb.xyxy[0].cpu().numpy().astype(int)
-                  for bb in res[i].boxes if len(bb.xywh) > 0]
+            bb = [
+                bb.xyxy[0].cpu().numpy().astype(int)
+                for bb in res[i].boxes if len(bb.xywh) > 0
+            ]
             bbs.append(bb)
         return bbs
 
@@ -132,8 +134,12 @@ class BgDetector(Detector):
         mask = self.bgSubtractor.apply(img)
 
         se = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE,
-                                se, iterations=BgDetector.MORPH_CLOSE_ITERATIONS)
+        mask = cv2.morphologyEx(
+            mask,
+            cv2.MORPH_CLOSE,
+            se,
+            iterations=BgDetector.MORPH_CLOSE_ITERATIONS
+        )
 
         bbs = self.get_bounding_boxes(mask)
         plotted = img.copy()
