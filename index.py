@@ -1,72 +1,35 @@
 from pathlib import Path
 import cv2
 from camera import FixedHeightCamera, PerspectiveCamera
-from constants import PAN_DX, TILT_DY, WINDOW_FLAGS, WINDOW_NAME, ZOOM_DZ
+from constants import PAN_DX, TILT_DY, ZOOM_DZ, videos_dir
 import random
 from detector import BgDetector, YoloPlayerDetector
 from frame_splitter import FrameSplitter, LinearFrameSplitter, PerspectiveFrameSplitter
-from utils import colors
+from utils import colors, get_random_file
 
 from top_down import TopDown
 from utils import load_json
+from video_player import VideoPlayer
 
-
-def get_frame_at(cap, seconds):
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    frame_id = int(fps*seconds)
-    cap.set(cv2.CAP_PROP_POS_FRAMES, frame_id)
-    return get_next_frame(cap)
-
-
-def get_next_frame(cap):
-    ret, frame = cap.read()
-    if not ret:
-        print('Could not receive frame.')
-    return ret, frame
-
-
-def play_video(cap):
-    while True:
-        ret, frame = get_next_frame(cap)
-        if not ret:
-            break
-        cv2.imshow('frame', frame)
-        key = cv2.waitKey(0)
-        if key == ord('q'):
-            break
-
-
-def show_frame(frame, window_name=WINDOW_NAME):
-    cv2.namedWindow(window_name, WINDOW_FLAGS)
-    cv2.imshow(window_name, frame)
-
-
-def get_random_file(dir):
-    files = list(dir.iterdir())
-    idx = random.randint(0, len(files)-1)
-    return files[idx]
-
-
-videos_dir = Path("/home/atti/source/datasets/SoccerTrack/wide_view/videos")
 coords_path = videos_dir / "../../coords.json"
 video_name = get_random_file(videos_dir)
 # video_name = videos_dir / "F_20200220_1_0180_0210.mp4"
 # video_name = videos_dir / "F_20200220_1_0480_0510.mp4"
 # video_name = videos_dir / "F_20220220_1_1920_1950.mp4"
 print(f"Video: {video_name}")
+player = VideoPlayer(video_name)
 
 pitch_coords = load_json(coords_path)
 top_down = TopDown(pitch_coords)
 detector = YoloPlayerDetector(pitch_coords)
 
-cap = cv2.VideoCapture(str(video_name.absolute()))
-ret, frame_orig = get_next_frame(cap)
+ret, frame_orig = player.get_next_frame()
 camera = PerspectiveCamera(frame_orig)
 frame_splitter = PerspectiveFrameSplitter(frame_orig)
 
 i = 0
 while True:
-    ret, frame_orig = get_next_frame(cap)
+    ret, frame_orig = player.get_next_frame()
     if not ret:
         break
 
@@ -90,17 +53,17 @@ while True:
 
     # camera.update_by_bbs(bbs)
     frame = camera.get_frame(frame_orig)
-    show_frame(frame, "ROI")
+    player.show_frame(frame, "ROI")
     camera.print()
 
     bb_pts = top_down.warp_bbs(bbs_joined)
     top_down_frame = top_down.pitch_model.copy()
     top_down.draw_roi_(top_down_frame, camera.get_corner_pts())
     top_down.draw_points_(top_down_frame, bb_pts)
-    show_frame(top_down_frame, "top down")
+    player.show_frame(top_down_frame, "top down")
 
     camera.draw_roi_(frame_orig)
-    show_frame(frame_orig, "Original")
+    player.show_frame(frame_orig, "Original")
 
     key = cv2.waitKey(0)
     if key == ord('d'):
@@ -123,5 +86,4 @@ while True:
     i += 1
 
 print(f"Video: {video_name}")
-cap.release()
-cv2.destroyAllWindows()
+player.release()

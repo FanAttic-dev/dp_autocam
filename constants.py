@@ -1,7 +1,7 @@
-import cv2
+from pathlib import Path
 
-WINDOW_NAME = 'frame'
-WINDOW_FLAGS = cv2.WINDOW_NORMAL  # cv2.WINDOW_AUTOSIZE
+
+videos_dir = Path("/home/atti/source/datasets/SoccerTrack/wide_view/videos")
 
 PAN_DX = 1
 TILT_DY = 1

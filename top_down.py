@@ -4,8 +4,6 @@ import cv2
 import numpy as np
 from utils import apply_homography, coords_to_pts, load_json, colors
 
-from constants import WINDOW_NAME
-
 
 class TopDown:
     assets_path = Path('assets')

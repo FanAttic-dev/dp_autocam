@@ -1,3 +1,4 @@
+import random
 import numpy as np
 import json
 
@@ -44,3 +45,9 @@ def apply_homography(H, x, y):
     x = v[0] / v[2]
     y = v[1] / v[2]
     return x, y
+
+
+def get_random_file(dir):
+    files = list(dir.iterdir())
+    idx = random.randint(0, len(files)-1)
+    return files[idx]
