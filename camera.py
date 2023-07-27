@@ -16,8 +16,10 @@ class Camera:
 class PerspectiveCamera(Camera):
     SENSOR_W = 10
     CYLLINDER_RADIUS = 1000
+    DEFAULT_PAN_DEG = 12
     MAX_PAN_DEG = 65
     MIN_PAN_DEG = -60
+    DEFAULT_TILT_DEG = 9
     MAX_TILT_DEG = 38
     MIN_TILT_DEG = -16
     FRAME_ASPECT_RATIO = 16/9
@@ -30,7 +32,7 @@ class PerspectiveCamera(Camera):
         [FRAME_W-1, 0]
     ], dtype=np.int16)
 
-    def __init__(self, frame_orig, pan_deg=0, tilt_deg=0):
+    def __init__(self, frame_orig, pan_deg=DEFAULT_PAN_DEG, tilt_deg=DEFAULT_TILT_DEG):
         h, w, _ = frame_orig.shape
         self.center_x = w // 2
         self.center_y = h // 2
@@ -67,7 +69,8 @@ class PerspectiveCamera(Camera):
         self.f = f
 
     def reset(self):
-        self.set(0, 0)
+        self.set(PerspectiveCamera.DEFAULT_PAN_DEG,
+                 PerspectiveCamera.DEFAULT_TILT_DEG)
 
     def print(self):
         print(f"pan_deg = {self.pan_deg}")
