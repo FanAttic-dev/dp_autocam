@@ -15,8 +15,8 @@ class FrameSplitter:
 class PerspectiveFrameSplitter(FrameSplitter):
     def __init__(self, frame):
         self.cameras = [
-            PerspectiveCamera(frame, pan_deg=-29, tilt_deg=9),
-            PerspectiveCamera(frame, pan_deg=11, tilt_deg=9),
+            PerspectiveCamera(frame, pan_deg=-30, tilt_deg=9),
+            PerspectiveCamera(frame, pan_deg=9, tilt_deg=9),
             PerspectiveCamera(frame, pan_deg=49, tilt_deg=9),
         ]
 
@@ -36,6 +36,10 @@ class PerspectiveFrameSplitter(FrameSplitter):
                 bbs_joined.append(bb_inv)
 
         return bbs_joined
+
+    def nms(self, bbs):
+        # TODO: remove overlapping bbs
+        ...
 
 
 class LinearFrameSplitter(FrameSplitter):
