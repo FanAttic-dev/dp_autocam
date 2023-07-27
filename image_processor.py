@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 
 from utils import coords_to_pts
+from constants import colors
 
 
 class ImageProcessor:
@@ -30,14 +31,10 @@ class ImageProcessor:
         return ImageProcessor.roi(img, x1, y1, x2, y2)
 
     @staticmethod
-    def draw_lines(img, pts):
-        return cv2.polylines(img, [pts], isClosed=True, color=(0, 255, 255), thickness=5)
-
-    @staticmethod
     def draw_mask(img, coords, margin=10):
         pts = coords_to_pts(coords)
         mask = np.zeros(img.shape[:2], dtype=np.uint8)
-        cv2.fillPoly(mask, pts=[pts], color=(255, 255, 255))
+        cv2.fillPoly(mask, pts=[pts], color=colors["white"])
 
         se = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
         mask = cv2.dilate(mask, se, iterations=margin)

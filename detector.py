@@ -5,6 +5,7 @@ import tqdm
 from ultralytics import YOLO
 
 from image_processor import ImageProcessor
+from constants import colors
 
 
 class Detector:
@@ -45,7 +46,7 @@ class YoloDetector(Detector):
             bbs.append(bb)
         return bbs
 
-    def draw_bounding_boxes_(self, img, bbs, color=(0, 255, 255)):
+    def draw_bounding_boxes_(self, img, bbs, color=colors["teal"]):
         for bb in bbs:
             x1, y1, x2, y2 = bb
             cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)

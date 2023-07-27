@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+from constants import colors
 
 
 class Camera:
@@ -111,7 +112,7 @@ class PerspectiveCamera(Camera):
             tilt_deg <= PerspectiveCamera.MAX_TILT_DEG and \
             tilt_deg >= PerspectiveCamera.MIN_TILT_DEG
 
-    def draw_roi_(self, frame_orig, color=(0, 255, 255)):
+    def draw_roi_(self, frame_orig, color=colors["yellow"]):
         pts = self.get_corner_pts()
         cv2.polylines(frame_orig, [pts], True, color, thickness=10)
 

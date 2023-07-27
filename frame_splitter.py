@@ -1,5 +1,6 @@
 import numpy as np
 from camera import PerspectiveCamera
+from constants import colors
 
 from utils import apply_homography, iou
 
@@ -40,6 +41,10 @@ class PerspectiveFrameSplitter(FrameSplitter):
     def nms(self, bbs):
         # TODO: remove overlapping bbs
         ...
+
+    def draw_roi_(self, frame):
+        for i, camera in enumerate(self.cameras):
+            camera.draw_roi_(frame, list(colors.values())[2+i])
 
 
 class LinearFrameSplitter(FrameSplitter):

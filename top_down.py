@@ -2,7 +2,8 @@ import json
 from pathlib import Path
 import cv2
 import numpy as np
-from utils import apply_homography, coords_to_pts, load_json, colors
+from utils import apply_homography, coords_to_pts, load_json
+from constants import colors
 
 
 class TopDown:
@@ -44,7 +45,7 @@ class TopDown:
                 print(x, y)
                 continue
             cv2.circle(
-                pitch_model, (x, y), radius=10, color=(0, 0, 255), thickness=-1)
+                pitch_model, (x, y), radius=10, color=colors["teal"], thickness=-1)
 
     def draw_roi_(self, frame, corner_pts):
         pts_warped = np.array(
@@ -52,4 +53,4 @@ class TopDown:
             dtype=np.int32
         )
         cv2.polylines(frame, [pts_warped], isClosed=True,
-                      color=colors[0], thickness=5)
+                      color=colors["yellow"], thickness=5)

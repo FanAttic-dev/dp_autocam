@@ -1,21 +1,14 @@
-from pathlib import Path
 import cv2
-from camera import FixedHeightCamera, PerspectiveCamera
-from constants import PAN_DX, TILT_DY, ZOOM_DZ, videos_dir
-import random
-from detector import BgDetector, YoloPlayerDetector
-from frame_splitter import FrameSplitter, LinearFrameSplitter, PerspectiveFrameSplitter
-from utils import colors, get_random_file
-
+from camera import PerspectiveCamera
+from constants import PAN_DX, TILT_DY, ZOOM_DZ, videos_dir, coords_path
+from detector import YoloPlayerDetector
+from frame_splitter import PerspectiveFrameSplitter
+from utils import get_random_file
 from top_down import TopDown
 from utils import load_json
 from video_player import VideoPlayer
 
-coords_path = videos_dir / "../../coords.json"
 video_name = get_random_file(videos_dir)
-# video_name = videos_dir / "F_20200220_1_0180_0210.mp4"
-# video_name = videos_dir / "F_20200220_1_0480_0510.mp4"
-# video_name = videos_dir / "F_20220220_1_1920_1950.mp4"
 print(f"Video: {video_name}")
 player = VideoPlayer(video_name)
 
@@ -23,7 +16,7 @@ pitch_coords = load_json(coords_path)
 top_down = TopDown(pitch_coords)
 detector = YoloPlayerDetector(pitch_coords)
 
-ret, frame_orig = player.get_next_frame()
+_, frame_orig = player.get_next_frame()
 camera = PerspectiveCamera(frame_orig)
 frame_splitter = PerspectiveFrameSplitter(frame_orig)
 
@@ -33,16 +26,14 @@ while True:
     if not ret:
         break
 
-    frame_orig = detector.preprocess(frame_orig)
     h, w, _ = frame_orig.shape
+    frame_orig = detector.preprocess(frame_orig)
 
     # Split, detect & merge
     frames = frame_splitter.split(frame_orig)
-    # frame_joined = frame_splitter.join(frames)
-
     bbs, frames_detected = detector.detect(frames)
+    frame_splitter.draw_roi_(frame_orig)
     # for i, frame in enumerate(frames_detected):
-    # frame_splitter.cameras[i].draw_roi_(frame_orig, color=colors[i])
     # show_frame(frame, f"Frame {i}")
 
     bbs_joined = frame_splitter.join_bbs(bbs)
