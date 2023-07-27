@@ -78,26 +78,28 @@ while True:
     # frame_joined = frame_splitter.join(frames)
 
     bbs, frames_detected = detector.detect(frames)
-    for i, frame in enumerate(frames_detected):
-        frame_splitter.cameras[i].draw_roi_(frame_orig, color=colors[i])
-        show_frame(frame, f"Frame {i}")
+    # for i, frame in enumerate(frames_detected):
+    # frame_splitter.cameras[i].draw_roi_(frame_orig, color=colors[i])
+    # show_frame(frame, f"Frame {i}")
 
     bbs_joined = frame_splitter.join_bbs(bbs)
     detector.draw_bounding_boxes_(frame_orig, bbs_joined)
 
-    # frame_warped = top_down.warp_frame(frame_joined)
+    # frame_warped = top_down.warp_frame(frame_orig)
     # show_frame(frame_warped, "warped")
 
-    # bb_pts = top_down.warp_bbs(bbs_joined)
-    # top_down_frame = top_down.draw_points(bb_pts)
-    # show_frame(top_down_frame, "top down")
-
     # camera.update_by_bbs(bbs)
-    # frame = camera.get_frame(frame_orig)
-    # show_frame(frame, "ROI")
+    frame = camera.get_frame(frame_orig)
+    show_frame(frame, "ROI")
     camera.print()
 
-    # camera.draw_roi_(frame_orig)
+    bb_pts = top_down.warp_bbs(bbs_joined)
+    top_down_frame = top_down.pitch_model.copy()
+    top_down.draw_roi_(top_down_frame, camera.get_corner_pts())
+    top_down.draw_points_(top_down_frame, bb_pts)
+    show_frame(top_down_frame, "top down")
+
+    camera.draw_roi_(frame_orig)
     show_frame(frame_orig, "Original")
 
     key = cv2.waitKey(0)

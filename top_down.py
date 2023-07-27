@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 import cv2
 import numpy as np
-from utils import apply_homography, coords_to_pts, load_json
+from utils import apply_homography, coords_to_pts, load_json, colors
 
 from constants import WINDOW_NAME
 
@@ -15,6 +15,7 @@ class TopDown:
     def __init__(self, video_pitch_coords):
         self.pitch_model = cv2.imread(str(TopDown.pitch_model_path))
         self.pitch_coords = load_json(TopDown.pitch_coords_path)
+        self.video_pitch_coords = video_pitch_coords
         self.H, _ = cv2.findHomography(coords_to_pts(video_pitch_coords),
                                        coords_to_pts(self.pitch_coords))
 
@@ -38,8 +39,7 @@ class TopDown:
         h, w, _ = self.pitch_model.shape
         return x >= 0 and x < w and y >= 0 and y < h
 
-    def draw_points(self, pts):
-        pitch_model = self.pitch_model.copy()
+    def draw_points_(self, pitch_model, pts):
         for pt in pts:
             x, y = pt
             if not self.check_bounds(x, y):
@@ -47,4 +47,11 @@ class TopDown:
                 continue
             cv2.circle(
                 pitch_model, (x, y), radius=10, color=(0, 0, 255), thickness=-1)
-        return pitch_model
+
+    def draw_roi_(self, frame, corner_pts):
+        pts_warped = np.array(
+            [apply_homography(self.H, x, y) for x, y in corner_pts],
+            dtype=np.int32
+        )
+        cv2.polylines(frame, [pts_warped], isClosed=True,
+                      color=colors[0], thickness=5)

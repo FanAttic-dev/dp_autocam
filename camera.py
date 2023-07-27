@@ -55,7 +55,7 @@ class PerspectiveCamera(Camera):
 
     @property
     def H(self):
-        src = self.get_corners_pts()
+        src = self.get_corner_pts()
         dst = PerspectiveCamera.FRAME_CORNERS
 
         H, _ = cv2.findHomography(src, dst)
@@ -91,7 +91,7 @@ class PerspectiveCamera(Camera):
             np.sqrt(PerspectiveCamera.CYLLINDER_RADIUS**2 + x**2)
         return self.shift_coords(x, y)
 
-    def get_corners_pts(self):
+    def get_corner_pts(self):
         pts = []
         for pan_deg, tilt_deg in self.corners_ang.values():
             x, y = self.get_coords(
@@ -109,7 +109,7 @@ class PerspectiveCamera(Camera):
             tilt_deg >= PerspectiveCamera.MIN_TILT_DEG
 
     def draw_roi_(self, frame_orig, color=(0, 255, 255)):
-        pts = self.get_corners_pts()
+        pts = self.get_corner_pts()
         cv2.polylines(frame_orig, [pts], True, color, thickness=10)
 
     def get_frame(self, frame_orig):
