@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 import cv2
 import numpy as np
-from utils import coords_to_pts, load_json
+from utils import apply_homography, coords_to_pts, load_json
 
 from constants import WINDOW_NAME
 
@@ -22,19 +22,12 @@ class TopDown:
         return cv2.warpPerspective(
             frame, self.H, (self.pitch_model.shape[1], self.pitch_model.shape[0]))
 
-    def apply_H(self, x, y):
-        v = np.array([x, y, 1])
-        v = self.H.dot(v)
-        x = v[0] / v[2]
-        y = v[1] / v[2]
-        return x, y
-
     def warp_bbs(self, bbs):
         res = []
         for bb in bbs:
             x1, y1, x2, y2 = bb
-            x1, y1 = self.apply_H(x1, y1)
-            x2, y2 = self.apply_H(x2, y2)
+            x1, y1 = apply_homography(self.H, x1, y1)
+            x2, y2 = apply_homography(self.H, x2, y2)
             center_x = int((x1 + x2) / 2)
             center_y = int(y2)
 

@@ -36,3 +36,11 @@ def iou(bb1, bb2):
 def load_json(file_name):
     with open(file_name, 'r') as f:
         return json.load(f)
+
+
+def apply_homography(H, x, y):
+    v = np.array([x, y, 1])
+    v = H.dot(v)
+    x = v[0] / v[2]
+    y = v[1] / v[2]
+    return x, y

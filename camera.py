@@ -53,6 +53,14 @@ class PerspectiveCamera(Camera):
             "right top": [self.fov_horiz_deg / 2, -self.fov_vert_deg / 2],
         }
 
+    @property
+    def H(self):
+        src = self.get_corners_pts()
+        dst = PerspectiveCamera.FRAME_CORNERS
+
+        H, _ = cv2.findHomography(src, dst)
+        return H
+
     def set(self, pan_deg, tilt_deg, f=12):
         self.pan_deg = pan_deg
         self.tilt_deg = tilt_deg
@@ -105,13 +113,9 @@ class PerspectiveCamera(Camera):
         cv2.polylines(frame_orig, [pts], True, color, thickness=10)
 
     def get_frame(self, frame_orig):
-        src = self.get_corners_pts()
-        dst = PerspectiveCamera.FRAME_CORNERS
-
-        H, _ = cv2.findHomography(src, dst)
         return cv2.warpPerspective(
             frame_orig,
-            H,
+            self.H,
             (PerspectiveCamera.FRAME_W, PerspectiveCamera.FRAME_H),
             flags=cv2.INTER_LINEAR)
 

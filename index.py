@@ -82,8 +82,8 @@ while True:
         frame_splitter.cameras[i].draw_roi_(frame_orig, color=colors[i])
         # show_frame(frame, f"Frame {i}")
 
-    # bbs_joined = frame_splitter.join_bbs(bbs)
-    # detector.draw_bounding_boxes_(frame_orig, bbs_joined)
+    bbs_joined = frame_splitter.join_bbs(bbs)
+    detector.draw_bounding_boxes_(frame_orig, bbs_joined)
 
     # frame_warped = top_down.warp_frame(frame_joined)
     # show_frame(frame_warped, "warped")

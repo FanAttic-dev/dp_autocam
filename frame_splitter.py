@@ -1,7 +1,7 @@
 import numpy as np
 from camera import PerspectiveCamera
 
-from utils import iou
+from utils import apply_homography, iou
 
 
 class FrameSplitter:
@@ -25,9 +25,17 @@ class PerspectiveFrameSplitter(FrameSplitter):
         return frames
 
     def join_bbs(self, bbs):
-        ...
-        # for camera, frame_bbs in zip(self.cameras, bbs):
-        #     camera.
+        bbs_joined = []
+        for camera, frame_bbs in zip(self.cameras, bbs):
+            for bb in frame_bbs:
+                H_inv = np.linalg.inv(camera.H)
+                x1, y1, x2, y2 = bb
+                x1, y1 = apply_homography(H_inv, x1, y1)
+                x2, y2 = apply_homography(H_inv, x2, y2)
+                bb_inv = [int(x) for x in [x1, y1, x2, y2]]
+                bbs_joined.append(bb_inv)
+
+        return bbs_joined
 
 
 class LinearFrameSplitter(FrameSplitter):
