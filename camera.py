@@ -13,6 +13,9 @@ class Camera:
     def pan(self, dx):
         ...
 
+    def get_corner_pts(self):
+        ...
+
 
 class PerspectiveCamera(Camera):
     SENSOR_W = 10

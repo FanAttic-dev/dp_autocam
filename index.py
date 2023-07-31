@@ -31,26 +31,26 @@ while True:
 
     # Split, detect & merge
     frames = frame_splitter.split(frame_orig)
-    bbs, frames_detected = detector.detect(frames)
+    bbs, _ = detector.detect(frames)
     frame_splitter.draw_roi_(frame_orig)
-    # for i, frame in enumerate(frames_detected):
-    # show_frame(frame, f"Frame {i}")
 
     bbs_joined = frame_splitter.join_bbs(bbs)
     detector.draw_bounding_boxes_(frame_orig, bbs_joined)
 
     # frame_warped = top_down.warp_frame(frame_orig)
-    # show_frame(frame_warped, "warped")
+    # player.show_frame(frame_warped, "warped")
 
+    # ROI
     # camera.update_by_bbs(bbs)
     frame = camera.get_frame(frame_orig)
     player.show_frame(frame, "ROI")
     camera.print()
 
-    bb_pts = top_down.warp_bbs(bbs_joined)
+    # Top-down
+    bbs_pts = top_down.warp_bbs(bbs_joined)
     top_down_frame = top_down.pitch_model.copy()
-    top_down.draw_roi_(top_down_frame, camera.get_corner_pts())
-    top_down.draw_points_(top_down_frame, bb_pts)
+    top_down.draw_roi_(top_down_frame, camera)
+    top_down.draw_points_(top_down_frame, bbs_pts)
     player.show_frame(top_down_frame, "top down")
 
     camera.draw_roi_(frame_orig)

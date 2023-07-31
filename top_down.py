@@ -47,9 +47,10 @@ class TopDown:
             cv2.circle(
                 pitch_model, (x, y), radius=10, color=colors["teal"], thickness=-1)
 
-    def draw_roi_(self, frame, corner_pts):
+    def draw_roi_(self, frame, camera):
         pts_warped = np.array(
-            [apply_homography(self.H, x, y) for x, y in corner_pts],
+            [apply_homography(self.H, x, y)
+             for x, y in camera.get_corner_pts()],
             dtype=np.int32
         )
         cv2.polylines(frame, [pts_warped], isClosed=True,
