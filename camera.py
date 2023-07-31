@@ -16,8 +16,14 @@ class Camera:
     def get_corner_pts(self):
         ...
 
+    def update_by_bbs(self, bbs):
+        ...
+
 
 class PerspectiveCamera(Camera):
+    PAN_DX = 1
+    TILT_DY = 1
+    ZOOM_DZ = 2
     SENSOR_W = 10
     CYLLINDER_RADIUS = 1000
     DEFAULT_PAN_DEG = 12
@@ -144,6 +150,26 @@ class PerspectiveCamera(Camera):
         if not self.check_ptz_bounds(self.pan_deg, self.tilt_deg, f):
             return
         self.f = f
+
+    def process_input(self, key):
+        is_alive = True
+        if key == ord('d'):
+            self.pan(PerspectiveCamera.PAN_DX)
+        elif key == ord('a'):
+            self.pan(-PerspectiveCamera.PAN_DX)
+        elif key == ord('w'):
+            self.tilt(-PerspectiveCamera.TILT_DY)
+        elif key == ord('s'):
+            self.tilt(PerspectiveCamera.TILT_DY)
+        elif key == ord('p'):
+            self.zoom(PerspectiveCamera.ZOOM_DZ)
+        elif key == ord('m'):
+            self.zoom(-PerspectiveCamera.ZOOM_DZ)
+        elif key == ord('r'):
+            self.reset()
+        elif key == ord('q'):
+            is_alive = False
+        return is_alive
 
 
 class FixedHeightCamera(Camera):
