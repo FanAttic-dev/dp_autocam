@@ -49,3 +49,10 @@ def get_random_file(dir):
     files = list(dir.iterdir())
     idx = random.randint(0, len(files)-1)
     return files[idx]
+
+
+def merge_bbs(bbs1, bbs2):
+    return {
+        "boxes": bbs1["boxes"] + bbs2["boxes"],
+        "cls": bbs1["cls"] + bbs2["cls"]
+    }
