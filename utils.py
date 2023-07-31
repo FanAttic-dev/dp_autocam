@@ -56,3 +56,15 @@ def merge_bbs(bbs1, bbs2):
         "boxes": bbs1["boxes"] + bbs2["boxes"],
         "cls": bbs1["cls"] + bbs2["cls"]
     }
+
+
+def add_bb_(bbs, bb, cls):
+    if not bb:
+        return
+
+    bbs["boxes"].append(bb)
+    bbs["cls"].append(cls)
+
+
+def add_bb_ball_(bbs, bb_ball):
+    add_bb_(bbs, bb_ball, 0)

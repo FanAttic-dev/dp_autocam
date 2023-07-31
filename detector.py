@@ -11,6 +11,7 @@ from constants import colors
 class Detector:
     def __init__(self, pitch_coords):
         self.pitch_coords = pitch_coords
+        self.bb_ball_last = None
 
     def preprocess(self, img):
         ...
@@ -26,7 +27,7 @@ class YoloDetector(Detector):
     args = {
         'device': 0,  # 0 if gpu else 'cpu'
         'imgsz': 960,
-        'classes': None,  # [0] for ball only, None for all
+        'classes': [1, 2, 3, 4],  # [0] for ball only, None for all
         'conf': 0.35,
         'max_det': 50,
         'iou': 0.7
@@ -56,12 +57,6 @@ class YoloDetector(Detector):
                 ]
             }
             bbs_frames.append(bbs)
-        # for i in range(len(res)):
-        #     bb = [
-        #         bb.xyxy[0].cpu().numpy().astype(int)
-        #         for bb in res[i].boxes if len(bb.xywh) > 0
-        #     ]
-        #     bbs.append(bb)
         return bbs_frames
 
     def draw_bbs_(self, img, bbs):
@@ -79,13 +74,48 @@ class YoloDetector(Detector):
         img = ImageProcessor.draw_mask(img, self.pitch_coords, margin=5)
         return img
 
+    def get_ball(self, bbs):
+        bb_balls = [
+            bb for bb, cls in zip(bbs["boxes"], bbs["cls"]) if cls == 0
+        ]
+        if len(bb_balls) == 0:
+            # no ball detected
+            return []
+
+        if not self.bb_ball_last:
+            self.bb_ball_last = bb_balls[0]
+            return self.bb_ball_last
+
+        if len(bb_balls) > 1:
+            print("balls:", bb_balls)
+
+        # choose the closest detection to the reference
+        bb_ball = min(
+            bb_balls,
+            key=lambda bb: np.linalg.norm(np.array(bb) - np.array(self.bb_ball_last)))
+
+        if len(bb_balls) > 1:
+            print("chosen ball:", bb_ball)
+
+        self.bb_ball_last = bb_ball
+        return bb_ball
+
 
 class YoloBallDetector(YoloDetector):
+    args = {
+        'device': 0,  # 0 if gpu else 'cpu'
+        'imgsz': 960,
+        'classes': None,  # [0] for ball only, None for all
+        'conf': 0.05,
+        'max_det': 1,
+        'iou': 0.7
+    }
+
     model_path = Path(
         f"./weights/yolov8_{YoloDetector.args['imgsz']}_ball.pt")
 
     def detect(self, img):
-        res = self.model.track(
+        res = self.model.predict(
             img, **YoloBallDetector.args, tracker="bytetrack.yaml")
         return self.res2bbs(res), self.plot(res)
 

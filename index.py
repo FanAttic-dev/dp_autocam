@@ -1,15 +1,18 @@
+from pathlib import Path
 import cv2
 from camera import PerspectiveCamera
 from constants import videos_dir, coords_path
 from detector import YoloBallDetector, YoloPlayerDetector
 from frame_splitter import PerspectiveFrameSplitter
-from utils import get_random_file, merge_bbs
+from utils import add_bb_, add_bb_ball_, get_random_file
 from top_down import TopDown
 from utils import load_json
 from video_player import VideoPlayer
 
 """ Init """
 video_name = get_random_file(videos_dir)
+video_name = Path(
+    "/home/atti/source/datasets/SoccerTrack/wide_view/videos/F_20220220_1_1530_1560.mp4")
 print(f"Video: {video_name}")
 player = VideoPlayer(video_name)
 
@@ -37,17 +40,20 @@ while is_alive:
     frame_splitter.draw_roi_(frame_orig)
 
     bbs, _ = detector.detect(frames)
-    bbs_ball, _ = ball_detector.detect(frames)
+    bbs_ball, bbs_ball_frame = ball_detector.detect(frames)
+    player.show_frame(bbs_ball_frame[0])
 
     bbs_joined = frame_splitter.join_bbs(bbs)
     bbs_ball_joined = frame_splitter.join_bbs(bbs_ball)
-    bbs_joined = merge_bbs(bbs_joined, bbs_ball_joined)
+    bb_ball = ball_detector.get_ball(bbs_ball_joined)
+    add_bb_ball_(bbs_joined, bb_ball)
+    # bbs_joined = merge_bbs(bbs_joined, bbs_ball_joined)
     detector.draw_bbs_(frame_orig, bbs_joined)
 
     """ ROI """
-    camera.update_by_bbs(bbs)
-    frame = camera.get_frame(frame_orig)
-    player.show_frame(frame, "ROI")
+    camera.update_by_bbs(bbs_joined, bb_ball)
+    # frame = camera.get_frame(frame_orig)
+    # player.show_frame(frame, "ROI")
     camera.print()
     camera.draw_roi_(frame_orig)
     player.show_frame(frame_orig, "Original")
