@@ -26,15 +26,19 @@ class PerspectiveFrameSplitter(FrameSplitter):
         return frames
 
     def join_bbs(self, bbs):
-        bbs_joined = []
+        bbs_joined = {
+            "boxes": [],
+            "cls": []
+        }
         for camera, frame_bbs in zip(self.cameras, bbs):
-            for bb in frame_bbs:
+            for bb, cls in zip(frame_bbs["boxes"], frame_bbs["cls"]):
                 H_inv = np.linalg.inv(camera.H)
                 x1, y1, x2, y2 = bb
                 x1, y1 = apply_homography(H_inv, x1, y1)
                 x2, y2 = apply_homography(H_inv, x2, y2)
                 bb_inv = [int(x) for x in [x1, y1, x2, y2]]
-                bbs_joined.append(bb_inv)
+                bbs_joined["boxes"].append(bb_inv)
+                bbs_joined["cls"].append(cls)
 
         return bbs_joined
 

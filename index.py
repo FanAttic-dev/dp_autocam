@@ -39,7 +39,7 @@ while is_alive:
     detector.draw_bbs_(frame_orig, bbs_joined)
 
     """ ROI """
-    # camera.update_by_bbs(bbs)
+    camera.update_by_bbs(bbs)
     frame = camera.get_frame(frame_orig)
     player.show_frame(frame, "ROI")
     camera.print()
@@ -47,10 +47,12 @@ while is_alive:
     player.show_frame(frame_orig, "Original")
 
     """ Top-down """
-    bbs_pts = top_down.warp_bbs(bbs_joined)
     top_down_frame = top_down.pitch_model.copy()
     top_down.draw_roi_(top_down_frame, camera)
-    top_down.draw_points_(top_down_frame, bbs_pts)
+
+    top_down_pts = top_down.bbs2points(bbs_joined)
+    top_down.draw_points_(top_down_frame, top_down_pts)
+
     player.show_frame(top_down_frame, "top down")
 
     """ Warp frame """

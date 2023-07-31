@@ -31,24 +31,43 @@ class YoloDetector(Detector):
         'max_det': 50,
         'iou': 0.7
     }
+    cls2color = {
+        0: colors["red"],  # ball
+        1: colors["teal"],  # player
+        2: colors["yellow"],  # referee
+        3: colors["orange"],  # goalkeeper
+    }
 
     def __init__(self, pitch_coords):
         super().__init__(pitch_coords)
         self.model = YOLO(self.__class__.model_path)
 
     def res2bbs(self, res):
-        bbs = []
-        for i in range(len(res)):
-            bb = [
-                bb.xyxy[0].cpu().numpy().astype(int)
-                for bb in res[i].boxes if len(bb.xywh) > 0
-            ]
-            bbs.append(bb)
-        return bbs
+        bbs_frames = []
+        for det_frame in res:
+            bbs = {
+                "boxes": [
+                    bb.cpu().numpy().astype(int)
+                    for bb in det_frame.boxes.xyxy
+                ],
+                "cls": [
+                    cls.cpu().numpy().astype(int).item()
+                    for cls in det_frame.boxes.cls
+                ]
+            }
+            bbs_frames.append(bbs)
+        # for i in range(len(res)):
+        #     bb = [
+        #         bb.xyxy[0].cpu().numpy().astype(int)
+        #         for bb in res[i].boxes if len(bb.xywh) > 0
+        #     ]
+        #     bbs.append(bb)
+        return bbs_frames
 
-    def draw_bbs_(self, img, bbs, color=colors["teal"]):
-        for bb in bbs:
+    def draw_bbs_(self, img, bbs):
+        for bb, cls in zip(bbs["boxes"], bbs["cls"]):
             x1, y1, x2, y2 = bb
+            color = YoloDetector.cls2color[cls]
             cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
 
     def plot(self, res):

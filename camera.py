@@ -171,6 +171,10 @@ class PerspectiveCamera(Camera):
             is_alive = False
         return is_alive
 
+    def update_by_bbs(self, bbs):
+        # TODO
+        ...
+
 
 class FixedHeightCamera(Camera):
     def __init__(self, full_img):
