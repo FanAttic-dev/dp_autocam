@@ -201,9 +201,15 @@ class PerspectiveCamera(Camera):
     def update_by_bbs(self, bbs, bb_ball):
         if not bb_ball:
             return
+
         x1, y1, x2, y2 = bb_ball
-        x = (x1 + x2) // 2
-        y = (y1 + y2) // 2
+        x_ball = (x1 + x2) // 2
+        y_ball = (y1 + y2) // 2
+        x_center, y_center = self.center
+
+        alpha = 0.1
+        x = x_ball * alpha + x_center * (1-alpha)
+        y = y_ball * alpha + y_center * (1-alpha)
         self.set_center(x, y)
 
 
