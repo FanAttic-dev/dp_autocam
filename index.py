@@ -65,12 +65,12 @@ while is_alive:
 
     """ ROI """
     camera.update_by_bbs(bbs_joined, bb_ball)
+    camera.draw_center_(frame_orig)
     frame = camera.get_frame(frame_orig)
     player.show_frame(frame, "ROI")
     camera.print()
     camera.draw_roi_(frame_orig)
-    # player.show_frame(frame_orig, "Original")
-    cv2.imshow("Original", frame_orig)
+    player.show_frame(frame_orig, "Original")
 
     """ Top-down """
     top_down_frame = top_down.pitch_model.copy()

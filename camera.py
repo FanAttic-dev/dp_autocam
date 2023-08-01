@@ -59,7 +59,7 @@ class PerspectiveCamera(Camera):
 
     @property
     def center(self):
-        return self.ptz2coords()
+        return self.ptz2coords(self.pan_deg, self.tilt_deg, self.f)
 
     @property
     def corners_ang(self):
@@ -111,7 +111,7 @@ class PerspectiveCamera(Camera):
         phi_rad = np.deg2rad(phi_deg)
         y = np.tan(phi_rad) * \
             np.sqrt(PerspectiveCamera.CYLLINDER_RADIUS**2 + x**2)
-        return self.shift_coords(x, y)
+        return self.shift_coords(int(x), int(y))
 
     def coords2ptz(self, x, y):
         x -= self.frame_orig_center_x
@@ -141,11 +141,10 @@ class PerspectiveCamera(Camera):
     def draw_roi_(self, frame_orig, color=colors["yellow"]):
         pts = self.get_corner_pts()
         cv2.polylines(frame_orig, [pts], True, color, thickness=10)
-        self.draw_center_(frame_orig)
 
     def draw_center_(self, frame, color=colors["red"]):
-        cv2.circle(frame, (self.frame_orig_center_x, self.frame_orig_center_y),
-                   radius=10, color=color, thickness=10)
+        cv2.circle(frame, self.center,
+                   radius=5, color=color, thickness=5)
 
     def get_frame(self, frame_orig):
         return cv2.warpPerspective(
