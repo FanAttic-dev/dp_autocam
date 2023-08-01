@@ -24,7 +24,8 @@ class PerspectiveCamera(Camera):
     PAN_DX = 1
     TILT_DY = 1
     ZOOM_DZ = 2
-    SENSOR_W = 10
+    SENSOR_W = 25
+    DEFAULT_F = 30
     CYLLINDER_RADIUS = 1000
     DEFAULT_PAN_DEG = 12
     MAX_PAN_DEG = 65
@@ -73,7 +74,7 @@ class PerspectiveCamera(Camera):
         H, _ = cv2.findHomography(src, dst)
         return H
 
-    def set(self, pan_deg, tilt_deg, f=12):
+    def set(self, pan_deg, tilt_deg, f=DEFAULT_F):
         self.pan_deg = pan_deg
         self.tilt_deg = tilt_deg
         self.f = f
@@ -172,6 +173,7 @@ class PerspectiveCamera(Camera):
         return is_alive
 
     def update_by_bbs(self, bbs, bb_ball):
+        # TODO
         ...
 
 

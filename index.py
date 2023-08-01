@@ -41,19 +41,18 @@ while is_alive:
 
     bbs, _ = detector.detect(frames)
     bbs_ball, bbs_ball_frame = ball_detector.detect(frames)
-    player.show_frame(bbs_ball_frame[0])
+    # player.show_frame(bbs_ball_frame[0])
 
     bbs_joined = frame_splitter.join_bbs(bbs)
     bbs_ball_joined = frame_splitter.join_bbs(bbs_ball)
     bb_ball = ball_detector.get_ball(bbs_ball_joined)
     add_bb_ball_(bbs_joined, bb_ball)
-    # bbs_joined = merge_bbs(bbs_joined, bbs_ball_joined)
     detector.draw_bbs_(frame_orig, bbs_joined)
 
     """ ROI """
     camera.update_by_bbs(bbs_joined, bb_ball)
-    # frame = camera.get_frame(frame_orig)
-    # player.show_frame(frame, "ROI")
+    frame = camera.get_frame(frame_orig)
+    player.show_frame(frame, "ROI")
     camera.print()
     camera.draw_roi_(frame_orig)
     player.show_frame(frame_orig, "Original")

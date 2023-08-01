@@ -78,6 +78,7 @@ class YoloDetector(Detector):
         bb_balls = [
             bb for bb, cls in zip(bbs["boxes"], bbs["cls"]) if cls == 0
         ]
+
         if len(bb_balls) == 0:
             # no ball detected
             return []
@@ -86,16 +87,10 @@ class YoloDetector(Detector):
             self.bb_ball_last = bb_balls[0]
             return self.bb_ball_last
 
-        if len(bb_balls) > 1:
-            print("balls:", bb_balls)
-
         # choose the closest detection to the reference
         bb_ball = min(
             bb_balls,
             key=lambda bb: np.linalg.norm(np.array(bb) - np.array(self.bb_ball_last)))
-
-        if len(bb_balls) > 1:
-            print("chosen ball:", bb_ball)
 
         self.bb_ball_last = bb_ball
         return bb_ball
