@@ -9,6 +9,13 @@ from top_down import TopDown
 from utils import load_json
 from video_player import VideoPlayer
 
+
+def on_mouse_click(event, x, y, flags, param):
+    if event == cv2.EVENT_LBUTTONDOWN:
+        camera.set_center(x, y)
+        print(x, y)
+
+
 """ Init """
 video_name = get_random_file(videos_dir)
 video_name = Path(
@@ -24,6 +31,8 @@ ball_detector = YoloBallDetector(pitch_coords)
 is_alive, frame_orig = player.get_next_frame()
 camera = PerspectiveCamera(frame_orig)
 frame_splitter = PerspectiveFrameSplitter(frame_orig)
+player.create_window("Original")
+cv2.setMouseCallback("Original", on_mouse_click)
 
 i = 0
 while is_alive:
@@ -55,7 +64,8 @@ while is_alive:
     player.show_frame(frame, "ROI")
     camera.print()
     camera.draw_roi_(frame_orig)
-    player.show_frame(frame_orig, "Original")
+    # player.show_frame(frame_orig, "Original")
+    cv2.imshow("Original", frame_orig)
 
     """ Top-down """
     top_down_frame = top_down.pitch_model.copy()

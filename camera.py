@@ -23,9 +23,9 @@ class Camera:
 class PerspectiveCamera(Camera):
     PAN_DX = 1
     TILT_DY = 1
-    ZOOM_DZ = 2
-    SENSOR_W = 25
-    DEFAULT_F = 30
+    ZOOM_DZ = 60
+    SENSOR_W = 836  # 25
+    DEFAULT_F = 1003  # 30
     CYLLINDER_RADIUS = 1000
     DEFAULT_PAN_DEG = 12
     MAX_PAN_DEG = 65
@@ -78,6 +78,14 @@ class PerspectiveCamera(Camera):
         self.pan_deg = pan_deg
         self.tilt_deg = tilt_deg
         self.f = f
+
+    def set_center(self, x, y):
+        x -= self.center_x
+        y -= self.center_y
+        pan_deg = np.rad2deg(np.arctan(x / self.f))
+        tilt_deg = np.rad2deg(
+            np.arctan(y / (np.sqrt(PerspectiveCamera.CYLLINDER_RADIUS**2 + x**2))))
+        self.set(pan_deg, tilt_deg, self.f)
 
     def reset(self):
         self.set(PerspectiveCamera.DEFAULT_PAN_DEG,

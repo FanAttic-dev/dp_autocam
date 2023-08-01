@@ -30,8 +30,11 @@ class VideoPlayer:
             if key == ord('q'):
                 break
 
-    def show_frame(self, frame, window_name=WINDOW_NAME):
+    def create_window(self, window_name):
         cv2.namedWindow(window_name, VideoPlayer.WINDOW_FLAGS)
+
+    def show_frame(self, frame, window_name=WINDOW_NAME):
+        self.create_window(window_name)
         cv2.imshow(window_name, frame)
 
     def release(self):
