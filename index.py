@@ -24,7 +24,7 @@ def mouse_callback(event, x, y, flags, param):
 """ Init """
 video_name = get_random_file(videos_dir)
 video_name = Path(
-    "/home/atti/source/datasets/SoccerTrack/wide_view/videos/F_20220220_1_1530_1560.mp4")
+    "/home/atti/source/datasets/SoccerTrack/wide_view/videos/F_20200220_1_0060_0090.mp4")
 print(f"Video: {video_name}")
 player = VideoPlayer(video_name)
 
@@ -55,7 +55,8 @@ while is_alive:
 
     bbs, _ = detector.detect(frames)
     bbs_ball, bbs_ball_frame = ball_detector.detect(frames)
-    # player.show_frame(bbs_ball_frame[0])
+    for i, ball_frame in enumerate(bbs_ball_frame):
+        player.show_frame(ball_frame, f"ball frame {i}")
 
     bbs_joined = frame_splitter.join_bbs(bbs)
     bbs_ball_joined = frame_splitter.join_bbs(bbs_ball)

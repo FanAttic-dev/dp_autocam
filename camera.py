@@ -104,6 +104,11 @@ class PerspectiveCamera(Camera):
         y = y + self.frame_orig_center_y
         return x, y
 
+    def unshift_coords(self, x, y):
+        x = x - self.frame_orig_center_x
+        y = y - self.frame_orig_center_y
+        return x, y
+
     def ptz2coords(self, theta_deg, phi_deg, f):
         theta_rad = np.deg2rad(theta_deg)
         x = np.tan(theta_rad) * PerspectiveCamera.CYLLINDER_RADIUS
@@ -114,9 +119,8 @@ class PerspectiveCamera(Camera):
         return self.shift_coords(int(x), int(y))
 
     def coords2ptz(self, x, y):
-        x -= self.frame_orig_center_x
-        y -= self.frame_orig_center_y
-        pan_deg = np.rad2deg(np.arctan(x / self.f))
+        x, y = self.unshift_coords(x, y)
+        pan_deg = np.rad2deg(np.arctan(x / PerspectiveCamera.CYLLINDER_RADIUS))
         tilt_deg = np.rad2deg(
             np.arctan(y / (np.sqrt(PerspectiveCamera.CYLLINDER_RADIUS**2 + x**2))))
         return pan_deg, tilt_deg
@@ -195,8 +199,12 @@ class PerspectiveCamera(Camera):
         return is_alive
 
     def update_by_bbs(self, bbs, bb_ball):
-        # TODO
-        ...
+        if not bb_ball:
+            return
+        x1, y1, x2, y2 = bb_ball
+        x = (x1 + x2) // 2
+        y = (y1 + y2) // 2
+        self.set_center(x, y)
 
 
 class FixedHeightCamera(Camera):
@@ -249,6 +257,6 @@ class FixedHeightCamera(Camera):
 
         center_x = sum(map(
             lambda bb_center: bb_center[0], bb_centers)) // len(bb_centers)
-        print(center_x)
+
         if self.check_bounds(self.get_frame_x(center_x)):
             self.center_x = center_x

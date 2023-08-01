@@ -18,7 +18,7 @@ class PerspectiveFrameSplitter(FrameSplitter):
         self.cameras = [
             PerspectiveCamera(frame, pan_deg=-30, tilt_deg=9),
             PerspectiveCamera(frame, pan_deg=9, tilt_deg=9),
-            PerspectiveCamera(frame, pan_deg=49, tilt_deg=9),
+            PerspectiveCamera(frame, pan_deg=40, tilt_deg=9),
         ]
 
     def split(self, frame):

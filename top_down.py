@@ -47,7 +47,6 @@ class TopDown:
         for pt, cls in zip(points["points"], points["cls"]):
             x, y = pt
             if not self.check_bounds(x, y):
-                print(x, y)
                 continue
             cv2.circle(
                 top_down_frame, (x, y), radius=10, color=YoloDetector.cls2color[cls], thickness=-1)

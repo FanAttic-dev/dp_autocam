@@ -71,7 +71,7 @@ class YoloDetector(Detector):
         return res
 
     def preprocess(self, img):
-        img = ImageProcessor.draw_mask(img, self.pitch_coords, margin=5)
+        img = ImageProcessor.draw_mask(img, self.pitch_coords, margin=1)
         return img
 
     def get_ball(self, bbs):
@@ -101,9 +101,9 @@ class YoloBallDetector(YoloDetector):
         'device': 0,  # 0 if gpu else 'cpu'
         'imgsz': 960,
         'classes': None,  # [0] for ball only, None for all
-        'conf': 0.05,
+        'conf': 0.15,
         'max_det': 1,
-        'iou': 0.7
+        'iou': 0.5
     }
 
     model_path = Path(
