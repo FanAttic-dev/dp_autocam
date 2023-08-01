@@ -9,11 +9,16 @@ from top_down import TopDown
 from utils import load_json
 from video_player import VideoPlayer
 
+mousePos = {
+    "x": 0,
+    "y": 0
+}
 
-def on_mouse_click(event, x, y, flags, param):
-    if event == cv2.EVENT_LBUTTONDOWN:
-        camera.set_center(x, y)
-        print(x, y)
+
+def mouse_callback(event, x, y, flags, param):
+    if event == cv2.EVENT_MOUSEMOVE:
+        mousePos["x"] = x
+        mousePos["y"] = y
 
 
 """ Init """
@@ -32,7 +37,7 @@ is_alive, frame_orig = player.get_next_frame()
 camera = PerspectiveCamera(frame_orig)
 frame_splitter = PerspectiveFrameSplitter(frame_orig)
 player.create_window("Original")
-cv2.setMouseCallback("Original", on_mouse_click)
+cv2.setMouseCallback("Original", mouse_callback)
 
 i = 0
 while is_alive:
@@ -82,7 +87,7 @@ while is_alive:
 
     """ Input """
     key = cv2.waitKey(0)
-    is_alive = camera.process_input(key)
+    is_alive = camera.process_input(key, mousePos["x"], mousePos["y"])
 
     i += 1
 

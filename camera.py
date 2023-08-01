@@ -45,8 +45,8 @@ class PerspectiveCamera(Camera):
 
     def __init__(self, frame_orig, pan_deg=DEFAULT_PAN_DEG, tilt_deg=DEFAULT_TILT_DEG):
         h, w, _ = frame_orig.shape
-        self.center_x = w // 2
-        self.center_y = h // 2
+        self.frame_orig_center_x = w // 2
+        self.frame_orig_center_y = h // 2
         self.set(pan_deg, tilt_deg)
 
     @property
@@ -56,6 +56,10 @@ class PerspectiveCamera(Camera):
     @property
     def fov_vert_deg(self):
         return self.fov_horiz_deg / 16 * 9
+
+    @property
+    def center(self):
+        return self.ptz2coords()
 
     @property
     def corners_ang(self):
@@ -80,11 +84,7 @@ class PerspectiveCamera(Camera):
         self.f = f
 
     def set_center(self, x, y):
-        x -= self.center_x
-        y -= self.center_y
-        pan_deg = np.rad2deg(np.arctan(x / self.f))
-        tilt_deg = np.rad2deg(
-            np.arctan(y / (np.sqrt(PerspectiveCamera.CYLLINDER_RADIUS**2 + x**2))))
+        pan_deg, tilt_deg = self.coords2ptz(x, y)
         self.set(pan_deg, tilt_deg, self.f)
 
     def reset(self):
@@ -100,11 +100,11 @@ class PerspectiveCamera(Camera):
         print()
 
     def shift_coords(self, x, y):
-        x = x + self.center_x
-        y = y + self.center_y
+        x = x + self.frame_orig_center_x
+        y = y + self.frame_orig_center_y
         return x, y
 
-    def get_coords(self, theta_deg, phi_deg, f):
+    def ptz2coords(self, theta_deg, phi_deg, f):
         theta_rad = np.deg2rad(theta_deg)
         x = np.tan(theta_rad) * PerspectiveCamera.CYLLINDER_RADIUS
 
@@ -113,9 +113,17 @@ class PerspectiveCamera(Camera):
             np.sqrt(PerspectiveCamera.CYLLINDER_RADIUS**2 + x**2)
         return self.shift_coords(x, y)
 
+    def coords2ptz(self, x, y):
+        x -= self.frame_orig_center_x
+        y -= self.frame_orig_center_y
+        pan_deg = np.rad2deg(np.arctan(x / self.f))
+        tilt_deg = np.rad2deg(
+            np.arctan(y / (np.sqrt(PerspectiveCamera.CYLLINDER_RADIUS**2 + x**2))))
+        return pan_deg, tilt_deg
+
     def get_corner_pts(self):
         pts = [
-            self.get_coords(
+            self.ptz2coords(
                 self.pan_deg + pan_deg,
                 self.tilt_deg + tilt_deg,
                 self.f)
@@ -133,6 +141,11 @@ class PerspectiveCamera(Camera):
     def draw_roi_(self, frame_orig, color=colors["yellow"]):
         pts = self.get_corner_pts()
         cv2.polylines(frame_orig, [pts], True, color, thickness=10)
+        self.draw_center_(frame_orig)
+
+    def draw_center_(self, frame, color=colors["red"]):
+        cv2.circle(frame, (self.frame_orig_center_x, self.frame_orig_center_y),
+                   radius=10, color=color, thickness=10)
 
     def get_frame(self, frame_orig):
         return cv2.warpPerspective(
@@ -160,7 +173,7 @@ class PerspectiveCamera(Camera):
             return
         self.f = f
 
-    def process_input(self, key):
+    def process_input(self, key, mouseX, mouseY):
         is_alive = True
         if key == ord('d'):
             self.pan(PerspectiveCamera.PAN_DX)
@@ -176,6 +189,8 @@ class PerspectiveCamera(Camera):
             self.zoom(-PerspectiveCamera.ZOOM_DZ)
         elif key == ord('r'):
             self.reset()
+        elif key == ord('f'):
+            self.set_center(mouseX, mouseY)
         elif key == ord('q'):
             is_alive = False
         return is_alive
