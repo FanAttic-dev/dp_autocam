@@ -22,9 +22,9 @@ def mouse_callback(event, x, y, flags, param):
 
 
 """ Init """
-video_name = get_random_file(videos_dir)
-# video_name = Path(
-#     "/home/atti/source/datasets/SoccerTrack/wide_view/videos/F_20200220_1_0060_0090.mp4")
+# video_name = get_random_file(videos_dir)
+video_name = Path(
+    "/home/atti/source/datasets/SoccerTrack/wide_view/videos/F_20200220_1_0120_0150.mp4")
 print(f"Video: {video_name}")
 player = VideoPlayer(video_name)
 
@@ -51,7 +51,6 @@ while is_alive:
     """ Detection """
     # Split frame, detect objects, merge & draw bounding boxes
     frames = frame_splitter.split(frame_orig)
-    frame_splitter.draw_roi_(frame_orig)
 
     bbs, _ = detector.detect(frames)
     bbs_ball, bbs_ball_frame = ball_detector.detect(frames)
@@ -65,11 +64,12 @@ while is_alive:
     detector.draw_bbs_(frame_orig, bbs_joined)
 
     """ ROI """
-    camera.update_by_bbs(bbs_joined, bb_ball)
+    camera.update_by_bbs(bbs_joined, bb_ball, top_down)
     camera.draw_center_(frame_orig)
     frame = camera.get_frame(frame_orig)
     player.show_frame(frame, "ROI")
     camera.print()
+    frame_splitter.draw_roi_(frame_orig)
     camera.draw_roi_(frame_orig)
     player.show_frame(frame_orig, "Original")
 

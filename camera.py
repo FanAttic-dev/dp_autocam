@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from constants import colors
+from utils import apply_homography, average_point
 
 
 class Camera:
@@ -77,6 +78,10 @@ class PerspectiveCamera(Camera):
 
         H, _ = cv2.findHomography(src, dst)
         return H
+
+    @property
+    def H_inv(self):
+        return np.linalg.inv(self.H)
 
     def set(self, pan_deg, tilt_deg, f=DEFAULT_F):
         self.pan_deg = pan_deg
@@ -198,19 +203,34 @@ class PerspectiveCamera(Camera):
             is_alive = False
         return is_alive
 
-    def update_by_bbs(self, bbs, bb_ball):
-        if not bb_ball:
-            return
+    def update_by_bbs(self, bbs, bb_ball, top_down):
+        def update_center(x, y, alpha=0.1):
+            x_center, y_center = self.center
+            x = x * alpha + x_center * (1-alpha)
+            y = y * alpha + y_center * (1-alpha)
+            self.set_center(x, y)
 
-        x1, y1, x2, y2 = bb_ball
-        x_ball = (x1 + x2) // 2
-        y_ball = (y1 + y2) // 2
-        x_center, y_center = self.center
+        def measure_ball(bb_ball):
+            x1, y1, x2, y2 = bb_ball
+            x_ball = (x1 + x2) // 2
+            y_ball = (y1 + y2) // 2
+            return x_ball, y_ball
 
-        alpha = 0.1
-        x = x_ball * alpha + x_center * (1-alpha)
-        y = y_ball * alpha + y_center * (1-alpha)
-        self.set_center(x, y)
+        def measure_players(bbs):
+            pts = top_down.bbs2points(bbs)
+            x, y = average_point(pts)
+            x, y = apply_homography(top_down.H_inv, x, y)
+            return x, y
+
+        _, y_center = self.center
+
+        if bb_ball:
+            x, _ = measure_ball(bb_ball)
+            update_center(x, y_center)
+
+        if bbs:
+            x, _ = measure_players(bbs)
+            update_center(x, y_center)
 
 
 class FixedHeightCamera(Camera):

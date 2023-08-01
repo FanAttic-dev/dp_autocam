@@ -68,3 +68,7 @@ def add_bb_(bbs, bb, cls):
 
 def add_bb_ball_(bbs, bb_ball):
     add_bb_(bbs, bb_ball, 0)
+
+
+def average_point(points):
+    return np.mean(np.array(points["points"]), axis=0)

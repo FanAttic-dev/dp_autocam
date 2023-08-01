@@ -19,6 +19,10 @@ class TopDown:
         self.H, _ = cv2.findHomography(coords_to_pts(video_pitch_coords),
                                        coords_to_pts(self.pitch_coords))
 
+    @property
+    def H_inv(self):
+        return np.linalg.inv(self.H)
+
     def warp_frame(self, frame):
         return cv2.warpPerspective(
             frame, self.H, (self.pitch_model.shape[1], self.pitch_model.shape[0]))
