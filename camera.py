@@ -50,7 +50,7 @@ class PerspectiveCamera(Camera):
         self.frame_orig_center_x = w // 2
         self.frame_orig_center_y = h // 2
         self.set(pan_deg, tilt_deg)
-        self.kf = KalmanFilter(dt=0.01, acc_x=1, acc_y=1,
+        self.kf = KalmanFilter(dt=0.1, acc_x=1, acc_y=1,
                                std_acc=1, std_measurement=10)
         self.kf.set_pos(*self.center)
 

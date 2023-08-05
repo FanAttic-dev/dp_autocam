@@ -36,8 +36,8 @@ ball_detector = YoloBallDetector(pitch_coords)
 is_alive, frame_orig = player.get_next_frame()
 camera = PerspectiveCamera(frame_orig)
 frame_splitter = PerspectiveFrameSplitter(frame_orig)
-player.create_window("Original")
-cv2.setMouseCallback("Original", mouse_callback)
+# player.create_window("Original")
+# cv2.setMouseCallback("Original", mouse_callback)
 
 i = 0
 while is_alive:
@@ -52,35 +52,40 @@ while is_alive:
     # Split frame, detect objects, merge & draw bounding boxes
     frames = frame_splitter.split(frame_orig)
 
-    bbs, _ = detector.detect(frames)
+    # bbs, _ = detector.detect(frames)
     bbs_ball, bbs_ball_frame = ball_detector.detect(frames)
     # for i, ball_frame in enumerate(bbs_ball_frame):
     #     player.show_frame(ball_frame, f"ball frame {i}")
 
-    bbs_joined = frame_splitter.join_bbs(bbs)
+    # bbs_joined = frame_splitter.join_bbs(bbs)
+    bbs_joined = {
+        "boxes": [],
+        "cls": []
+    }
     bbs_ball_joined = frame_splitter.join_bbs(bbs_ball)
     bb_ball = ball_detector.get_ball(bbs_ball_joined)
     add_bb_ball_(bbs_joined, bb_ball)
     detector.draw_bbs_(frame_orig, bbs_joined)
 
     """ ROI """
-    camera.update_by_bbs(bbs_joined, bb_ball, top_down)
-    camera.draw_center_(frame_orig)
+    # camera.update_by_bbs(bbs_joined, bb_ball, top_down)
+    camera.update_by_bbs([], bb_ball, top_down)
     frame = camera.get_frame(frame_orig)
     player.show_frame(frame, "ROI")
-    camera.print()
-    frame_splitter.draw_roi_(frame_orig)
-    camera.draw_roi_(frame_orig)
-    player.show_frame(frame_orig, "Original")
+    # camera.print()
+    # camera.draw_center_(frame_orig)
+    # frame_splitter.draw_roi_(frame_orig)
+    # camera.draw_roi_(frame_orig)
+    # player.show_frame(frame_orig, "Original")
 
     """ Top-down """
-    top_down_frame = top_down.pitch_model.copy()
-    top_down.draw_roi_(top_down_frame, camera)
+    # top_down_frame = top_down.pitch_model.copy()
+    # top_down.draw_roi_(top_down_frame, camera)
 
-    top_down_pts = top_down.bbs2points(bbs_joined)
-    top_down.draw_points_(top_down_frame, top_down_pts)
+    # top_down_pts = top_down.bbs2points(bbs_joined)
+    # top_down.draw_points_(top_down_frame, top_down_pts)
 
-    player.show_frame(top_down_frame, "top down")
+    # player.show_frame(top_down_frame, "top down")
 
     """ Warp frame """
     # frame_warped = top_down.warp_frame(frame_orig)
