@@ -208,11 +208,9 @@ class PerspectiveCamera(Camera):
         return is_alive
 
     def update_by_bbs(self, bbs, bb_ball, top_down):
-        def update_center(x, y, alpha=0.1):
-            x_center, y_center = self.center
-            x = x * alpha + x_center * (1-alpha)
-            y = y * alpha + y_center * (1-alpha)
-            self.set_center(x, y)
+        def update_center(x, y):
+            self.kf.update(x, y)
+            self.set_center(*self.kf.pos)
 
         def measure_ball(bb_ball):
             x1, y1, x2, y2 = bb_ball
@@ -227,6 +225,8 @@ class PerspectiveCamera(Camera):
             return x, y
 
         _, y_center = self.center
+
+        self.kf.predict(decelerate=bb_ball is None)
 
         if bb_ball:
             x, _ = measure_ball(bb_ball)

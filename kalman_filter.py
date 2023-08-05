@@ -56,6 +56,10 @@ class KalmanFilter():
             [-self.x[3].item()]
         ])
 
+    @property
+    def pos(self):
+        return self.x[0].item(), self.x[2].item()
+
     def set_pos(self, x, y):
         self.x[0] = x
         self.x[2] = y
@@ -84,4 +88,3 @@ class KalmanFilter():
         I = np.eye(self.H.shape[1])
         I_KH = I - (K @ self.H)
         self.P = I_KH @ self.P @ I_KH.T + K @ self.R @ K.T
-        return K
