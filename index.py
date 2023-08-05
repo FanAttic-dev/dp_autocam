@@ -49,23 +49,26 @@ while is_alive:
     frame_orig = detector.preprocess(frame_orig)
 
     """ Detection """
-    # Split frame, detect objects, merge & draw bounding boxes
-    frames = frame_splitter.split(frame_orig)
+    if not camera.pause_measurements:
+        # Split frame, detect objects, merge & draw bounding boxes
+        frames = frame_splitter.split(frame_orig)
 
-    # bbs, _ = detector.detect(frames)
-    bbs_ball, bbs_ball_frame = ball_detector.detect(frames)
-    # for i, ball_frame in enumerate(bbs_ball_frame):
-    #     player.show_frame(ball_frame, f"ball frame {i}")
+        # bbs, _ = detector.detect(frames)
+        bbs_ball, bbs_ball_frame = ball_detector.detect(frames)
+        # for i, ball_frame in enumerate(bbs_ball_frame):
+        #     player.show_frame(ball_frame, f"ball frame {i}")
 
-    # bbs_joined = frame_splitter.join_bbs(bbs)
-    bbs_joined = {
-        "boxes": [],
-        "cls": []
-    }
-    bbs_ball_joined = frame_splitter.join_bbs(bbs_ball)
-    bb_ball = ball_detector.get_ball(bbs_ball_joined)
-    add_bb_ball_(bbs_joined, bb_ball)
-    detector.draw_bbs_(frame_orig, bbs_joined)
+        # bbs_joined = frame_splitter.join_bbs(bbs)
+        bbs_joined = {
+            "boxes": [],
+            "cls": []
+        }
+        bbs_ball_joined = frame_splitter.join_bbs(bbs_ball)
+        bb_ball = ball_detector.get_ball(bbs_ball_joined)
+        add_bb_ball_(bbs_joined, bb_ball)
+        detector.draw_bbs_(frame_orig, bbs_joined)
+    else:
+        bb_ball = []
 
     """ ROI """
     # camera.update_by_bbs(bbs_joined, bb_ball, top_down)
@@ -74,9 +77,9 @@ while is_alive:
     player.show_frame(frame, "ROI")
     # camera.print()
     # camera.draw_center_(frame_orig)
-    # frame_splitter.draw_roi_(frame_orig)
-    # camera.draw_roi_(frame_orig)
-    # player.show_frame(frame_orig, "Original")
+    frame_splitter.draw_roi_(frame_orig)
+    camera.draw_roi_(frame_orig)
+    player.show_frame(frame_orig, "Original")
 
     """ Top-down """
     # top_down_frame = top_down.pitch_model.copy()

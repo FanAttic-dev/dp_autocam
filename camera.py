@@ -50,9 +50,10 @@ class PerspectiveCamera(Camera):
         self.frame_orig_center_x = w // 2
         self.frame_orig_center_y = h // 2
         self.set(pan_deg, tilt_deg)
-        self.kf = KalmanFilter(dt=0.1, acc_x=1, acc_y=0,
-                               std_acc=1, std_measurement=10)
+        self.kf = KalmanFilter(dt=0.1, acc_x=10, acc_y=0,
+                               std_acc=0.001, std_measurement=40)
         self.kf.set_pos(*self.center)
+        self.pause_measurements = False
 
     @property
     def fov_horiz_deg(self):
@@ -205,6 +206,8 @@ class PerspectiveCamera(Camera):
             self.set_center(mouseX, mouseY)
         elif key == ord('q'):
             is_alive = False
+        elif key == ord('n'):
+            self.pause_measurements = not self.pause_measurements
         return is_alive
 
     def update_by_bbs(self, bbs, bb_ball, top_down):
@@ -222,15 +225,15 @@ class PerspectiveCamera(Camera):
 
         _, y_center = self.center
 
-        self.kf.predict(decelerate=bb_ball is None)
+        self.kf.predict(decelerate=(len(bb_ball) == 0))
         print(
             f"Pos X: {self.kf.x[0].item()}, Velocity X: {self.kf.x[1].item()}, P: {self.kf.P[0][0].item()}, K: {self.kf.K[0][0].item()}")
+        x_pred, y_pred = self.kf.pos
+        self.set_center(x_pred, y_pred)
 
-        if bb_ball:
+        if bb_ball and not self.pause_measurements:
             x_ball, _ = measure_ball(bb_ball)
             self.kf.update(x_ball, y_center)
-            x_pred, y_pred = self.kf.pos
-            self.set_center(x_pred, y_pred)
 
         if bbs:
             x, _ = measure_players(bbs)

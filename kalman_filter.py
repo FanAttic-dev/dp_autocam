@@ -67,8 +67,10 @@ class KalmanFilter():
         self.x[2] = y
 
     def predict(self, decelerate=False):
-        # u = self.u_dec if decelerate else self.u_acc
-        u = self.u_acc
+        u = self.u_dec if decelerate else self.u_acc
+        if decelerate:
+            print("Decelerating")
+        # u = self.u_acc
         self.x = self.A @ self.x + self.B @ u
 
         # P = A * P * A' + Q
