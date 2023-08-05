@@ -50,7 +50,7 @@ class PerspectiveCamera(Camera):
         self.frame_orig_center_x = w // 2
         self.frame_orig_center_y = h // 2
         self.set(pan_deg, tilt_deg)
-        self.kf = KalmanFilter(dt=0.1, acc_x=1, acc_y=1,
+        self.kf = KalmanFilter(dt=0.1, acc_x=1, acc_y=0,
                                std_acc=1, std_measurement=10)
         self.kf.set_pos(*self.center)
 
@@ -208,10 +208,6 @@ class PerspectiveCamera(Camera):
         return is_alive
 
     def update_by_bbs(self, bbs, bb_ball, top_down):
-        def update_center(x, y):
-            self.kf.update(x, y)
-            self.set_center(*self.kf.pos)
-
         def measure_ball(bb_ball):
             x1, y1, x2, y2 = bb_ball
             x_ball = (x1 + x2) // 2
@@ -227,14 +223,18 @@ class PerspectiveCamera(Camera):
         _, y_center = self.center
 
         self.kf.predict(decelerate=bb_ball is None)
+        print(
+            f"Pos X: {self.kf.x[0].item()}, Velocity X: {self.kf.x[1].item()}, P: {self.kf.P[0][0].item()}, K: {self.kf.K[0][0].item()}")
 
         if bb_ball:
-            x, _ = measure_ball(bb_ball)
-            update_center(x, y_center)
+            x_ball, _ = measure_ball(bb_ball)
+            self.kf.update(x_ball, y_center)
+            x_pred, y_pred = self.kf.pos
+            self.set_center(x_pred, y_pred)
 
         if bbs:
             x, _ = measure_players(bbs)
-            update_center(x, y_center)
+            # TODO
 
 
 class FixedHeightCamera(Camera):

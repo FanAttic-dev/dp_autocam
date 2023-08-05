@@ -49,12 +49,14 @@ class KalmanFilter():
 
         self.R = np.eye(self.H.shape[0]) * std_measurement**2
 
+        self.K = self.x
+
     @property
     def u_dec(self):
         return np.array([
             [-self.x[1].item()],
             [-self.x[3].item()]
-        ])
+        ]) * 0.5
 
     @property
     def pos(self):
@@ -65,7 +67,8 @@ class KalmanFilter():
         self.x[2] = y
 
     def predict(self, decelerate=False):
-        u = self.u_dec if decelerate else self.u_acc
+        # u = self.u_dec if decelerate else self.u_acc
+        u = self.u_acc
         self.x = self.A @ self.x + self.B @ u
 
         # P = A * P * A' + Q
@@ -77,6 +80,7 @@ class KalmanFilter():
         # K = P * H' * inv(H * P * H' + R)
         S = np.linalg.inv(self.H @ self.P @ self.H.T + self.R)
         K = self.P @ self.H.T @ S
+        self.K = K
 
         z = np.array([
             [x_meas],
