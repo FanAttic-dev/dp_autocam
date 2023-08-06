@@ -41,6 +41,8 @@ class KalmanFilterBase():
 
 
 class KalmanFilter(KalmanFilterBase):
+    DECELERATION_RATE = 1
+
     def __init__(self, dt, acc_x, acc_y, std_acc, std_measurement):
         self.dt = dt
 
@@ -60,6 +62,15 @@ class KalmanFilter(KalmanFilterBase):
             [0, 0, 0, 1, dt, dt**2 / 2],
             [0, 0, 0, 0, 1, dt],
             [0, 0, 0, 0, 0, 1]
+        ])
+
+        self.B = np.array([
+            [dt**2 / 2, 0],
+            [dt, 0],
+            [1, 0],
+            [0, dt**2 / 2],
+            [0, dt],
+            [0, 1]
         ])
 
         self.H = np.array([
@@ -83,8 +94,22 @@ class KalmanFilter(KalmanFilterBase):
         self.K = self.x
 
     @property
+    def u_dec(self):
+        v_x, v_y = self.vel
+        v = np.array([v_x, v_y])
+        v_x_norm, v_y_norm = v / np.linalg.norm(v)
+        return np.array([
+            [-v_x_norm],
+            [-v_y_norm]
+        ]) * KalmanFilterControl.DECELERATION_RATE
+
+    @property
     def pos(self):
         return self.x[0].item(), self.x[3].item()
+
+    @property
+    def vel(self):
+        return self.x[1].item(), self.x[4].item()
 
     def set_pos(self, x, y):
         self.x[0] = x
@@ -97,6 +122,18 @@ class KalmanFilter(KalmanFilterBase):
                f"P x: {self.P[0][0].item():.2f}, "
                f"K x: {self.K[0][0].item():.2f}"
                ))
+
+    def predict(self, decelerate=False):
+        self.x = self.A @ self.x
+
+        if decelerate:
+            print("Decelerating")
+            self.x += self.B @ self.u_dec
+
+        # P = A * P * A' + Q
+        self.P = self.A @ self.P @ self.A.T + self.Q
+
+        return self.pos
 
 
 class KalmanFilterControl(KalmanFilterBase):

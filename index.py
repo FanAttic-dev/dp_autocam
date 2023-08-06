@@ -77,9 +77,9 @@ while is_alive:
     player.show_frame(frame, "ROI")
     # camera.print()
     # camera.draw_center_(frame_orig)
-    frame_splitter.draw_roi_(frame_orig)
-    camera.draw_roi_(frame_orig)
-    player.show_frame(frame_orig, "Original")
+    # frame_splitter.draw_roi_(frame_orig)
+    # camera.draw_roi_(frame_orig)
+    # player.show_frame(frame_orig, "Original")
 
     """ Top-down """
     # top_down_frame = top_down.pitch_model.copy()
