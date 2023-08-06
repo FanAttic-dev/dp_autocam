@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 from constants import colors
-from kalman_filter import KalmanFilter
+from kalman_filter import KalmanFilterControl, KalmanFilter
 from utils import apply_homography, average_point
 
 
@@ -50,8 +50,8 @@ class PerspectiveCamera(Camera):
         self.frame_orig_center_x = w // 2
         self.frame_orig_center_y = h // 2
         self.set(pan_deg, tilt_deg)
-        self.kf = KalmanFilter(dt=0.1, acc_x=10, acc_y=0,
-                               std_acc=0.001, std_measurement=40)
+        self.kf = KalmanFilterControl(dt=0.1, acc_x=10, acc_y=0,
+                                      std_acc=0.1, std_measurement=10)
         self.kf.set_pos(*self.center)
         self.pause_measurements = False
 
@@ -226,8 +226,7 @@ class PerspectiveCamera(Camera):
         _, y_center = self.center
 
         self.kf.predict(decelerate=(len(bb_ball) == 0))
-        print(
-            f"Pos X: {self.kf.x[0].item()}, Velocity X: {self.kf.x[1].item()}, P: {self.kf.P[0][0].item()}, K: {self.kf.K[0][0].item()}")
+        self.kf.print()
         x_pred, y_pred = self.kf.pos
         self.set_center(x_pred, y_pred)
 
