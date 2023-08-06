@@ -41,7 +41,7 @@ class KalmanFilterBase():
 
 
 class KalmanFilter(KalmanFilterBase):
-    DECELERATION_RATE = 1
+    DECELERATION_RATE = 0.3
 
     def __init__(self, dt, acc_x, acc_y, std_acc, std_measurement):
         self.dt = dt
@@ -62,15 +62,6 @@ class KalmanFilter(KalmanFilterBase):
             [0, 0, 0, 1, dt, dt**2 / 2],
             [0, 0, 0, 0, 1, dt],
             [0, 0, 0, 0, 0, 1]
-        ])
-
-        self.B = np.array([
-            [dt**2 / 2, 0],
-            [dt, 0],
-            [0, 0],
-            [0, dt**2 / 2],
-            [0, dt],
-            [0, 0]
         ])
 
         self.H = np.array([
@@ -94,20 +85,12 @@ class KalmanFilter(KalmanFilterBase):
         self.K = self.x
 
     @property
-    def u_dec(self):
-        v_x, v_y = self.vel
-        return np.array([
-            [-v_x],
-            [-v_y]
-        ]) * KalmanFilterControl.DECELERATION_RATE
-
-    @property
     def pos(self):
-        return self.x[0].item(), self.x[3].item()
+        return np.array([self.x[0], self.x[3]])
 
     @property
     def vel(self):
-        return self.x[1].item(), self.x[4].item()
+        return np.array([self.x[1], self.x[4]])
 
     def set_pos(self, x, y):
         self.x[0] = x
@@ -130,8 +113,7 @@ class KalmanFilter(KalmanFilterBase):
 
         if decelerate:
             print("Decelerating")
-            self.set_acc(0, 0)
-            self.x += self.B @ self.u_dec
+            self.set_acc(*(-self.vel * KalmanFilter.DECELERATION_RATE))
 
         # P = A * P * A' + Q
         self.P = self.A @ self.P @ self.A.T + self.Q
@@ -140,7 +122,7 @@ class KalmanFilter(KalmanFilterBase):
 
 
 class KalmanFilterControl(KalmanFilterBase):
-    DECELERATION_RATE = 0.5
+    DECELERATION_RATE = 0.1
 
     def __init__(self, dt, acc_x, acc_y, std_acc, std_measurement):
         self.dt = dt
@@ -200,7 +182,7 @@ class KalmanFilterControl(KalmanFilterBase):
 
     @property
     def pos(self):
-        return self.x[0].item(), self.x[2].item()
+        return np.array([self.x[0], self.x[3]])
 
     def set_pos(self, x, y):
         self.x[0] = x
