@@ -67,10 +67,10 @@ class KalmanFilter(KalmanFilterBase):
         self.B = np.array([
             [dt**2 / 2, 0],
             [dt, 0],
-            [1, 0],
+            [0, 0],
             [0, dt**2 / 2],
             [0, dt],
-            [0, 1]
+            [0, 0]
         ])
 
         self.H = np.array([
@@ -96,11 +96,9 @@ class KalmanFilter(KalmanFilterBase):
     @property
     def u_dec(self):
         v_x, v_y = self.vel
-        v = np.array([v_x, v_y])
-        v_x_norm, v_y_norm = v / np.linalg.norm(v)
         return np.array([
-            [-v_x_norm],
-            [-v_y_norm]
+            [-v_x],
+            [-v_y]
         ]) * KalmanFilterControl.DECELERATION_RATE
 
     @property
@@ -115,6 +113,10 @@ class KalmanFilter(KalmanFilterBase):
         self.x[0] = x
         self.x[3] = y
 
+    def set_acc(self, acc_x, acc_y):
+        self.x[2] = acc_x
+        self.x[5] = acc_y
+
     def print(self):
         print((f"Pos x: {self.x[0].item():.2f}, "
                f"Vel x: {self.x[1].item():.2f}, "
@@ -128,6 +130,7 @@ class KalmanFilter(KalmanFilterBase):
 
         if decelerate:
             print("Decelerating")
+            self.set_acc(0, 0)
             self.x += self.B @ self.u_dec
 
         # P = A * P * A' + Q
