@@ -43,16 +43,16 @@ class KalmanFilterBase():
 class KalmanFilter(KalmanFilterBase):
     DECELERATION_RATE = 0.3
 
-    def __init__(self, dt, acc_x, acc_y, std_acc, std_measurement):
+    def __init__(self, dt, std_acc, std_measurement):
         self.dt = dt
 
         self.x = np.array([
             [0],  # x
             [0],  # x'
-            [acc_x],  # x''
+            [0],  # x''
             [0],  # y
             [0],  # y'
-            [acc_y]  # y''
+            [0]   # y''
         ])
 
         self.A = np.array([
