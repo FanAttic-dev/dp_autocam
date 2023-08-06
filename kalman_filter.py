@@ -108,12 +108,12 @@ class KalmanFilter(KalmanFilterBase):
                f"K x: {self.K[0][0].item():.2f}"
                ))
 
-    def predict(self, decelerate=False):
+    def predict(self):
         self.x = self.A @ self.x
 
-        if decelerate:
-            print("Decelerating")
-            self.set_acc(*(-self.vel * KalmanFilter.DECELERATION_RATE))
+        # if decelerate:
+        #     print("Decelerating")
+        #     self.set_acc(*(-self.vel * KalmanFilter.DECELERATION_RATE))
 
         # P = A * P * A' + Q
         self.P = self.A @ self.P @ self.A.T + self.Q

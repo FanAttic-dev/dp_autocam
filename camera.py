@@ -51,9 +51,10 @@ class PerspectiveCamera(Camera):
         self.frame_orig_center_y = h // 2
         self.set(pan_deg, tilt_deg)
         self.kf = KalmanFilter(dt=0.1, acc_x=0, acc_y=0,
-                               std_acc=0.01, std_measurement=40)
+                               std_acc=0.001, std_measurement=90)
         self.kf.set_pos(*self.center)
         self.pause_measurements = False
+        self.measurement_last = self.center
 
     @property
     def fov_horiz_deg(self):
@@ -225,14 +226,19 @@ class PerspectiveCamera(Camera):
 
         _, y_center = self.center
 
-        self.kf.predict(decelerate=(len(bb_ball) == 0))
+        # self.kf.predict(decelerate=(len(bb_ball) == 0))
+        self.kf.predict()
         self.kf.print()
         x_pred, y_pred = self.kf.pos
         self.set_center(x_pred, y_pred)
 
         if bb_ball and not self.pause_measurements:
             x_ball, _ = measure_ball(bb_ball)
-            self.kf.update(x_ball, y_center)
+            measurement = (x_ball, y_center)
+            self.kf.update(*measurement)
+            self.measurement_last = measurement
+        else:
+            self.kf.update(*self.measurement_last)
 
         if bbs:
             x, _ = measure_players(bbs)
