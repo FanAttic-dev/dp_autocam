@@ -2,6 +2,7 @@ import numpy as np
 
 
 class KalmanFilterBase():
+
     @property
     def pos(self):
         ...
@@ -24,6 +25,7 @@ class KalmanFilterBase():
         # K = P * H' * inv(H * P * H' + R)
         S = np.linalg.inv(self.H @ self.P @ self.H.T + self.R)
         K = self.P @ self.H.T @ S
+        self.K = K
 
         z = np.array([
             [x_meas],
@@ -78,6 +80,8 @@ class KalmanFilter(KalmanFilterBase):
 
         self.R = np.eye(self.H.shape[0]) * std_measurement**2
 
+        self.K = self.x
+
     @property
     def pos(self):
         return self.x[0].item(), self.x[3].item()
@@ -87,7 +91,12 @@ class KalmanFilter(KalmanFilterBase):
         self.x[3] = y
 
     def print(self):
-        ...
+        print((f"Pos x: {self.x[0].item():.2f}, "
+               f"Vel x: {self.x[1].item():.2f}, "
+               f"Acc x: {self.x[2].item():.2f} "
+               f"P x: {self.P[0][0].item():.2f}, "
+               f"K x: {self.K[0][0].item():.2f}"
+               ))
 
 
 class KalmanFilterControl(KalmanFilterBase):
