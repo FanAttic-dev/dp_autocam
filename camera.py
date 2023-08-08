@@ -225,7 +225,7 @@ class PerspectiveCamera(Camera):
 
         _, y_center = self.center
 
-        # self.kf.predict(decelerate=(len(bb_ball) == 0))
+        # self.kf.decelerate = len(bb_ball) == 0
         self.kf.predict()
         self.kf.print()
         x_pred, y_pred = self.kf.pos

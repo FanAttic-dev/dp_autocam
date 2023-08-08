@@ -2,13 +2,34 @@ import numpy as np
 
 
 class KalmanFilterBase():
+    def __init__(self):
+        self.decelerate = False
 
     @property
     def pos(self):
         ...
 
+    @property
+    def vel(self):
+        ...
+
+    @property
+    def K(self):
+        # K = P * H' * inv(H * P * H' + R)
+        S = np.linalg.inv(self.H @ self.P @ self.H.T + self.R)
+        return self.P @ self.H.T @ S
+
     def set_pos(self, x, y):
         ...
+
+    def set_P(self):
+        self.P = np.eye(self.A.shape[1])
+
+    def set_Q(self):
+        ...
+
+    def set_R(self, std_measurement):
+        self.R = np.eye(self.H.shape[0]) * std_measurement**2
 
     def print(self):
         ...
@@ -22,26 +43,82 @@ class KalmanFilterBase():
         return self.pos
 
     def update(self, x_meas, y_meas):
-        # K = P * H' * inv(H * P * H' + R)
-        S = np.linalg.inv(self.H @ self.P @ self.H.T + self.R)
-        self.K = self.P @ self.H.T @ S
-
         z = np.array([
             [x_meas],
             [y_meas]
         ])
-        self.x = self.x + self.K @ (z - self.H @ self.x)
+
+        K = self.K
+        self.x = self.x + K @ (z - self.H @ self.x)
 
         # P = (I - K * H) * P * (I - K * H)' + K * R * K
         I = np.eye(self.H.shape[1])
-        I_KH = I - (self.K @ self.H)
-        self.P = I_KH @ self.P @ I_KH.T + self.K @ self.R @ self.K.T
+        I_KH = I - (K @ self.H)
+        self.P = I_KH @ self.P @ I_KH.T + K @ self.R @ K.T
+
+
+class KalmanFilterVel(KalmanFilterBase):
+    def __init__(self, dt, std_acc, std_measurement):
+        super().__init__()
+        self.dt = dt
+
+        self.x = np.array([
+            [0],  # x
+            [0],  # x'
+            [0],  # y
+            [0],  # y'
+        ])
+
+        self.A = np.array([
+            [1, dt, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, dt],
+            [0, 0, 0, 1],
+        ])
+
+        self.H = np.array([
+            [1, 0, 0, 0],
+            [0, 0, 1, 0]
+        ])
+
+        self.set_Q(std_acc)
+        self.set_R(std_measurement)
+        self.set_P()
+
+    @property
+    def pos(self):
+        return np.array([self.x[0], self.x[2]])
+
+    @property
+    def vel(self):
+        return np.array([self.x[1], self.x[3]])
+
+    def set_pos(self, x, y):
+        self.x[0] = x
+        self.x[2] = y
+
+    def set_Q(self, std_acc):
+        dt = self.dt
+        self.Q = np.array([
+            [dt**4 / 4, dt**3 / 2, 0, 0],
+            [dt**3 / 2, dt**2, 0, 0],
+            [0, 0, dt**4 / 4, dt**3 / 2],
+            [0, 0, dt**3 / 2, dt**2],
+        ]) * std_acc**2
+
+    def print(self):
+        print((f"Pos: [{self.x[0].item():.2f}, {self.x[2].item():.2f}], "
+               f"Vel: [{self.x[1].item():.2f}, {self.x[3].item():.2f}], "
+               f"P x: {self.P[0][0].item():.2f}, "
+               f"K x: {self.K[0][0].item():.2f}"
+               ))
 
 
 class KalmanFilterAcc(KalmanFilterBase):
     DECELERATION_RATE = 0.8
 
     def __init__(self, dt, std_acc, std_measurement):
+        super().__init__()
         self.dt = dt
 
         self.x = np.array([
@@ -67,13 +144,9 @@ class KalmanFilterAcc(KalmanFilterBase):
             [0, 0, 0, 1, 0, 0]
         ])
 
+        self.set_P()
         self.set_Q(std_acc)
-
-        self.P = np.eye(self.A.shape[1])
-
         self.set_R(std_measurement)
-
-        self.K = None
 
     @property
     def pos(self):
@@ -91,9 +164,6 @@ class KalmanFilterAcc(KalmanFilterBase):
         self.x[2] = acc_x
         self.x[5] = acc_y
 
-    def set_R(self, std_measurement):
-        self.R = np.eye(self.H.shape[0]) * std_measurement**2
-
     def set_Q(self, std_acc):
         dt = self.dt
         self.Q = np.array([
@@ -106,18 +176,18 @@ class KalmanFilterAcc(KalmanFilterBase):
         ]) * std_acc**2
 
     def print(self):
-        print((f"Pos x: {self.x[0].item():.2f}, "
-               f"Vel x: {self.x[1].item():.2f}, "
-               f"Acc x: {self.x[2].item():.2f}, "
+        print((f"Pos: [{self.x[0].item():.2f}, {self.x[3].item():.2f}], "
+               f"Vel: [{self.x[1].item():.2f}, {self.x[4].item():.2f}], "
+               f"Acc: [{self.x[2].item():.2f}, {self.x[5].item():.2f}], "
                f"P x: {self.P[0][0].item():.2f}, "
-               f"K x: {self.K[0][0].item() if self.K is not None else 0:.2f}"
+               f"K x: {self.K[0][0].item():.2f}"
                ))
 
-    def predict(self, decelerate=False):
+    def predict(self):
         self.x = self.A @ self.x
 
-        if decelerate:
-            # print("Decelerating")
+        if self.decelerate:
+            print("Decelerating")
             self.set_acc(*(-self.vel * KalmanFilterAcc.DECELERATION_RATE))
 
         # P = A * P * A' + Q
@@ -130,6 +200,7 @@ class KalmanFilterAccCtrl(KalmanFilterBase):
     DECELERATION_RATE = 0.1
 
     def __init__(self, dt, acc_x, acc_y, std_acc, std_measurement):
+        super().__init__()
         self.dt = dt
         self.acc_x = acc_x
         self.acc_y = acc_y
@@ -165,24 +236,15 @@ class KalmanFilterAccCtrl(KalmanFilterBase):
             [0, 0, 1, 0]
         ])
 
-        self.Q = np.array([
-            [dt**4 / 4, dt**3 / 2, 0, 0],
-            [dt**3 / 2, dt**2, 0, 0],
-            [0, 0, dt**4 / 4, dt**3 / 2],
-            [0, 0, dt**3 / 2, dt**2],
-        ]) * std_acc**2
-
-        self.P = np.eye(self.A.shape[1])
-
-        self.R = np.eye(self.H.shape[0]) * std_measurement**2
-
-        self.K = self.x
+        self.set_P()
+        self.set_Q(std_acc)
+        self.set_R(std_measurement)
 
     @property
     def u_dec(self):
         return np.array([
-            [-self.x[1].item()],
-            [-self.x[3].item()]
+            [-self.x[1]],
+            [-self.x[3]]
         ]) * KalmanFilterAccCtrl.DECELERATION_RATE
 
     @property
@@ -192,73 +254,6 @@ class KalmanFilterAccCtrl(KalmanFilterBase):
     def set_pos(self, x, y):
         self.x[0] = x
         self.x[2] = y
-
-    def print(self):
-        print((f"Pos x: {self.x[0].item():.2f}, "
-               f"Vel x: {self.x[1].item():.2f}, "
-               f"Acc x: {self.u_acc[0].item():.2f} "
-               f"P x: {self.P[0][0].item():.2f}, "
-               f"K x: {self.K[0][0].item() if self.K is not None else 0:.2f}"
-               ))
-
-    def predict(self, decelerate=False):
-        u = self.u_dec if decelerate else self.u_acc
-        if decelerate:
-            print("Decelerating")
-        # u = self.u_acc
-        self.x = self.A @ self.x + self.B @ u
-
-        # P = A * P * A' + Q
-        self.P = self.A @ self.P @ self.A.T + self.Q
-
-        return self.pos
-
-
-class KalmanFilterVel(KalmanFilterBase):
-    def __init__(self, dt, std_acc, std_measurement):
-        self.dt = dt
-
-        self.x = np.array([
-            [0],  # x
-            [0],  # x'
-            [0],  # y
-            [0],  # y'
-        ])
-
-        self.A = np.array([
-            [1, dt, 0, 0],
-            [0, 1, 0, 0],
-            [0, 0, 1, dt],
-            [0, 0, 0, 1],
-        ])
-
-        self.H = np.array([
-            [1, 0, 0, 0],
-            [0, 0, 1, 0]
-        ])
-
-        self.set_Q(std_acc)
-
-        self.P = np.eye(self.A.shape[1])
-
-        self.set_R(std_measurement)
-
-        self.K = None
-
-    @property
-    def pos(self):
-        return np.array([self.x[0], self.x[2]])
-
-    @property
-    def vel(self):
-        return np.array([self.x[1], self.x[3]])
-
-    def set_pos(self, x, y):
-        self.x[0] = x
-        self.x[2] = y
-
-    def set_R(self, std_measurement):
-        self.R = np.eye(self.H.shape[0]) * std_measurement**2
 
     def set_Q(self, std_acc):
         dt = self.dt
@@ -272,12 +267,17 @@ class KalmanFilterVel(KalmanFilterBase):
     def print(self):
         print((f"Pos x: {self.x[0].item():.2f}, "
                f"Vel x: {self.x[1].item():.2f}, "
+               f"Acc x: {self.u_acc[0].item():.2f} "
                f"P x: {self.P[0][0].item():.2f}, "
-               f"K x: {self.K[0][0].item() if self.K is not None else 0:.2f}"
+               f"K x: {self.K[0][0].item():.2f}"
                ))
 
-    def predict(self, decelerate=False):
-        self.x = self.A @ self.x
+    def predict(self):
+        u = self.u_dec if self.decelerate else self.u_acc
+        if self.decelerate:
+            print("Decelerating")
+        # u = self.u_acc
+        self.x = self.A @ self.x + self.B @ u
 
         # P = A * P * A' + Q
         self.P = self.A @ self.P @ self.A.T + self.Q
