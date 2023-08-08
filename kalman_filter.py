@@ -24,20 +24,18 @@ class KalmanFilterBase():
     def update(self, x_meas, y_meas):
         # K = P * H' * inv(H * P * H' + R)
         S = np.linalg.inv(self.H @ self.P @ self.H.T + self.R)
-        K = self.P @ self.H.T @ S
-        self.K = K
+        self.K = self.P @ self.H.T @ S
 
         z = np.array([
             [x_meas],
             [y_meas]
         ])
-        self.x = self.x + K @ (z - self.H @ self.x)
+        self.x = self.x + self.K @ (z - self.H @ self.x)
 
         # P = (I - K * H) * P * (I - K * H)' + K * R * K
         I = np.eye(self.H.shape[1])
-        I_KH = I - (K @ self.H)
-        self.P = I_KH @ self.P @ I_KH.T + K @ self.R @ K.T
-        return K
+        I_KH = I - (self.K @ self.H)
+        self.P = I_KH @ self.P @ I_KH.T + self.K @ self.R @ self.K.T
 
 
 class KalmanFilterAcc(KalmanFilterBase):
@@ -112,7 +110,7 @@ class KalmanFilterAcc(KalmanFilterBase):
                f"Vel x: {self.x[1].item():.2f}, "
                f"Acc x: {self.x[2].item():.2f}, "
                f"P x: {self.P[0][0].item():.2f}, "
-               f"K x: {self.K[0][0].item():.2f}"
+               f"K x: {self.K[0][0].item() if self.K is not None else 0:.2f}"
                ))
 
     def predict(self, decelerate=False):
@@ -200,7 +198,7 @@ class KalmanFilterAccCtrl(KalmanFilterBase):
                f"Vel x: {self.x[1].item():.2f}, "
                f"Acc x: {self.u_acc[0].item():.2f} "
                f"P x: {self.P[0][0].item():.2f}, "
-               f"K x: {self.K[0][0].item():.2f}"
+               f"K x: {self.K[0][0].item() if self.K is not None else 0:.2f}"
                ))
 
     def predict(self, decelerate=False):
@@ -245,7 +243,7 @@ class KalmanFilterVel(KalmanFilterBase):
 
         self.set_R(std_measurement)
 
-        self.K = self.x
+        self.K = None
 
     @property
     def pos(self):
@@ -275,7 +273,7 @@ class KalmanFilterVel(KalmanFilterBase):
         print((f"Pos x: {self.x[0].item():.2f}, "
                f"Vel x: {self.x[1].item():.2f}, "
                f"P x: {self.P[0][0].item():.2f}, "
-               f"K x: {self.K[0][0].item():.2f}"
+               f"K x: {self.K[0][0].item() if self.K is not None else 0:.2f}"
                ))
 
     def predict(self, decelerate=False):
