@@ -240,9 +240,9 @@ class PerspectiveCamera(Camera):
         else:
             self.kf.update(*self.measurement_last)
 
-        if bbs:
-            x, _ = measure_players(bbs)
-            # TODO
+        # if bbs:
+        #     x, _ = measure_players(bbs)
+        #     # TODO
 
 
 class FixedHeightCamera(Camera):

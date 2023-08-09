@@ -8,6 +8,8 @@ from utils import add_bb_, add_bb_ball_, get_random_file
 from top_down import TopDown
 from utils import load_json
 from video_player import VideoPlayer
+from video_recorder import VideoRecorder
+import argparse
 
 mousePos = {
     "x": 0,
@@ -21,12 +23,20 @@ def mouse_callback(event, x, y, flags, param):
         mousePos["y"] = y
 
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-r', "--record", action='store_true')
+    return parser.parse_args()
+
+
 """ Init """
-# video_name = get_random_file(videos_dir)
-video_name = Path(
+args = parse_args()
+
+# video_path = get_random_file(videos_dir)
+video_path = Path(
     "/home/atti/source/datasets/SoccerTrack/wide_view/videos/F_20200220_1_0120_0150.mp4")
-print(f"Video: {video_name}")
-player = VideoPlayer(video_name)
+player = VideoPlayer(video_path)
+delay = player.get_delay(args.record)
 
 pitch_coords = load_json(coords_path)
 top_down = TopDown(pitch_coords)
@@ -38,6 +48,9 @@ camera = PerspectiveCamera(frame_orig)
 frame_splitter = PerspectiveFrameSplitter(frame_orig)
 # player.create_window("Original")
 # cv2.setMouseCallback("Original", mouse_callback)
+
+if args.record:
+    recorder = VideoRecorder(player, camera.FRAME_W, camera.FRAME_H)
 
 i = 0
 while is_alive:
@@ -71,8 +84,8 @@ while is_alive:
         bb_ball = []
 
     """ ROI """
-    # camera.update_by_bbs(bbs_joined, bb_ball, top_down)
-    camera.update_by_bbs([], bb_ball, top_down)
+    camera.update_by_bbs(bbs_joined, bb_ball, top_down)
+    # camera.update_by_bbs([], bb_ball, top_down)
     frame = camera.get_frame(frame_orig)
     player.show_frame(frame, "ROI")
     # camera.print()
@@ -95,10 +108,15 @@ while is_alive:
     # player.show_frame(frame_warped, "warped")
 
     """ Input """
-    key = cv2.waitKey(0)
+    if args.record:
+        recorder.write(frame)
+
+    key = cv2.waitKey(delay)
     is_alive = camera.process_input(key, mousePos["x"], mousePos["y"])
 
     i += 1
 
-print(f"Video: {video_name}")
+print(f"Video: {video_path}")
+if args.record:
+    recorder.release()
 player.release()
