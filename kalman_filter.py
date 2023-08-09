@@ -106,12 +106,17 @@ class KalmanFilterVel(KalmanFilterBase):
             [0, 0, dt**3 / 2, dt**2],
         ]) * std_acc**2
 
+    def get_stats(self):
+        return {
+            "Pos": [f"{self.x[0].item():.2f}", f"{self.x[2].item():.2f}"],
+            "Vel": [f"{self.x[1].item():.2f}", f"{self.x[3].item():.2f}"],
+            "P x": f"{self.P[0][0].item():.2f}",
+            "K x": f"{self.K[0][0].item():.2f}",
+        }
+
     def print(self):
-        print((f"Pos: [{self.x[0].item():.2f}, {self.x[2].item():.2f}], "
-               f"Vel: [{self.x[1].item():.2f}, {self.x[3].item():.2f}], "
-               f"P x: {self.P[0][0].item():.2f}, "
-               f"K x: {self.K[0][0].item():.2f}"
-               ))
+        stats = self.get_stats()
+        print(str(stats))
 
 
 class KalmanFilterAcc(KalmanFilterBase):

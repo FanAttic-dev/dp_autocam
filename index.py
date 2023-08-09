@@ -50,7 +50,7 @@ frame_splitter = PerspectiveFrameSplitter(frame_orig)
 # cv2.setMouseCallback("Original", mouse_callback)
 
 if args.record:
-    recorder = VideoRecorder(player, camera.FRAME_W, camera.FRAME_H)
+    recorder = VideoRecorder(player, camera)
 
 i = 0
 while is_alive:
