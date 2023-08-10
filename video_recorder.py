@@ -93,6 +93,7 @@ class VideoRecorder:
     def write(self, frame):
         frame = self.add_stats_bar(frame)
         self.writer.write(frame)
+        return frame
 
     def release(self):
         self.writer.release()

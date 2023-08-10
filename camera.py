@@ -50,8 +50,8 @@ class PerspectiveCamera(Camera):
         self.frame_orig_center_x = w // 2
         self.frame_orig_center_y = h // 2
         self.set(pan_deg, tilt_deg)
-        self.kf = KalmanFilterVel(dt=0.1, std_acc=0.1, std_measurement=10)
-        # self.kf = KalmanFilterAcc(dt=0.1, std_acc=0.01, std_measurement=100)
+        self.kf = KalmanFilterVel(dt=0.1, std_acc=0.1, std_meas=10)
+        # self.kf = KalmanFilterAcc(dt=0.1, std_acc=0.01, std_meas=100)
         self.kf.set_pos(*self.center)
         self.pause_measurements = False
         self.measurement_last = self.center
@@ -226,7 +226,7 @@ class PerspectiveCamera(Camera):
 
         _, y_center = self.center
 
-        # self.kf.decelerate = len(bb_ball) == 0
+        # self.kf.set_decelerating(len(bb_ball) == 0)
         self.kf.predict()
         self.kf.print()
         x_pred, y_pred = self.kf.pos

@@ -87,7 +87,8 @@ while is_alive:
     camera.update_by_bbs(bbs_joined, bb_ball, top_down)
     # camera.update_by_bbs([], bb_ball, top_down)
     frame = camera.get_frame(frame_orig)
-    player.show_frame(frame, "ROI")
+    if not args.record:
+        player.show_frame(frame, "ROI")
     # camera.print()
     # camera.draw_center_(frame_orig)
     # frame_splitter.draw_roi_(frame_orig)
@@ -109,7 +110,8 @@ while is_alive:
 
     """ Input """
     if args.record:
-        recorder.write(frame)
+        recorded_frame = recorder.write(frame)
+        player.show_frame(recorded_frame, "Recorded_frame")
 
     key = cv2.waitKey(delay)
     is_alive = camera.process_input(key, mousePos["x"], mousePos["y"])
