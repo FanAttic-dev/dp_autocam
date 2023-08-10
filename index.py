@@ -18,7 +18,7 @@ mousePos = {
 
 
 def mouse_callback(event, x, y, flags, param):
-    if event == cv2.EVENT_MOUSEMOVE:
+    if event == cv2.EVENT_LBUTTONDOWN:
         mousePos["x"] = x
         mousePos["y"] = y
 
@@ -26,6 +26,7 @@ def mouse_callback(event, x, y, flags, param):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-r', "--record", action='store_true')
+    parser.add_argument('-m', "--mouse", action='store_true')
     return parser.parse_args()
 
 
@@ -46,8 +47,10 @@ ball_detector = YoloBallDetector(pitch_coords)
 is_alive, frame_orig = player.get_next_frame()
 camera = PerspectiveCamera(frame_orig)
 frame_splitter = PerspectiveFrameSplitter(frame_orig)
-# player.create_window("Original")
-# cv2.setMouseCallback("Original", mouse_callback)
+
+if args.mouse:
+    player.create_window("Original")
+    cv2.setMouseCallback("Original", mouse_callback)
 
 if args.record:
     recorder = VideoRecorder(player, camera)
@@ -62,38 +65,47 @@ while is_alive:
     frame_orig = detector.preprocess(frame_orig)
 
     """ Detection """
-    if not camera.pause_measurements:
-        # Split frame, detect objects, merge & draw bounding boxes
+    bbs_joined = {
+        "boxes": [],
+        "cls": []
+    }
+    if camera.pause_measurements:
+        bb_ball = []
+    elif args.mouse:
+        ball_size = 5
+        bb_ball = [
+            mousePos["x"] - ball_size, mousePos["y"] - ball_size,
+            mousePos["x"] + ball_size, mousePos["y"] + ball_size
+        ]
+    else:
+        """ Split frame, detect objects, merge & draw bounding boxes """
         frames = frame_splitter.split(frame_orig)
 
+        # Players
         # bbs, _ = detector.detect(frames)
+        # bbs_joined = frame_splitter.join_bbs(bbs)
+
+        # Balls
         bbs_ball, bbs_ball_frame = ball_detector.detect(frames)
         # for i, ball_frame in enumerate(bbs_ball_frame):
         #     player.show_frame(ball_frame, f"ball frame {i}")
-
-        # bbs_joined = frame_splitter.join_bbs(bbs)
-        bbs_joined = {
-            "boxes": [],
-            "cls": []
-        }
         bbs_ball_joined = frame_splitter.join_bbs(bbs_ball)
         bb_ball = ball_detector.get_ball(bbs_ball_joined)
         add_bb_ball_(bbs_joined, bb_ball)
+
+        # Render
         detector.draw_bbs_(frame_orig, bbs_joined)
-    else:
-        bb_ball = []
 
     """ ROI """
     camera.update_by_bbs(bbs_joined, bb_ball, top_down)
-    # camera.update_by_bbs([], bb_ball, top_down)
     frame = camera.get_frame(frame_orig)
     if not args.record:
         player.show_frame(frame, "ROI")
     # camera.print()
-    # camera.draw_center_(frame_orig)
-    # frame_splitter.draw_roi_(frame_orig)
-    # camera.draw_roi_(frame_orig)
-    # player.show_frame(frame_orig, "Original")
+    camera.draw_center_(frame_orig)
+    frame_splitter.draw_roi_(frame_orig)
+    camera.draw_roi_(frame_orig)
+    player.show_frame(frame_orig, "Original")
 
     """ Top-down """
     # top_down_frame = top_down.pitch_model.copy()
