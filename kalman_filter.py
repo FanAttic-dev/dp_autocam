@@ -247,10 +247,9 @@ class KalmanFilterAccCtrl(KalmanFilterBase):
     DECELERATION_RATE = 0.1
 
     def __init__(self, dt, std_acc, std_meas, acc_x=0, acc_y=0):
-        super().__init__(dt, std_acc, std_meas)
-
         self.acc_x = acc_x
         self.acc_y = acc_y
+        super().__init__(dt, std_acc, std_meas)
 
     @property
     def u_dec(self):
@@ -261,7 +260,11 @@ class KalmanFilterAccCtrl(KalmanFilterBase):
 
     @property
     def pos(self):
-        return np.array([self.x[0], self.x[3]])
+        return np.array([self.x[0], self.x[2]])
+
+    @property
+    def vel(self):
+        return np.array([self.x[1], self.x[3]])
 
     def set_pos(self, x, y):
         self.x[0] = x
@@ -308,22 +311,22 @@ class KalmanFilterAccCtrl(KalmanFilterBase):
             [0, 0, 1, 0]
         ])
 
-    def init_Q(self, std_acc):
+    def init_Q(self):
         dt = self.dt
         self.Q = np.array([
             [dt**4 / 4, dt**3 / 2, 0, 0],
             [dt**3 / 2, dt**2, 0, 0],
             [0, 0, dt**4 / 4, dt**3 / 2],
             [0, 0, dt**3 / 2, dt**2],
-        ]) * std_acc**2
+        ]) * self.std_acc**2
 
     def get_stats(self):
         stats = super().get_stats()
         stats.update({
             "Name": "KF Acceleration Control",
-            "Pos": [f"{self.x[0].item():.2f}", f"{self.x[3].item():.2f}"],
-            "Vel": [f"{self.x[1].item():.2f}", f"{self.x[4].item():.2f}"],
-            "U_acc": [f"{self.u_acc[0].item():.2f}", f"{self.u_acc[1].item():.2f}"],
+            "Pos": [f"{self.x[0].item():.2f}", f"{self.x[2].item():.2f}"],
+            "Vel": [f"{self.x[1].item():.2f}", f"{self.x[3].item():.2f}"],
+            "U_acc": [f"{self.u[0].item():.2f}", f"{self.u[1].item():.2f}"],
             "P x": f"{self.P[0][0].item():.2f}",
             "K x": f"{self.K[0][0].item():.2f}",
         })
