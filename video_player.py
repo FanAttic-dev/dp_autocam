@@ -5,12 +5,23 @@ class VideoPlayer:
     WINDOW_NAME = 'frame'
     WINDOW_FLAGS = cv2.WINDOW_NORMAL  # cv2.WINDOW_AUTOSIZE
 
-    def __init__(self, video_name):
-        self.cap = cv2.VideoCapture(str(video_name.absolute()))
+    def __init__(self, video_path):
+        self.video_path = video_path
+        self.cap = cv2.VideoCapture(str(video_path.absolute()))
+        print(f"Video player initialized: {self.video_path.absolute()}")
+
+    @property
+    def fps(self):
+        return self.cap.get(cv2.CAP_PROP_FPS)
+
+    @property
+    def frame_size(self):
+        width = self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+        height = self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        return int(width), int(height)
 
     def get_frame_at(self, seconds):
-        fps = self.cap.get(cv2.CAP_PROP_FPS)
-        frame_id = int(fps*seconds)
+        frame_id = int(self.fps*seconds)
         self.cap.set(cv2.CAP_PROP_POS_FRAMES, frame_id)
         return self.get_next_frame(self.cap)
 
@@ -36,6 +47,11 @@ class VideoPlayer:
     def show_frame(self, frame, window_name=WINDOW_NAME):
         self.create_window(window_name)
         cv2.imshow(window_name, frame)
+
+    def get_delay(self, is_recording=False):
+        if is_recording:
+            return int(1000 / self.fps)
+        return 0
 
     def release(self):
         self.cap.release()

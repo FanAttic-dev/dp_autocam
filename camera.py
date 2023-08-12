@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from constants import colors
+from kalman_filter import KalmanFilterAcc, KalmanFilterAccCtrl, KalmanFilterVel
 from utils import apply_homography, average_point
 
 
@@ -49,6 +50,13 @@ class PerspectiveCamera(Camera):
         self.frame_orig_center_x = w // 2
         self.frame_orig_center_y = h // 2
         self.set(pan_deg, tilt_deg)
+        self.kf = KalmanFilterVel(dt=0.1, std_acc=0.01, std_meas=50)
+        # self.kf = KalmanFilterAcc(dt=0.1, std_acc=0.01, std_meas=500)
+        # self.kf = KalmanFilterAccCtrl(
+        #     dt=0.1, std_acc=0.01, std_meas=100, acc_x=5, acc_y=5)
+        self.kf.set_pos(*self.center)
+        self.pause_measurements = False
+        self.measurement_last = self.center
 
     @property
     def fov_horiz_deg(self):
@@ -201,15 +209,11 @@ class PerspectiveCamera(Camera):
             self.set_center(mouseX, mouseY)
         elif key == ord('q'):
             is_alive = False
+        elif key == ord('n'):
+            self.pause_measurements = not self.pause_measurements
         return is_alive
 
     def update_by_bbs(self, bbs, bb_ball, top_down):
-        def update_center(x, y, alpha=0.1):
-            x_center, y_center = self.center
-            x = x * alpha + x_center * (1-alpha)
-            y = y * alpha + y_center * (1-alpha)
-            self.set_center(x, y)
-
         def measure_ball(bb_ball):
             x1, y1, x2, y2 = bb_ball
             x_ball = (x1 + x2) // 2
@@ -224,13 +228,24 @@ class PerspectiveCamera(Camera):
 
         _, y_center = self.center
 
-        if bb_ball:
-            x, _ = measure_ball(bb_ball)
-            update_center(x, y_center)
+        # self.kf.set_decelerating(len(bb_ball) == 0)
+        self.kf.predict()
+        self.kf.print()
+        x_pred, y_pred = self.kf.pos
+        self.set_center(x_pred, y_pred)
 
-        if bbs:
-            x, _ = measure_players(bbs)
-            update_center(x, y_center)
+        # if bb_ball and not self.pause_measurements:
+        if bb_ball:
+            x_ball, _ = measure_ball(bb_ball)
+            measurement = (x_ball, y_center)
+            self.kf.update(*measurement)
+            self.measurement_last = measurement
+        else:
+            self.kf.update(*self.measurement_last)
+
+        # if bbs:
+        #     x, _ = measure_players(bbs)
+        #     # TODO
 
 
 class FixedHeightCamera(Camera):
