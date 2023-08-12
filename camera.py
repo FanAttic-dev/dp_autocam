@@ -31,11 +31,11 @@ class PerspectiveCamera(Camera):
     DEFAULT_F = 1003  # 30
     CYLLINDER_RADIUS = 1000
     DEFAULT_PAN_DEG = 12
-    MAX_PAN_DEG = 65
-    MIN_PAN_DEG = -60
+    MIN_PAN_DEG = -38
+    MAX_PAN_DEG = 45
     DEFAULT_TILT_DEG = 9
-    MAX_TILT_DEG = 38
-    MIN_TILT_DEG = -16
+    MIN_TILT_DEG = 8
+    MAX_TILT_DEG = 9
     FRAME_ASPECT_RATIO = 16/9
     FRAME_W = 1920
     FRAME_H = int(FRAME_W / FRAME_ASPECT_RATIO)
@@ -56,7 +56,6 @@ class PerspectiveCamera(Camera):
         # self.model = KalmanFilterAcc(dt=0.1, std_acc=0.01, std_meas=500)
         # self.model = KalmanFilterAccCtrl(
         #     dt=0.1, std_acc=0.01, std_meas=100, acc_x=5, acc_y=5)
-        # self.model.set_pos(*self.center)
         self.model.set_pos(*self.center)
         self.pause_measurements = False
         self.measurement_last = self.center
@@ -95,8 +94,16 @@ class PerspectiveCamera(Camera):
         return np.linalg.inv(self.H)
 
     def set(self, pan_deg, tilt_deg, f=DEFAULT_F):
-        self.pan_deg = pan_deg
-        self.tilt_deg = tilt_deg
+        self.pan_deg = np.clip(
+            pan_deg,
+            PerspectiveCamera.MIN_PAN_DEG,
+            PerspectiveCamera.MAX_PAN_DEG,
+        )
+        self.tilt_deg = np.clip(
+            tilt_deg,
+            PerspectiveCamera.MIN_TILT_DEG,
+            PerspectiveCamera.MAX_TILT_DEG
+        )
         self.f = f
 
     def set_center(self, x, y):
@@ -152,12 +159,6 @@ class PerspectiveCamera(Camera):
 
         return np.array(pts, dtype=np.int32)
 
-    def check_ptz_bounds(self, pan_deg, tilt_deg, f):
-        return pan_deg <= PerspectiveCamera.MAX_PAN_DEG and \
-            pan_deg >= PerspectiveCamera.MIN_PAN_DEG and \
-            tilt_deg <= PerspectiveCamera.MAX_TILT_DEG and \
-            tilt_deg >= PerspectiveCamera.MIN_TILT_DEG
-
     def draw_roi_(self, frame_orig, color=colors["yellow"]):
         pts = self.get_corner_pts()
         cv2.polylines(frame_orig, [pts], True, color, thickness=10)
@@ -176,21 +177,15 @@ class PerspectiveCamera(Camera):
 
     def pan(self, dx):
         pan_deg = self.pan_deg + dx
-        if not self.check_ptz_bounds(pan_deg, self.tilt_deg, self.f):
-            return
-        self.pan_deg = pan_deg
+        self.set(pan_deg, self.tilt_deg, self.f)
 
     def tilt(self, dy):
         tilt_deg = self.tilt_deg + dy
-        if not self.check_ptz_bounds(self.pan_deg, tilt_deg, self.f):
-            return
-        self.tilt_deg = tilt_deg
+        self.set(self.pan_deg, tilt_deg, self.f)
 
     def zoom(self, dz):
         f = self.f + dz
-        if not self.check_ptz_bounds(self.pan_deg, self.tilt_deg, f):
-            return
-        self.f = f
+        self.set(self.pan_deg, self.tilt_deg, f)
 
     def process_input(self, key, mouseX, mouseY):
         is_alive = True

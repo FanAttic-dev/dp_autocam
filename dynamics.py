@@ -4,7 +4,7 @@ from model import Model
 
 
 class Dynamics(Model):
-    DECELERATION_RATE = 0.05
+    DECELERATION_RATE = 1.5
 
     def __init__(self, dt, alpha):
         self.dt = dt
@@ -63,10 +63,8 @@ class Dynamics(Model):
         self.x = self.F @ self.x
 
         if self.is_decelerating:
-            vel = self.vel * (1 - Dynamics.DECELERATION_RATE)
-            self.set_vel(*vel)
-            # self.u = -Dynamics.DECELERATION_RATE * self.vel
-            # self.x = self.x + self.G @ self.u
+            self.u = -Dynamics.DECELERATION_RATE * self.vel
+            self.x = self.x + self.G @ self.u
 
     def update(self, x_meas, y_meas):
         x_pos, y_pos = self.pos
@@ -74,7 +72,6 @@ class Dynamics(Model):
         dy = y_meas - y_pos
 
         self.set_u(dx, dy)
-
         self.x = self.x + self.G @ self.u
 
     def get_stats(self):
