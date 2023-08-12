@@ -86,7 +86,7 @@ class VideoRecorder:
                 text_y += spacing
 
         frame = add_border(frame)
-        put_dict_items(frame, self.camera.kf.get_stats())
+        put_dict_items(frame, self.camera.model.get_stats())
 
         return frame
 

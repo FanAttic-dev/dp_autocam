@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from constants import colors
+from dynamics import Dynamics
 from kalman_filter import KalmanFilterAcc, KalmanFilterAccCtrl, KalmanFilterVel
 from utils import apply_homography, average_point
 
@@ -50,11 +51,13 @@ class PerspectiveCamera(Camera):
         self.frame_orig_center_x = w // 2
         self.frame_orig_center_y = h // 2
         self.set(pan_deg, tilt_deg)
-        self.kf = KalmanFilterVel(dt=0.1, std_acc=0.01, std_meas=50)
-        # self.kf = KalmanFilterAcc(dt=0.1, std_acc=0.01, std_meas=500)
-        # self.kf = KalmanFilterAccCtrl(
+        self.model = Dynamics(dt=0.1, alpha=0.01)
+        # self.model = KalmanFilterVel(dt=0.1, std_acc=0.01, std_meas=50)
+        # self.model = KalmanFilterAcc(dt=0.1, std_acc=0.01, std_meas=500)
+        # self.model = KalmanFilterAccCtrl(
         #     dt=0.1, std_acc=0.01, std_meas=100, acc_x=5, acc_y=5)
-        self.kf.set_pos(*self.center)
+        # self.model.set_pos(*self.center)
+        self.model.set_pos(*self.center)
         self.pause_measurements = False
         self.measurement_last = self.center
 
@@ -228,20 +231,22 @@ class PerspectiveCamera(Camera):
 
         _, y_center = self.center
 
-        # self.kf.set_decelerating(len(bb_ball) == 0)
-        self.kf.predict()
-        self.kf.print()
-        x_pred, y_pred = self.kf.pos
+        self.model.set_decelerating(len(bb_ball) == 0)
+        self.model.predict()
+        self.model.print()
+        x_pred, y_pred = self.model.pos
         self.set_center(x_pred, y_pred)
 
         # if bb_ball and not self.pause_measurements:
         if bb_ball:
             x_ball, _ = measure_ball(bb_ball)
             measurement = (x_ball, y_center)
-            self.kf.update(*measurement)
+            self.model.update(*measurement)
+            # self.kf.update(*measurement)
             self.measurement_last = measurement
         else:
-            self.kf.update(*self.measurement_last)
+            ...
+            # self.kf.update(*self.measurement_last)
 
         # if bbs:
         #     x, _ = measure_players(bbs)
