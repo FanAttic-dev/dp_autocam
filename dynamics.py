@@ -4,7 +4,8 @@ from model import Model
 
 
 class Dynamics(Model):
-    DECELERATION_RATE = 1.5
+    ACCELERATION_RATE = 0.5
+    DECELERATION_RATE = 2
 
     def __init__(self, dt, alpha):
         self.dt = dt
@@ -54,7 +55,7 @@ class Dynamics(Model):
         self.u = np.array([
             dx,
             dy
-        ])
+        ]) * Dynamics.ACCELERATION_RATE
 
     def set_decelerating(self, is_decelerating):
         self.is_decelerating = is_decelerating
@@ -80,6 +81,7 @@ class Dynamics(Model):
             "Name": "Dynamics Velocity Model",
             "is_decelerating": self.is_decelerating,
             "Decel. rate": Dynamics.DECELERATION_RATE,
+            "Accel. rate": Dynamics.ACCELERATION_RATE,
             "dt": self.dt,
             "alpha": self.alpha,
             "Pos": [f"{self.x[0].item():.2f}", f"{self.x[2].item():.2f}"],

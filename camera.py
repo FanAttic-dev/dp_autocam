@@ -242,14 +242,13 @@ class PerspectiveCamera(Camera):
 
         _, y_center = self.center
 
-        # self.model.set_decelerating(len(bb_ball) == 0)
         is_in_dead_zone = self.is_meas_in_dead_zone()
         self.model.set_decelerating(is_decelerating=is_in_dead_zone)
 
         self.model.predict()
         self.model.print()
-        x_pred, y_pred = self.model.pos
-        self.set_center(x_pred, y_pred)
+
+        self.set_center(*self.model.pos)
 
         if bb_ball:
             x_ball, _ = measure_ball(bb_ball)
