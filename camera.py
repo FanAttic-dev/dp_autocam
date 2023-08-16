@@ -1,8 +1,9 @@
 import cv2
 import numpy as np
 from constants import colors
+from dynamics import Dynamics
 from kalman_filter import KalmanFilterAcc, KalmanFilterAccCtrl, KalmanFilterVel
-from utils import apply_homography, average_point
+from utils import apply_homography, average_point, lies_in_rectangle
 
 
 class Camera:
@@ -30,11 +31,11 @@ class PerspectiveCamera(Camera):
     DEFAULT_F = 1003  # 30
     CYLLINDER_RADIUS = 1000
     DEFAULT_PAN_DEG = 12
-    MAX_PAN_DEG = 65
-    MIN_PAN_DEG = -60
+    MIN_PAN_DEG = -50
+    MAX_PAN_DEG = 50
     DEFAULT_TILT_DEG = 9
-    MAX_TILT_DEG = 38
-    MIN_TILT_DEG = -16
+    MIN_TILT_DEG = 8
+    MAX_TILT_DEG = 9
     FRAME_ASPECT_RATIO = 16/9
     FRAME_W = 1920
     FRAME_H = int(FRAME_W / FRAME_ASPECT_RATIO)
@@ -50,13 +51,15 @@ class PerspectiveCamera(Camera):
         self.frame_orig_center_x = w // 2
         self.frame_orig_center_y = h // 2
         self.set(pan_deg, tilt_deg)
-        self.kf = KalmanFilterVel(dt=0.1, std_acc=0.01, std_meas=50)
-        # self.kf = KalmanFilterAcc(dt=0.1, std_acc=0.01, std_meas=500)
-        # self.kf = KalmanFilterAccCtrl(
+        self.model = Dynamics(dt=0.1, alpha=0.01)
+        # self.model = KalmanFilterVel(dt=0.1, std_acc=0.01, std_meas=50)
+        # self.model = KalmanFilterAcc(dt=0.1, std_acc=0.01, std_meas=500)
+        # self.model = KalmanFilterAccCtrl(
         #     dt=0.1, std_acc=0.01, std_meas=100, acc_x=5, acc_y=5)
-        self.kf.set_pos(*self.center)
+        self.model.set_pos(*self.center)
         self.pause_measurements = False
         self.measurement_last = self.center
+        self.init_dead_zone()
 
     @property
     def fov_horiz_deg(self):
@@ -92,13 +95,32 @@ class PerspectiveCamera(Camera):
         return np.linalg.inv(self.H)
 
     def set(self, pan_deg, tilt_deg, f=DEFAULT_F):
-        self.pan_deg = pan_deg
-        self.tilt_deg = tilt_deg
+        self.pan_deg = np.clip(
+            pan_deg,
+            PerspectiveCamera.MIN_PAN_DEG,
+            PerspectiveCamera.MAX_PAN_DEG,
+        )
+        self.tilt_deg = np.clip(
+            tilt_deg,
+            PerspectiveCamera.MIN_TILT_DEG,
+            PerspectiveCamera.MAX_TILT_DEG
+        )
         self.f = f
 
     def set_center(self, x, y):
         pan_deg, tilt_deg = self.coords2ptz(x, y)
         self.set(pan_deg, tilt_deg, self.f)
+
+    def init_dead_zone(self):
+        self.dead_zone = np.array([
+            [640, 0],  # start point (top left)
+            [1280, 1079]  # end point (bottom right)
+        ])
+
+    def is_meas_in_dead_zone(self):
+        meas = np.array([[self.measurement_last]], dtype=np.float32)
+        meas_frame_coord = cv2.perspectiveTransform(meas, self.H)[0][0]
+        return lies_in_rectangle(meas_frame_coord, self.dead_zone)
 
     def reset(self):
         self.set(PerspectiveCamera.DEFAULT_PAN_DEG,
@@ -149,12 +171,6 @@ class PerspectiveCamera(Camera):
 
         return np.array(pts, dtype=np.int32)
 
-    def check_ptz_bounds(self, pan_deg, tilt_deg, f):
-        return pan_deg <= PerspectiveCamera.MAX_PAN_DEG and \
-            pan_deg >= PerspectiveCamera.MIN_PAN_DEG and \
-            tilt_deg <= PerspectiveCamera.MAX_TILT_DEG and \
-            tilt_deg >= PerspectiveCamera.MIN_TILT_DEG
-
     def draw_roi_(self, frame_orig, color=colors["yellow"]):
         pts = self.get_corner_pts()
         cv2.polylines(frame_orig, [pts], True, color, thickness=10)
@@ -162,6 +178,10 @@ class PerspectiveCamera(Camera):
     def draw_center_(self, frame, color=colors["red"]):
         cv2.circle(frame, self.center,
                    radius=5, color=color, thickness=5)
+
+    def draw_dead_zone_(self, frame):
+        start, end = self.dead_zone
+        cv2.rectangle(frame, start, end, color=colors["yellow"], thickness=5)
 
     def get_frame(self, frame_orig):
         return cv2.warpPerspective(
@@ -173,21 +193,15 @@ class PerspectiveCamera(Camera):
 
     def pan(self, dx):
         pan_deg = self.pan_deg + dx
-        if not self.check_ptz_bounds(pan_deg, self.tilt_deg, self.f):
-            return
-        self.pan_deg = pan_deg
+        self.set(pan_deg, self.tilt_deg, self.f)
 
     def tilt(self, dy):
         tilt_deg = self.tilt_deg + dy
-        if not self.check_ptz_bounds(self.pan_deg, tilt_deg, self.f):
-            return
-        self.tilt_deg = tilt_deg
+        self.set(self.pan_deg, tilt_deg, self.f)
 
     def zoom(self, dz):
         f = self.f + dz
-        if not self.check_ptz_bounds(self.pan_deg, self.tilt_deg, f):
-            return
-        self.f = f
+        self.set(self.pan_deg, self.tilt_deg, f)
 
     def process_input(self, key, mouseX, mouseY):
         is_alive = True
@@ -228,20 +242,20 @@ class PerspectiveCamera(Camera):
 
         _, y_center = self.center
 
-        # self.kf.set_decelerating(len(bb_ball) == 0)
-        self.kf.predict()
-        self.kf.print()
-        x_pred, y_pred = self.kf.pos
-        self.set_center(x_pred, y_pred)
+        is_in_dead_zone = self.is_meas_in_dead_zone()
+        self.model.set_decelerating(is_decelerating=is_in_dead_zone)
 
-        # if bb_ball and not self.pause_measurements:
+        self.model.predict()
+        self.model.print()
+
+        self.set_center(*self.model.pos)
+
         if bb_ball:
             x_ball, _ = measure_ball(bb_ball)
-            measurement = (x_ball, y_center)
-            self.kf.update(*measurement)
-            self.measurement_last = measurement
-        else:
-            self.kf.update(*self.measurement_last)
+            self.measurement_last = (x_ball, y_center)
+
+        if not is_in_dead_zone:
+            self.model.update(*self.measurement_last)
 
         # if bbs:
         #     x, _ = measure_players(bbs)

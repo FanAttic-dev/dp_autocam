@@ -72,3 +72,12 @@ def add_bb_ball_(bbs, bb_ball):
 
 def average_point(points):
     return np.mean(np.array(points["points"]), axis=0)
+
+
+def lies_in_rectangle(pt, rect):
+    start_pt, end_pt = rect
+    x_start, y_start = start_pt
+    x_end, y_end = end_pt
+    x_pt, y_pt = pt
+    return x_start <= x_pt and y_start <= y_pt \
+        and x_pt <= x_end and y_pt <= y_end

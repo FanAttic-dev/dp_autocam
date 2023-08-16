@@ -1,7 +1,9 @@
 import numpy as np
 
+from model import Model
 
-class KalmanFilterBase():
+
+class KalmanFilterBase(Model):
     def __init__(self, dt, std_acc, std_meas):
         self.dt = dt
         self.std_acc = std_acc
@@ -17,14 +19,6 @@ class KalmanFilterBase():
         self.init_R()
 
     @property
-    def pos(self):
-        ...
-
-    @property
-    def vel(self):
-        ...
-
-    @property
     def K(self):
         # K = P * H' * inv(H * P * H' + R)
         S = np.linalg.inv(self.H @ self.P @ self.H.T + self.R)
@@ -32,12 +26,6 @@ class KalmanFilterBase():
 
     def init_x(self):
         self.x = None
-
-    def set_pos(self, x, y):
-        ...
-
-    def set_decelerating(self, is_decelerating):
-        self.is_decelerating = is_decelerating
 
     def init_u(self):
         self.u = None
