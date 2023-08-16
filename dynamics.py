@@ -63,6 +63,7 @@ class Dynamics(Model):
         self.x = self.F @ self.x
 
         if self.is_decelerating:
+            print("Decelerating")
             self.u = -Dynamics.DECELERATION_RATE * self.vel
             self.x = self.x + self.G @ self.u
 
@@ -77,6 +78,7 @@ class Dynamics(Model):
     def get_stats(self):
         stats = {
             "Name": "Dynamics Velocity Model",
+            "is_decelerating": self.is_decelerating,
             "Decel. rate": Dynamics.DECELERATION_RATE,
             "dt": self.dt,
             "alpha": self.alpha,

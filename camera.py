@@ -3,7 +3,7 @@ import numpy as np
 from constants import colors
 from dynamics import Dynamics
 from kalman_filter import KalmanFilterAcc, KalmanFilterAccCtrl, KalmanFilterVel
-from utils import apply_homography, average_point
+from utils import apply_homography, average_point, lies_in_rectangle
 
 
 class Camera:
@@ -31,8 +31,8 @@ class PerspectiveCamera(Camera):
     DEFAULT_F = 1003  # 30
     CYLLINDER_RADIUS = 1000
     DEFAULT_PAN_DEG = 12
-    MIN_PAN_DEG = -38
-    MAX_PAN_DEG = 45
+    MIN_PAN_DEG = -50
+    MAX_PAN_DEG = 50
     DEFAULT_TILT_DEG = 9
     MIN_TILT_DEG = 8
     MAX_TILT_DEG = 9
@@ -59,6 +59,7 @@ class PerspectiveCamera(Camera):
         self.model.set_pos(*self.center)
         self.pause_measurements = False
         self.measurement_last = self.center
+        self.init_dead_zone()
 
     @property
     def fov_horiz_deg(self):
@@ -109,6 +110,17 @@ class PerspectiveCamera(Camera):
     def set_center(self, x, y):
         pan_deg, tilt_deg = self.coords2ptz(x, y)
         self.set(pan_deg, tilt_deg, self.f)
+
+    def init_dead_zone(self):
+        self.dead_zone = np.array([
+            [640, 0],  # start point (top left)
+            [1280, 1079]  # end point (bottom right)
+        ])
+
+    def is_meas_in_dead_zone(self):
+        meas = np.array([[self.measurement_last]], dtype=np.float32)
+        meas_frame_coord = cv2.perspectiveTransform(meas, self.H)[0][0]
+        return lies_in_rectangle(meas_frame_coord, self.dead_zone)
 
     def reset(self):
         self.set(PerspectiveCamera.DEFAULT_PAN_DEG,
@@ -166,6 +178,10 @@ class PerspectiveCamera(Camera):
     def draw_center_(self, frame, color=colors["red"]):
         cv2.circle(frame, self.center,
                    radius=5, color=color, thickness=5)
+
+    def draw_dead_zone_(self, frame):
+        start, end = self.dead_zone
+        cv2.rectangle(frame, start, end, color=colors["yellow"], thickness=5)
 
     def get_frame(self, frame_orig):
         return cv2.warpPerspective(
@@ -226,22 +242,21 @@ class PerspectiveCamera(Camera):
 
         _, y_center = self.center
 
-        self.model.set_decelerating(len(bb_ball) == 0)
+        # self.model.set_decelerating(len(bb_ball) == 0)
+        is_in_dead_zone = self.is_meas_in_dead_zone()
+        self.model.set_decelerating(is_decelerating=is_in_dead_zone)
+
         self.model.predict()
         self.model.print()
         x_pred, y_pred = self.model.pos
         self.set_center(x_pred, y_pred)
 
-        # if bb_ball and not self.pause_measurements:
         if bb_ball:
             x_ball, _ = measure_ball(bb_ball)
-            measurement = (x_ball, y_center)
-            self.model.update(*measurement)
-            # self.kf.update(*measurement)
-            self.measurement_last = measurement
-        else:
-            ...
-            # self.kf.update(*self.measurement_last)
+            self.measurement_last = (x_ball, y_center)
+
+        if not is_in_dead_zone:
+            self.model.update(*self.measurement_last)
 
         # if bbs:
         #     x, _ = measure_players(bbs)

@@ -99,13 +99,15 @@ while is_alive:
     """ ROI """
     camera.update_by_bbs(bbs_joined, bb_ball, top_down)
     frame = camera.get_frame(frame_orig)
+
+    camera.draw_dead_zone_(frame)
     if not args.record:
         player.show_frame(frame, "ROI")
     # camera.print()
     # camera.draw_center_(frame_orig)
-    # frame_splitter.draw_roi_(frame_orig)
-    # camera.draw_roi_(frame_orig)
-    # player.show_frame(frame_orig, "Original")
+    frame_splitter.draw_roi_(frame_orig)
+    camera.draw_roi_(frame_orig)
+    player.show_frame(frame_orig, "Original")
 
     """ Top-down """
     # top_down_frame = top_down.pitch_model.copy()
