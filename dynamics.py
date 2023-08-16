@@ -4,7 +4,7 @@ from model import Model
 
 
 class Dynamics(Model):
-    ACCELERATION_RATE = 0.5
+    ACCELERATION_RATE = 1
     DECELERATION_RATE = 2
 
     def __init__(self, dt, alpha):
