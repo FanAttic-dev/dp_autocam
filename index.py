@@ -35,7 +35,7 @@ args = parse_args()
 
 video_path = get_random_file(videos_dir)
 video_path = Path(
-    "/home/atti/source/datasets/SoccerTrack/wide_view/videos/F_20220220_1_1740_1770.mp4")
+    "/home/atti/source/datasets/SoccerTrack/wide_view/videos/F_20220220_1_1140_1170.mp4")
 player = VideoPlayer(video_path)
 delay = player.get_delay(args.record)
 
@@ -48,7 +48,7 @@ top_down = TopDown(pitch_coords, camera)
 detector = YoloPlayerDetector(pitch_coords)
 ball_detector = YoloBallDetector(pitch_coords)
 
-args.record = True
+# args.record = True
 
 if args.mouse:
     player.create_window("Original")
@@ -109,9 +109,9 @@ while is_alive:
         player.show_frame(frame, "ROI")
     # camera.print()
     # camera.draw_center_(frame_orig)
-    frame_splitter.draw_roi_(frame_orig)
-    camera.draw_roi_(frame_orig)
-    player.show_frame(frame_orig, "Original")
+    # frame_splitter.draw_roi_(frame_orig)
+    # camera.draw_roi_(frame_orig)
+    # player.show_frame(frame_orig, "Original")
 
     """ Top-down """
     top_down_frame = top_down.get_frame(bbs_joined)

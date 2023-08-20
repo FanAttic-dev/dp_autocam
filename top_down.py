@@ -79,10 +79,11 @@ class TopDown:
             )
 
     def draw_roi_(self, frame):
-        x_min = self.video_pitch_coords["left bottom"]["x"]
-        x_max = self.video_pitch_coords["right bottom"]["x"]
-        y_max = self.video_pitch_coords["left bottom"]["y"]
-        y_min = self.video_pitch_coords["left top"]["y"]
+        margin = 10
+        x_min = self.video_pitch_coords["left bottom"]["x"] - margin
+        x_max = self.video_pitch_coords["right bottom"]["x"] + margin
+        y_max = self.video_pitch_coords["left bottom"]["y"] + margin
+        y_min = self.video_pitch_coords["left top"]["y"] - margin
 
         pts_warped = []
         for x, y in self.camera.get_corner_pts():
