@@ -4,12 +4,13 @@ from camera import PerspectiveCamera
 from constants import videos_dir, coords_path
 from detector import YoloBallDetector, YoloPlayerDetector
 from frame_splitter import PerspectiveFrameSplitter
-from utils import add_bb_, add_bb_ball_, get_random_file
+from utils import add_bb_, add_bb_ball_, get_bounding_box, get_random_file
 from top_down import TopDown
 from utils import load_json
 from video_player import VideoPlayer
 from video_recorder import VideoRecorder
 import argparse
+from constants import colors
 
 mousePos = {
     "x": 0,
@@ -110,8 +111,13 @@ while is_alive:
     # camera.print()
     # camera.draw_center_(frame_orig)
     # frame_splitter.draw_roi_(frame_orig)
-    # camera.draw_roi_(frame_orig)
-    # player.show_frame(frame_orig, "Original")
+    camera.draw_roi_(frame_orig)
+
+    x1, y1, x2, y2 = get_bounding_box(bbs_joined)
+    cv2.rectangle(frame_orig, (x1, y1), (x2, y2),
+                  colors["green"], thickness=10)
+
+    player.show_frame(frame_orig, "Original")
 
     """ Top-down """
     top_down_frame = top_down.get_frame(bbs_joined)
