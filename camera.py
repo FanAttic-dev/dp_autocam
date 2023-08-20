@@ -3,7 +3,7 @@ import numpy as np
 from constants import colors
 from dynamics import Dynamics
 from kalman_filter import KalmanFilterAcc, KalmanFilterAccCtrl, KalmanFilterVel
-from utils import apply_homography, average_point, lies_in_rectangle
+from utils import apply_homography, average_point, get_bounding_box, lies_in_rectangle
 
 
 class Camera:
@@ -29,13 +29,15 @@ class PerspectiveCamera(Camera):
     ZOOM_DZ = 60
     SENSOR_W = 836  # 25
     DEFAULT_F = 1003  # 30
+    MIN_F = 1183
+    MAX_F = 2083
     CYLLINDER_RADIUS = 1000
     DEFAULT_PAN_DEG = 12
     MIN_PAN_DEG = -50
     MAX_PAN_DEG = 50
     DEFAULT_TILT_DEG = 9
-    MIN_TILT_DEG = 9
-    MAX_TILT_DEG = 9
+    MIN_TILT_DEG = 5
+    MAX_TILT_DEG = 12
     FRAME_ASPECT_RATIO = 16/9
     FRAME_W = 1920
     FRAME_H = int(FRAME_W / FRAME_ASPECT_RATIO)
@@ -106,7 +108,11 @@ class PerspectiveCamera(Camera):
             PerspectiveCamera.MIN_TILT_DEG,
             PerspectiveCamera.MAX_TILT_DEG
         )
-        self.f = f
+        self.f = np.clip(
+            f,
+            PerspectiveCamera.MIN_F,
+            PerspectiveCamera.MAX_F
+        )
 
     def set_center(self, x, y):
         pan_deg, tilt_deg = self.coords2ptz(x, y)
@@ -247,6 +253,17 @@ class PerspectiveCamera(Camera):
             x, y = apply_homography(top_down.H_inv, x, y)
             return x, y
 
+        def measure_zoom(bbs):
+            bb_x_min, bb_y_min, bb_x_max, bb_y_max = get_bounding_box(bbs)
+
+            corner_pts = self.get_corner_pts()
+            roi_x_min, roi_y_min = corner_pts[0]
+            roi_x_max, roi_y_max = corner_pts[2]
+
+            dz = (bb_x_min - roi_x_min) + (roi_x_max - bb_x_max)
+
+            return dz
+
         _, y_center = self.center
 
         # is_in_dead_zone = self.is_meas_in_dead_zone()
@@ -267,6 +284,10 @@ class PerspectiveCamera(Camera):
         if bbs:
             x_players, y_players = measure_players(bbs)
             self.measurement_last = (x_players, y_players)
+
+            dz = measure_zoom(bbs)
+            print(f"DZ: {dz}")
+            self.zoom(dz)
 
         if not self.is_initialized:
             self.model.set_pos(*self.measurement_last)
