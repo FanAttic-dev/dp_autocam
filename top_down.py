@@ -12,12 +12,13 @@ class TopDown:
     pitch_model_path = assets_path / 'pitch_model.png'
     pitch_coords_path = assets_path / 'coords_pitch_model.json'
 
-    def __init__(self, video_pitch_coords):
+    def __init__(self, video_pitch_coords, camera):
         self.pitch_model = cv2.imread(str(TopDown.pitch_model_path))
         self.pitch_coords = load_json(TopDown.pitch_coords_path)
         self.video_pitch_coords = video_pitch_coords
         self.H, _ = cv2.findHomography(coords_to_pts(video_pitch_coords),
                                        coords_to_pts(self.pitch_coords))
+        self.camera = camera
 
     @property
     def H_inv(self):
@@ -47,18 +48,25 @@ class TopDown:
         h, w, _ = self.pitch_model.shape
         return x >= 0 and x < w and y >= 0 and y < h
 
-    def draw_points_(self, top_down_frame, points):
+    def draw_bbs_(self, top_down_frame, bbs):
+        points = self.bbs2points(bbs)
         for pt, cls in zip(points["points"], points["cls"]):
-            x, y = pt
-            if not self.check_bounds(x, y):
-                continue
+            # if not self.check_bounds(*pt):
+            #     continue
             cv2.circle(
-                top_down_frame, (x, y), radius=10, color=YoloDetector.cls2color[cls], thickness=-1)
+                top_down_frame, pt, radius=10, color=YoloDetector.cls2color[cls], thickness=-1)
 
-    def draw_roi_(self, frame, camera):
+    def draw_roi_(self, frame):
         pts_warped = np.array([
             apply_homography(self.H, x, y)
-            for x, y in camera.get_corner_pts()
+            for x, y in self.camera.get_corner_pts()
         ], dtype=np.int32)
         cv2.polylines(frame, [pts_warped], isClosed=True,
                       color=colors["yellow"], thickness=5)
+
+    def get_frame(self, bbs):
+        top_down_frame = self.pitch_model.copy()
+        self.draw_roi_(top_down_frame)
+
+        self.draw_bbs_(top_down_frame, bbs)
+        return top_down_frame

@@ -33,24 +33,26 @@ def parse_args():
 """ Init """
 args = parse_args()
 
-# video_path = get_random_file(videos_dir)
-video_path = Path(
-    "/home/atti/source/datasets/SoccerTrack/wide_view/videos/F_20200220_1_0120_0150.mp4")
+video_path = get_random_file(videos_dir)
+# video_path = Path(
+#     "/home/atti/source/datasets/SoccerTrack/wide_view/videos/F_20200220_1_0120_0150.mp4")
 player = VideoPlayer(video_path)
 delay = player.get_delay(args.record)
-
-pitch_coords = load_json(coords_path)
-top_down = TopDown(pitch_coords)
-detector = YoloPlayerDetector(pitch_coords)
-ball_detector = YoloBallDetector(pitch_coords)
 
 is_alive, frame_orig = player.get_next_frame()
 camera = PerspectiveCamera(frame_orig)
 frame_splitter = PerspectiveFrameSplitter(frame_orig)
 
+pitch_coords = load_json(coords_path)
+top_down = TopDown(pitch_coords, camera)
+detector = YoloPlayerDetector(pitch_coords)
+ball_detector = YoloBallDetector(pitch_coords)
+
+args.record = True
+
 if args.mouse:
     player.create_window("Original")
-    cv2.setMouseCallback("Original", mouse_callback)
+    cv2.setMouseCallback("O`riginal", mouse_callback)
 
 if args.record:
     recorder = VideoRecorder(player, camera)
@@ -82,25 +84,27 @@ while is_alive:
         frames = frame_splitter.split(frame_orig)
 
         # Players
-        # bbs, _ = detector.detect(frames)
-        # bbs_joined = frame_splitter.join_bbs(bbs)
+        bbs, _ = detector.detect(frames)
+        bbs_joined = frame_splitter.join_bbs(bbs)
 
         # Balls
-        bbs_ball, bbs_ball_frame = ball_detector.detect(frames)
+        bb_ball = []
+        # bbs_ball, bbs_ball_frame = ball_detector.detect(frames)
         # for i, ball_frame in enumerate(bbs_ball_frame):
         #     player.show_frame(ball_frame, f"ball frame {i}")
-        bbs_ball_joined = frame_splitter.join_bbs(bbs_ball)
-        bb_ball = ball_detector.get_ball(bbs_ball_joined)
-        add_bb_ball_(bbs_joined, bb_ball)
+        # bbs_ball_joined = frame_splitter.join_bbs(bbs_ball)
+        # bb_ball = ball_detector.get_ball(bbs_ball_joined)
+        # add_bb_ball_(bbs_joined, bb_ball)
 
         # Render
         detector.draw_bbs_(frame_orig, bbs_joined)
 
     """ ROI """
     camera.update_by_bbs(bbs_joined, bb_ball, top_down)
+    camera.draw_last_measurement_(frame_orig)
     frame = camera.get_frame(frame_orig)
 
-    camera.draw_dead_zone_(frame)
+    # camera.draw_dead_zone_(frame)
     if not args.record:
         player.show_frame(frame, "ROI")
     # camera.print()
@@ -110,13 +114,8 @@ while is_alive:
     player.show_frame(frame_orig, "Original")
 
     """ Top-down """
-    # top_down_frame = top_down.pitch_model.copy()
-    # top_down.draw_roi_(top_down_frame, camera)
-
-    # top_down_pts = top_down.bbs2points(bbs_joined)
-    # top_down.draw_points_(top_down_frame, top_down_pts)
-
-    # player.show_frame(top_down_frame, "top down")
+    top_down_frame = top_down.get_frame(bbs_joined)
+    player.show_frame(top_down_frame, "top down")
 
     """ Warp frame """
     # frame_warped = top_down.warp_frame(frame_orig)
@@ -124,7 +123,7 @@ while is_alive:
 
     """ Input """
     if args.record:
-        recorded_frame = recorder.write(frame)
+        recorded_frame = recorder.write(frame, top_down_frame)
         player.show_frame(recorded_frame, "Recorded_frame")
 
     key = cv2.waitKey(delay)
