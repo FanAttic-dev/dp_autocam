@@ -34,7 +34,7 @@ class PerspectiveCamera(Camera):
     MIN_PAN_DEG = -50
     MAX_PAN_DEG = 50
     DEFAULT_TILT_DEG = 9
-    MIN_TILT_DEG = 8
+    MIN_TILT_DEG = 9
     MAX_TILT_DEG = 9
     FRAME_ASPECT_RATIO = 16/9
     FRAME_W = 1920
