@@ -54,7 +54,29 @@ class TopDown:
             # if not self.check_bounds(*pt):
             #     continue
             cv2.circle(
-                top_down_frame, pt, radius=10, color=YoloDetector.cls2color[cls], thickness=-1)
+                top_down_frame,
+                pt,
+                radius=10,
+                color=YoloDetector.cls2color[cls],
+                thickness=-1
+            )
+
+    def draw_last_measurement_(self, top_down_frame):
+        meas = np.array([[self.camera.measurement_last]], dtype=np.float32)
+        meas_top_down_coord = cv2.perspectiveTransform(meas, self.H)[0][0]
+        self.draw_points_(
+            top_down_frame, [meas_top_down_coord], colors["violet"])
+
+    def draw_points_(self, top_down_frame, points, color):
+        for pt in points:
+            x, y = pt
+            cv2.circle(
+                top_down_frame,
+                (int(x), int(y)),
+                radius=10,
+                color=color,
+                thickness=-1
+            )
 
     def draw_roi_(self, frame):
         pts_warped = np.array([
@@ -69,4 +91,5 @@ class TopDown:
         self.draw_roi_(top_down_frame)
 
         self.draw_bbs_(top_down_frame, bbs)
+        self.draw_last_measurement_(top_down_frame)
         return top_down_frame

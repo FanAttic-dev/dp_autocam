@@ -115,7 +115,8 @@ while is_alive:
 
     """ Top-down """
     top_down_frame = top_down.get_frame(bbs_joined)
-    player.show_frame(top_down_frame, "top down")
+    if not args.record:
+        player.show_frame(top_down_frame, "top down")
 
     """ Warp frame """
     # frame_warped = top_down.warp_frame(frame_orig)

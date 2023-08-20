@@ -264,8 +264,8 @@ class PerspectiveCamera(Camera):
         #     self.model.update(*self.measurement_last)
 
         if bbs:
-            x_players, _ = measure_players(bbs)
-            self.measurement_last = (x_players, y_center)
+            x_players, y_players = measure_players(bbs)
+            self.measurement_last = (x_players, y_players)
             self.model.update(*self.measurement_last)
 
 
