@@ -79,10 +79,19 @@ class TopDown:
             )
 
     def draw_roi_(self, frame):
-        pts_warped = np.array([
-            apply_homography(self.H, x, y)
-            for x, y in self.camera.get_corner_pts()
-        ], dtype=np.int32)
+        x_min = self.video_pitch_coords["left bottom"]["x"]
+        x_max = self.video_pitch_coords["right bottom"]["x"]
+        y_max = self.video_pitch_coords["left bottom"]["y"]
+        y_min = self.video_pitch_coords["left top"]["y"]
+
+        pts_warped = []
+        for x, y in self.camera.get_corner_pts():
+            x = np.clip(x, x_min, x_max)
+            y = np.clip(y, y_min, y_max)
+            x_, y_ = apply_homography(self.H, x, y)
+            pts_warped.append((x_, y_))
+        pts_warped = np.array(pts_warped, dtype=np.int32)
+
         cv2.polylines(frame, [pts_warped], isClosed=True,
                       color=colors["yellow"], thickness=5)
 
