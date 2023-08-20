@@ -65,15 +65,15 @@ class TopDown:
         meas = np.array([[self.camera.measurement_last]], dtype=np.float32)
         meas_top_down_coord = cv2.perspectiveTransform(meas, self.H)[0][0]
         self.draw_points_(
-            top_down_frame, [meas_top_down_coord], colors["violet"])
+            top_down_frame, [meas_top_down_coord], colors["violet"], radius=20)
 
-    def draw_points_(self, top_down_frame, points, color):
+    def draw_points_(self, top_down_frame, points, color, radius=10):
         for pt in points:
             x, y = pt
             cv2.circle(
                 top_down_frame,
                 (int(x), int(y)),
-                radius=10,
+                radius=radius,
                 color=color,
                 thickness=-1
             )
