@@ -34,8 +34,8 @@ def parse_args():
 args = parse_args()
 
 video_path = get_random_file(videos_dir)
-# video_path = Path(
-#     "/home/atti/source/datasets/SoccerTrack/wide_view/videos/F_20200220_1_0120_0150.mp4")
+video_path = Path(
+    "/home/atti/source/datasets/SoccerTrack/wide_view/videos/F_20220220_1_1740_1770.mp4")
 player = VideoPlayer(video_path)
 delay = player.get_delay(args.record)
 

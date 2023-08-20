@@ -56,9 +56,10 @@ class PerspectiveCamera(Camera):
         # self.model = KalmanFilterAcc(dt=0.1, std_acc=0.01, std_meas=500)
         # self.model = KalmanFilterAccCtrl(
         #     dt=0.1, std_acc=0.01, std_meas=100, acc_x=5, acc_y=5)
+        self.is_initialized = False
         self.model.set_pos(*self.center)
-        self.pause_measurements = False
         self.measurement_last = self.center
+        self.pause_measurements = False
         self.init_dead_zone()
 
     @property
@@ -266,8 +267,14 @@ class PerspectiveCamera(Camera):
         if bbs:
             x_players, y_players = measure_players(bbs)
             self.measurement_last = (x_players, y_players)
-            # UPDATE ONLY X
-            self.model.update(x_players, y_center)
+
+        if not self.is_initialized:
+            self.model.set_pos(*self.measurement_last)
+            self.set_center(*self.measurement_last)
+            self.is_initialized = True
+            return
+
+        self.model.update(*self.measurement_last)
 
 
 class FixedHeightCamera(Camera):
