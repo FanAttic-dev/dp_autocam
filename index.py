@@ -53,7 +53,7 @@ ball_detector = YoloBallDetector(pitch_coords)
 
 if args.mouse:
     player.create_window("Original")
-    cv2.setMouseCallback("O`riginal", mouse_callback)
+    cv2.setMouseCallback("Original", mouse_callback)
 
 if args.record:
     recorder = VideoRecorder(player, camera)
