@@ -47,7 +47,7 @@ frame_splitter = PerspectiveFrameSplitter(frame_orig)
 pitch_coords = load_json(coords_path)
 top_down = TopDown(pitch_coords, camera)
 detector = YoloPlayerDetector(pitch_coords)
-ball_detector = YoloBallDetector(pitch_coords)
+ball_detector = YoloBallDetector(pitch_coords, camera.ball_model)
 
 # args.record = True
 
@@ -107,7 +107,8 @@ while is_alive:
     """ ROI """
     camera.update_by_bbs(bbs_joined, bb_ball, top_down)
     camera.draw_ball_prediction_(frame_orig, colors["green"])
-    detector.draw_ball_radius_(frame_orig, camera.ball_model, colors["green"])
+    ball_detector.draw_ball_radius_(
+        frame_orig, colors["green"])
     frame = camera.get_frame(frame_orig)
 
     camera.draw_dead_zone_(frame)
@@ -121,7 +122,7 @@ while is_alive:
     # cv2.rectangle(frame_orig, (x1, y1), (x2, y2),
     #               colors["green"], thickness=10)
 
-    # player.show_frame(frame_orig, "Original")
+    player.show_frame(frame_orig, "Original")
 
     """ Top-down """
     top_down_frame = top_down.get_frame(bbs_joined)
@@ -133,7 +134,7 @@ while is_alive:
 
     """ Recorder """
     recorder_frame = recorder.get_frame(frame, top_down_frame)
-    # player.show_frame(recorder_frame, "ROI")
+    player.show_frame(recorder_frame, "ROI")
     if args.record:
         recorder.write(recorder_frame)
 
