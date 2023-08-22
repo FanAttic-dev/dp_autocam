@@ -2,8 +2,8 @@ import cv2
 import numpy as np
 from constants import colors
 from dynamics import Dynamics
-from kalman_filter import KalmanFilterAcc, KalmanFilterAccCtrl, KalmanFilterVel
-from utils import apply_homography, average_point, get_bounding_box, lies_in_rectangle
+from kalman_filter import KalmanFilterAcc, KalmanFilterVel
+from utils import apply_homography, average_point, get_bb_center, get_bounding_box, lies_in_rectangle
 
 
 class Camera:
@@ -33,11 +33,11 @@ class PerspectiveCamera(Camera):
     MAX_F = 2083
     CYLLINDER_RADIUS = 1000
     DEFAULT_PAN_DEG = 12
-    MIN_PAN_DEG = -50
-    MAX_PAN_DEG = 50
+    MIN_PAN_DEG = -60
+    MAX_PAN_DEG = 60
     DEFAULT_TILT_DEG = 9
-    MIN_TILT_DEG = 5
-    MAX_TILT_DEG = 12
+    MIN_TILT_DEG = 9  # 5
+    MAX_TILT_DEG = 9  # 12
     FRAME_ASPECT_RATIO = 16/9
     FRAME_W = 1920
     FRAME_H = int(FRAME_W / FRAME_ASPECT_RATIO)
@@ -52,15 +52,15 @@ class PerspectiveCamera(Camera):
         h, w, _ = frame_orig.shape
         self.frame_orig_center_x = w // 2
         self.frame_orig_center_y = h // 2
-        self.set(pan_deg, tilt_deg)
-        self.model = Dynamics(dt=0.1, alpha=0.01)
-        # self.model = KalmanFilterVel(dt=0.1, std_acc=0.01, std_meas=50)
-        # self.model = KalmanFilterAcc(dt=0.1, std_acc=0.01, std_meas=500)
-        # self.model = KalmanFilterAccCtrl(
-        #     dt=0.1, std_acc=0.01, std_meas=100, acc_x=5, acc_y=5)
         self.is_initialized = False
+        self.set(pan_deg, tilt_deg)
+        self.model = Dynamics(dt=0.01, accel_rate=0.1, decel_rate=0.1)
+        # self.model = KalmanFilterVel(
+        #     dt=0.1, std_acc=0.1, std_meas=100, decel_rate=1)
         self.model.set_pos(*self.center)
-        self.measurement_last = self.center
+        self.ball_model = KalmanFilterVel(
+            dt=0.1, std_acc=0.1, std_meas=0.05, decel_rate=0.1)
+        self.ball_model.set_pos(*self.center)
         self.pause_measurements = False
         self.init_dead_zone()
 
@@ -124,8 +124,8 @@ class PerspectiveCamera(Camera):
             [1280, 1079]  # end point (bottom right)
         ])
 
-    def is_meas_in_dead_zone(self):
-        meas = np.array([[self.measurement_last]], dtype=np.float32)
+    def is_meas_in_dead_zone(self, meas_x, meas_y):
+        meas = np.array([[[meas_x.item(), meas_y.item()]]], dtype=np.float32)
         meas_frame_coord = cv2.perspectiveTransform(meas, self.H)[0][0]
         return lies_in_rectangle(meas_frame_coord, self.dead_zone)
 
@@ -186,8 +186,8 @@ class PerspectiveCamera(Camera):
         cv2.circle(frame_orig, self.center,
                    radius=5, color=color, thickness=5)
 
-    def draw_last_measurement_(self, frame_orig, color=colors["violet"]):
-        x, y = self.measurement_last
+    def draw_ball_prediction_(self, frame_orig, color=colors["violet"]):
+        x, y = self.ball_model.pos
         cv2.circle(frame_orig, (int(x), int(y)),
                    radius=5, color=color, thickness=5)
 
@@ -242,10 +242,7 @@ class PerspectiveCamera(Camera):
 
     def update_by_bbs(self, bbs, bb_ball, top_down):
         def measure_ball(bb_ball):
-            x1, y1, x2, y2 = bb_ball
-            x_ball = (x1 + x2) // 2
-            y_ball = (y1 + y2) // 2
-            return x_ball, y_ball
+            return get_bb_center(bb_ball)
 
         def measure_players(bbs):
             pts = top_down.bbs2points(bbs)
@@ -266,36 +263,38 @@ class PerspectiveCamera(Camera):
 
         _, y_center = self.center
 
-        # is_in_dead_zone = self.is_meas_in_dead_zone()
-        # self.model.set_decelerating(is_decelerating=is_in_dead_zone)
+        if bb_ball:
+            x_ball, y_ball = measure_ball(bb_ball)
+            self.ball_model.update(x_ball, y_ball)
 
-        self.model.predict()
-        self.model.print()
-
-        self.set_center(*self.model.pos)
-
-        # if bb_ball:
-        #     x_ball, _ = measure_ball(bb_ball)
-        #     self.measurement_last = (x_ball, y_center)
-
-        # if not is_in_dead_zone:
-        #     self.model.update(*self.measurement_last)
-
-        if bbs:
-            x_players, y_players = measure_players(bbs)
-            self.measurement_last = (x_players, y_players)
-
-            dz = measure_zoom(bbs)
-            print(f"DZ: {dz}")
-            self.zoom(dz)
-
-        if not self.is_initialized:
-            self.model.set_pos(*self.measurement_last)
-            self.set_center(*self.measurement_last)
+        if not self.is_initialized and self.ball_model.last_measurement is not None:
+            self.ball_model.set_pos(*self.ball_model.last_measurement)
+            self.model.set_pos(*self.ball_model.last_measurement)
+            self.set_center(*self.ball_model.last_measurement)
             self.is_initialized = True
             return
 
-        self.model.update(*self.measurement_last)
+        # Ball model
+        self.ball_model.set_decelerating(len(bb_ball) == 0)
+        self.ball_model.predict()
+
+        is_in_dead_zone = self.is_meas_in_dead_zone(*self.ball_model.pos)
+
+        # Camera model
+        if not is_in_dead_zone:
+            self.model.update(*self.ball_model.pos)
+
+        self.model.set_decelerating(is_decelerating=is_in_dead_zone)
+        self.model.predict()
+        self.set_center(*self.model.pos)
+
+        # if bbs:
+        #     x_players, y_players = measure_players(bbs)
+        #     self.measurement_last = (x_players, y_players)
+
+        #     dz = measure_zoom(bbs)
+        #     print(f"DZ: {dz}")
+        #     self.zoom(dz)
 
 
 class FixedHeightCamera(Camera):

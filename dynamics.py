@@ -4,13 +4,10 @@ from model import Model
 
 
 class Dynamics(Model):
-    ACCELERATION_RATE = 1
-    DECELERATION_RATE = 2
-
-    def __init__(self, dt, alpha):
+    def __init__(self, dt, accel_rate, decel_rate):
+        super().__init__(decel_rate)
         self.dt = dt
-        self.alpha = alpha
-        self.is_decelerating = False
+        self.accel_rate = accel_rate
 
         self.F = np.array([
             [1, dt, 0, 0],
@@ -20,10 +17,10 @@ class Dynamics(Model):
         ])
 
         self.G = np.array([
-            [alpha * dt, 0],
-            [alpha, 0],
-            [0, alpha * dt],
-            [0, alpha],
+            [dt, 0],
+            [1, 0],
+            [0, dt],
+            [0, 1],
         ])
 
         self.x = np.array([
@@ -55,7 +52,7 @@ class Dynamics(Model):
         self.u = np.array([
             dx,
             dy
-        ]) * Dynamics.ACCELERATION_RATE
+        ]) * self.accel_rate
 
     def set_decelerating(self, is_decelerating):
         self.is_decelerating = is_decelerating
@@ -65,10 +62,12 @@ class Dynamics(Model):
 
         if self.is_decelerating:
             print("Decelerating")
-            self.u = -Dynamics.DECELERATION_RATE * self.vel
+            self.u = -self.decel_rate * self.vel
             self.x = self.x + self.G @ self.u
 
     def update(self, x_meas, y_meas):
+        self.set_last_measurement(x_meas, y_meas)
+
         x_pos, y_pos = self.pos
         dx = x_meas - x_pos
         dy = y_meas - y_pos
@@ -80,10 +79,9 @@ class Dynamics(Model):
         stats = {
             "Name": "Dynamics Velocity Model",
             "is_decelerating": self.is_decelerating,
-            "Decel. rate": Dynamics.DECELERATION_RATE,
-            "Accel. rate": Dynamics.ACCELERATION_RATE,
+            "Decel. rate": self.decel_rate,
+            "Accel. rate": self.accel_rate,
             "dt": self.dt,
-            "alpha": self.alpha,
             "Pos": [f"{self.x[0].item():.2f}", f"{self.x[2].item():.2f}"],
             "Vel": [f"{self.x[1].item():.2f}", f"{self.x[3].item():.2f}"],
             "U": [f"{self.u[0].item():.2f}", f"{self.u[1].item():.2f}"],

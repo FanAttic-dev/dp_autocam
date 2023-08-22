@@ -1,4 +1,9 @@
 class Model:
+    def __init__(self, decel_rate):
+        self.decel_rate = decel_rate
+        self.set_decelerating(False)
+        self.last_measurement = None
+
     @property
     def pos(self):
         ...
@@ -24,6 +29,9 @@ class Model:
 
     def predict(self):
         ...
+
+    def set_last_measurement(self, x_meas, y_meas):
+        self.last_measurement = x_meas, y_meas
 
     def update(self, x_meas, y_meas):
         ...
