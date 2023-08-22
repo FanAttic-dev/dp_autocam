@@ -81,3 +81,17 @@ def lies_in_rectangle(pt, rect):
     x_pt, y_pt = pt
     return x_start <= x_pt and y_start <= y_pt \
         and x_pt <= x_end and y_pt <= y_end
+
+
+def get_bounding_box(bbs):
+    x_min, x_max = np.inf, -np.inf
+    y_min, y_max = np.inf, -np.inf
+
+    for bb in bbs["boxes"]:
+        x1, y1, x2, y2 = bb
+        x_min = min(x_min, x1)
+        y_min = min(y_min, y1)
+        x_max = max(x_max, x2)
+        y_max = max(y_max, y2)
+
+    return x_min, y_min, x_max, y_max

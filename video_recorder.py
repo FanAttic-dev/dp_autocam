@@ -90,8 +90,22 @@ class VideoRecorder:
 
         return frame
 
-    def write(self, frame):
+    def add_top_down_(self, frame, top_down_frame):
+        # frame_h, frame_w, _ = self.frame_size
+        # top_down_start = [1920, 709]
+        top_down_h, top_down_w, _ = top_down_frame.shape
+
+        top_down_h = int(top_down_h * (VideoRecorder.STATS_WIDTH / top_down_w))
+        top_down_w = VideoRecorder.STATS_WIDTH
+
+        top_down_frame_res = cv2.resize(
+            top_down_frame, (top_down_w, top_down_h))
+        frame[-top_down_h-1:-1, -top_down_w-1:-1] = top_down_frame_res
+        return frame
+
+    def write(self, frame, top_down_frame):
         frame = self.add_stats_bar(frame)
+        frame = self.add_top_down_(frame, top_down_frame)
         self.writer.write(frame)
         return frame
 
