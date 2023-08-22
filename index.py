@@ -34,9 +34,9 @@ def parse_args():
 """ Init """
 args = parse_args()
 
-# video_path = get_random_file(videos_dir)
-video_path = Path(
-    "/home/atti/source/datasets/SoccerTrack/wide_view/videos/F_20200220_1_0120_0150.mp4")
+video_path = get_random_file(videos_dir)
+# video_path = Path(
+#     "/home/atti/source/datasets/SoccerTrack/wide_view/videos/F_20200220_1_0120_0150.mp4")
 player = VideoPlayer(video_path)
 delay = player.get_delay(args.record)
 
@@ -95,7 +95,7 @@ while is_alive:
         # for i, ball_frame in enumerate(bbs_ball_frame):
         #     player.show_frame(ball_frame, f"ball frame {i}")
         bbs_ball_joined = frame_splitter.join_bbs(bbs_ball)
-        # detector.draw_bbs_(frame_orig, bbs_ball_joined, colors["white"])
+        detector.draw_bbs_(frame_orig, bbs_ball_joined, colors["white"])
 
         bb_ball = ball_detector.filter_balls(
             bbs_ball_joined, camera.ball_model)
@@ -115,13 +115,13 @@ while is_alive:
     # camera.print()
     # camera.draw_center_(frame_orig)
     # frame_splitter.draw_roi_(frame_orig)
-    camera.draw_roi_(frame_orig)
+    # camera.draw_roi_(frame_orig)
 
-    x1, y1, x2, y2 = get_bounding_box(bbs_joined)
-    cv2.rectangle(frame_orig, (x1, y1), (x2, y2),
-                  colors["green"], thickness=10)
+    # x1, y1, x2, y2 = get_bounding_box(bbs_joined)
+    # cv2.rectangle(frame_orig, (x1, y1), (x2, y2),
+    #               colors["green"], thickness=10)
 
-    player.show_frame(frame_orig, "Original")
+    # player.show_frame(frame_orig, "Original")
 
     """ Top-down """
     top_down_frame = top_down.get_frame(bbs_joined)
@@ -133,7 +133,7 @@ while is_alive:
 
     """ Recorder """
     recorder_frame = recorder.get_frame(frame, top_down_frame)
-    player.show_frame(recorder_frame, "ROI")
+    # player.show_frame(recorder_frame, "ROI")
     if args.record:
         recorder.write(recorder_frame)
 
