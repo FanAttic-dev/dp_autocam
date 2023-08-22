@@ -54,7 +54,7 @@ class PerspectiveCamera(Camera):
         self.frame_orig_center_y = h // 2
         self.is_initialized = False
         self.set(pan_deg, tilt_deg)
-        self.model = Dynamics(dt=0.01, accel_rate=0.01, decel_rate=0.1)
+        self.model = Dynamics(dt=0.01, accel_rate=0.1, decel_rate=0.1)
         # self.model = KalmanFilterVel(
         #     dt=0.1, std_acc=0.1, std_meas=100, decel_rate=1)
         self.model.set_pos(*self.center)
