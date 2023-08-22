@@ -111,7 +111,7 @@ class YoloBallDetector(YoloDetector):
         th_min = 5
         th = th_max * self.ball_model.K_x
 
-        dt = 100
+        dt = 20
         if self.__ball_threshold < th:
             self.__ball_threshold += dt
         else:
