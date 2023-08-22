@@ -95,3 +95,10 @@ def get_bounding_box(bbs):
         y_max = max(y_max, y2)
 
     return x_min, y_min, x_max, y_max
+
+
+def get_bb_center(bb):
+    x1, y1, x2, y2 = bb
+    x = (x1 + x2) // 2
+    y = (y1 + y2) // 2
+    return x, y

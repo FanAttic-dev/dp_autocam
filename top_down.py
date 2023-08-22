@@ -62,7 +62,8 @@ class TopDown:
             )
 
     def draw_last_measurement_(self, top_down_frame):
-        meas = np.array([[self.camera.measurement_last]], dtype=np.float32)
+        meas = np.array(
+            [[self.camera.model.last_measurement]], dtype=np.float32)
         meas_top_down_coord = cv2.perspectiveTransform(meas, self.H)[0][0]
         self.draw_points_(
             top_down_frame, [meas_top_down_coord], colors["violet"], radius=20)
@@ -101,5 +102,5 @@ class TopDown:
         self.draw_roi_(top_down_frame)
 
         self.draw_bbs_(top_down_frame, bbs)
-        self.draw_last_measurement_(top_down_frame)
+        # self.draw_last_measurement_(top_down_frame)
         return top_down_frame

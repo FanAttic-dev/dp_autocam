@@ -6,12 +6,12 @@ from ultralytics import YOLO
 
 from image_processor import ImageProcessor
 from constants import colors
+from utils import get_bb_center
 
 
 class Detector:
     def __init__(self, pitch_coords):
         self.pitch_coords = pitch_coords
-        self.bb_ball_last = None
 
     def preprocess(self, img):
         ...
@@ -20,6 +20,9 @@ class Detector:
         ...
 
     def plot(self, bbs):
+        ...
+
+    def get_stats(self):
         ...
 
 
@@ -59,10 +62,10 @@ class YoloDetector(Detector):
             bbs_frames.append(bbs)
         return bbs_frames
 
-    def draw_bbs_(self, img, bbs):
+    def draw_bbs_(self, img, bbs, color=None):
         for bb, cls in zip(bbs["boxes"], bbs["cls"]):
             x1, y1, x2, y2 = bb
-            color = YoloDetector.cls2color[cls]
+            color = YoloDetector.cls2color[cls] if color is None else color
             cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
 
     def plot(self, res):
@@ -74,7 +77,15 @@ class YoloDetector(Detector):
         img = ImageProcessor.draw_mask(img, self.pitch_coords, margin=1)
         return img
 
-    def get_ball(self, bbs):
+    @staticmethod
+    def get_ball_threshold(ball_model):
+        th_max = 500
+        th_min = 5
+        rate = 800
+        th = rate * ball_model.K_x
+        return np.clip(th, th_min, th_max)
+
+    def filter_balls(self, bbs, ball_model):
         bb_balls = [
             bb for bb, cls in zip(bbs["boxes"], bbs["cls"]) if cls == 0
         ]
@@ -83,17 +94,40 @@ class YoloDetector(Detector):
             # no ball detected
             return []
 
-        if not self.bb_ball_last:
-            self.bb_ball_last = bb_balls[0]
-            return self.bb_ball_last
+        if ball_model.last_measurement is None:
+            return bb_balls[0]
 
         # choose the closest detection to the reference
-        bb_ball = min(
-            bb_balls,
-            key=lambda bb: np.linalg.norm(np.array(bb) - np.array(self.bb_ball_last)))
+        bb_balls_dist = map(
+            lambda bb: {
+                "bb": bb,
+                "dist": np.linalg.norm(np.array(get_bb_center(bb)) - ball_model.pos.flatten())
+            },
+            bb_balls
+        )
+        bb_ball = min(bb_balls_dist, key=lambda bb: bb["dist"])
 
-        self.bb_ball_last = bb_ball
-        return bb_ball
+        threshold = YoloDetector.get_ball_threshold(ball_model)
+        if bb_ball["dist"] > threshold:
+            print("Discarding:", bb_ball)
+            return []
+
+        print("Ball:", bb_ball)
+        return bb_ball["bb"]
+
+    def draw_ball_radius_(self, frame, ball_model, color):
+        threshold = YoloDetector.get_ball_threshold(ball_model)
+        x, y = ball_model.pos
+        cv2.circle(frame, (int(x), int(y)), int(threshold), color)
+
+    def get_stats(self):
+        return {
+            "Name": self.__class__.__name__,
+            "imgsz": self.args["imgsz"],
+            "conf": self.args["conf"],
+            "max_det": self.args["max_det"],
+            "iou": self.args["iou"]
+        }
 
 
 class YoloBallDetector(YoloDetector):
@@ -101,7 +135,7 @@ class YoloBallDetector(YoloDetector):
         'device': 0,  # 0 if gpu else 'cpu'
         'imgsz': 960,
         'classes': None,  # [0] for ball only, None for all
-        'conf': 0.4,
+        'conf': 0.3,
         'max_det': 1,
         'iou': 0.5
     }

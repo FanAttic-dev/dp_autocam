@@ -8,9 +8,9 @@ class Dynamics(Model):
     DECELERATION_RATE = 2
 
     def __init__(self, dt, alpha):
+        super().__init__()
         self.dt = dt
         self.alpha = alpha
-        self.is_decelerating = False
 
         self.F = np.array([
             [1, dt, 0, 0],
@@ -69,6 +69,8 @@ class Dynamics(Model):
             self.x = self.x + self.G @ self.u
 
     def update(self, x_meas, y_meas):
+        self.set_last_measurement(x_meas, y_meas)
+
         x_pos, y_pos = self.pos
         dx = x_meas - x_pos
         dy = y_meas - y_pos
