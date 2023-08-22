@@ -77,49 +77,6 @@ class YoloDetector(Detector):
         img = ImageProcessor.draw_mask(img, self.pitch_coords, margin=1)
         return img
 
-    @staticmethod
-    def get_ball_threshold(ball_model):
-        th_max = 500
-        th_min = 5
-        rate = 800
-        th = rate * ball_model.K_x
-        return np.clip(th, th_min, th_max)
-
-    def filter_balls(self, bbs, ball_model):
-        bb_balls = [
-            bb for bb, cls in zip(bbs["boxes"], bbs["cls"]) if cls == 0
-        ]
-
-        if len(bb_balls) == 0:
-            # no ball detected
-            return []
-
-        if ball_model.last_measurement is None:
-            return bb_balls[0]
-
-        # choose the closest detection to the reference
-        bb_balls_dist = map(
-            lambda bb: {
-                "bb": bb,
-                "dist": np.linalg.norm(np.array(get_bb_center(bb)) - ball_model.pos.flatten())
-            },
-            bb_balls
-        )
-        bb_ball = min(bb_balls_dist, key=lambda bb: bb["dist"])
-
-        threshold = YoloDetector.get_ball_threshold(ball_model)
-        if bb_ball["dist"] > threshold:
-            print("Discarding:", bb_ball)
-            return []
-
-        print("Ball:", bb_ball)
-        return bb_ball["bb"]
-
-    def draw_ball_radius_(self, frame, ball_model, color):
-        threshold = YoloDetector.get_ball_threshold(ball_model)
-        x, y = ball_model.pos
-        cv2.circle(frame, (int(x), int(y)), int(threshold), color)
-
     def get_stats(self):
         return {
             "Name": self.__class__.__name__,
@@ -143,10 +100,63 @@ class YoloBallDetector(YoloDetector):
     model_path = Path(
         f"./weights/yolov8_{YoloDetector.args['imgsz']}_ball.pt")
 
+    def __init__(self, pitch_coords, ball_model):
+        super().__init__(pitch_coords)
+        self.ball_model = ball_model
+        self.__ball_threshold = 5
+
+    @property
+    def ball_threshold(self):
+        th_max = 2000
+        th_min = 5
+        th = th_max * self.ball_model.K_x
+
+        dt = 100
+        if self.__ball_threshold < th:
+            self.__ball_threshold += dt
+        else:
+            self.__ball_threshold -= dt
+
+        return np.clip(self.__ball_threshold, th_min, th_max)
+
     def detect(self, img):
         res = self.model.track(
             img, **YoloBallDetector.args, tracker="bytetrack.yaml")
         return self.res2bbs(res), self.plot(res)
+
+    def filter_balls(self, bbs, ball_model):
+        bb_balls = [
+            bb for bb, cls in zip(bbs["boxes"], bbs["cls"]) if cls == 0
+        ]
+
+        if len(bb_balls) == 0:
+            # no ball detected
+            return []
+
+        if ball_model.last_measurement is None:
+            return bb_balls[0]
+
+        # choose the closest detection to the reference
+        bb_balls_dist = map(
+            lambda bb: {
+                "bb": bb,
+                "dist": np.linalg.norm(np.array(get_bb_center(bb)) - ball_model.pos.flatten())
+            },
+            bb_balls
+        )
+        bb_ball = min(bb_balls_dist, key=lambda bb: bb["dist"])
+
+        threshold = self.ball_threshold
+        if bb_ball["dist"] > threshold:
+            print("Discarding:", bb_ball)
+            return []
+
+        print("Ball:", bb_ball)
+        return bb_ball["bb"]
+
+    def draw_ball_radius_(self, frame, color):
+        x, y = self.ball_model.pos
+        cv2.circle(frame, (int(x), int(y)), int(self.ball_threshold), color)
 
 
 class YoloPlayerDetector(YoloDetector):
