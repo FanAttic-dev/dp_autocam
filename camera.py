@@ -95,7 +95,10 @@ class PerspectiveCamera(Camera):
         if bb_ball:
             x_ball, y_ball = measure_ball(bb_ball)
             self.ball_model.update(x_ball, y_ball)
-            x_meas, y_meas = x_ball, y_ball
+        else:
+            x_ball, y_ball = (1-w_players) * \
+                self.ball_model.pos + w_players * self.model.pos
+            self.ball_model.update(x_ball, y_ball)
 
         if bbs:
             x_players, y_players = measure_players(bbs)
