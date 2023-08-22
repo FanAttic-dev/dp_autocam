@@ -65,8 +65,8 @@ class YoloDetector(Detector):
     def draw_bbs_(self, img, bbs, color=None):
         for bb, cls in zip(bbs["boxes"], bbs["cls"]):
             x1, y1, x2, y2 = bb
-            color = YoloDetector.cls2color[cls] if color is None else color
-            cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
+            bb_color = YoloDetector.cls2color[cls] if color is None else color
+            cv2.rectangle(img, (x1, y1), (x2, y2), bb_color, 2)
 
     def plot(self, res):
         for i in range(len(res)):

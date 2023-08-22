@@ -56,7 +56,7 @@ class TopDown:
             cv2.circle(
                 top_down_frame,
                 pt,
-                radius=10,
+                radius=15,
                 color=YoloDetector.cls2color[cls],
                 thickness=-1
             )
