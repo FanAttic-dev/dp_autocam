@@ -110,8 +110,8 @@ while is_alive:
     detector.draw_ball_radius_(frame_orig, camera.ball_model, colors["green"])
     frame = camera.get_frame(frame_orig)
 
-    # camera.draw_dead_zone_(frame)
-    #     player.show_frame(frame, "ROI")
+    camera.draw_dead_zone_(frame)
+    # player.show_frame(frame, "ROI")
     # camera.print()
     # camera.draw_center_(frame_orig)
     # frame_splitter.draw_roi_(frame_orig)

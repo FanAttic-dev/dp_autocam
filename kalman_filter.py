@@ -4,8 +4,8 @@ from model import Model
 
 
 class KalmanFilterBase(Model):
-    def __init__(self, dt, std_acc, std_meas):
-        super().__init__()
+    def __init__(self, dt, std_acc, std_meas, decel_rate):
+        super().__init__(decel_rate)
         self.dt = dt
         self.std_acc = std_acc
         self.std_meas = std_meas
@@ -54,7 +54,8 @@ class KalmanFilterBase(Model):
             "dt": self.dt,
             "std_acc": self.std_acc,
             "std_meas": self.std_meas,
-            "is_decelerating": self.is_decelerating
+            "is_decelerating": self.is_decelerating,
+            "decel_rate": self.decel_rate
         }
 
     def print(self):
@@ -86,10 +87,8 @@ class KalmanFilterBase(Model):
 
 
 class KalmanFilterVel(KalmanFilterBase):
-    DECELERATION_RATE = 0.1
-
-    def __init__(self, dt, std_acc, std_meas):
-        super().__init__(dt, std_acc, std_meas)
+    def __init__(self, dt, std_acc, std_meas, decel_rate):
+        super().__init__(dt, std_acc, std_meas, decel_rate)
 
     @property
     def pos(self):
@@ -102,7 +101,7 @@ class KalmanFilterVel(KalmanFilterBase):
     @property
     def u(self):
         if self.is_decelerating:
-            return -self.vel * KalmanFilterVel.DECELERATION_RATE
+            return -self.vel * self.decel_rate
         return np.array([
             [0],
             [0]
@@ -160,7 +159,6 @@ class KalmanFilterVel(KalmanFilterBase):
             "Pos": [f"{self.x[0].item():.2f}", f"{self.x[2].item():.2f}"],
             "Vel": [f"{self.x[1].item():.2f}", f"{self.x[3].item():.2f}"],
             "u": [f"{self.u[0].item():.2f}", f"{self.u[1].item():.2f}"],
-            "P x": f"{self.P[0][0].item():.2f}",
             "K x": f"{self.K_x.item():.2f}",
         })
         return stats
@@ -178,10 +176,8 @@ class KalmanFilterVel(KalmanFilterBase):
 
 
 class KalmanFilterAcc(KalmanFilterBase):
-    DECELERATION_RATE = 0.8
-
-    def __init__(self, dt, std_acc, std_meas):
-        super().__init__(dt, std_acc, std_meas)
+    def __init__(self, dt, std_acc, std_meas, decel_rate):
+        super().__init__(dt, std_acc, std_meas, decel_rate)
 
     @property
     def pos(self):
@@ -244,7 +240,6 @@ class KalmanFilterAcc(KalmanFilterBase):
             "Pos": [f"{self.x[0].item():.2f}", f"{self.x[3].item():.2f}"],
             "Vel": [f"{self.x[1].item():.2f}", f"{self.x[4].item():.2f}"],
             "Acc": [f"{self.x[2].item():.2f}", f"{self.x[5].item():.2f}"],
-            "P x": f"{self.P[0][0].item():.2f}",
             "K x": f"{self.K_x.item():.2f}",
         })
         return stats
@@ -253,7 +248,7 @@ class KalmanFilterAcc(KalmanFilterBase):
         self.x = self.F @ self.x
 
         if self.is_decelerating:
-            self.set_acc(*(-self.vel * KalmanFilterAcc.DECELERATION_RATE))
+            self.set_acc(*(-self.vel * self.decel_rate))
 
         # P = F * P * F' + Q
         self.P = self.F @ self.P @ self.F.T + self.Q

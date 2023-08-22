@@ -105,7 +105,7 @@ class VideoRecorder:
         camera_stats = get_stats(self.camera.model, "Camera")
         detector_stats = get_stats(self.detector, "Detector")
 
-        text_y = VideoRecorder.TEXT_MARGIN + self.spacing
+        text_y = self.spacing
 
         frame = add_border(frame)
 

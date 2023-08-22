@@ -1,5 +1,6 @@
 class Model:
-    def __init__(self):
+    def __init__(self, decel_rate):
+        self.decel_rate = decel_rate
         self.set_decelerating(False)
         self.last_measurement = None
 
