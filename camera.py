@@ -54,10 +54,12 @@ class PerspectiveCamera(Camera):
         self.frame_orig_center_y = h // 2
         self.is_initialized = False
         self.set(pan_deg, tilt_deg)
-        # self.model = Dynamics(dt=0.1, alpha=0.01)
-        self.model = KalmanFilterVel(dt=0.1, std_acc=0.1, std_meas=1)
+        self.model = Dynamics(dt=0.01, accel_rate=0.01, decel_rate=0.1)
+        # self.model = KalmanFilterVel(
+        #     dt=0.1, std_acc=0.1, std_meas=100, decel_rate=1)
         self.model.set_pos(*self.center)
-        self.ball_model = KalmanFilterVel(dt=0.1, std_acc=0.1, std_meas=0.05)
+        self.ball_model = KalmanFilterVel(
+            dt=0.1, std_acc=0.1, std_meas=0.05, decel_rate=0.1)
         self.ball_model.set_pos(*self.center)
         self.pause_measurements = False
         self.init_dead_zone()
@@ -122,8 +124,8 @@ class PerspectiveCamera(Camera):
             [1280, 1079]  # end point (bottom right)
         ])
 
-    def is_meas_in_dead_zone(self):
-        meas = np.array([[self.measurement]], dtype=np.float32)
+    def is_meas_in_dead_zone(self, meas_x, meas_y):
+        meas = np.array([[[meas_x.item(), meas_y.item()]]], dtype=np.float32)
         meas_frame_coord = cv2.perspectiveTransform(meas, self.H)[0][0]
         return lies_in_rectangle(meas_frame_coord, self.dead_zone)
 
@@ -276,11 +278,13 @@ class PerspectiveCamera(Camera):
         self.ball_model.set_decelerating(len(bb_ball) == 0)
         self.ball_model.predict()
 
-        # Camera model
-        self.model.update(*self.ball_model.pos)
+        is_in_dead_zone = self.is_meas_in_dead_zone(*self.ball_model.pos)
 
-        # is_in_dead_zone = self.is_meas_in_dead_zone()
-        # self.model.set_decelerating(is_decelerating=is_in_dead_zone)
+        # Camera model
+        if not is_in_dead_zone:
+            self.model.update(*self.ball_model.pos)
+
+        self.model.set_decelerating(is_decelerating=is_in_dead_zone)
         self.model.predict()
         self.set_center(*self.model.pos)
 
