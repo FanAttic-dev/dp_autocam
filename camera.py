@@ -95,10 +95,14 @@ class PerspectiveCamera(Camera):
         if bb_ball:
             x_ball, y_ball = measure_ball(bb_ball)
             self.ball_model.update(x_ball, y_ball)
+            self.ball_model.set_u(0, 0)
         else:
             x_ball, y_ball = (1-w_players) * \
                 self.ball_model.pos + w_players * self.model.pos
-            self.ball_model.update(x_ball, y_ball)
+            u_speed = 0.05
+            x_u = (x_ball - x_meas) * u_speed
+            y_u = (y_ball - y_meas) * u_speed
+            self.ball_model.set_u(x_u, y_u)
 
         if bbs:
             x_players, y_players = measure_players(bbs)
@@ -118,7 +122,7 @@ class PerspectiveCamera(Camera):
             return
 
         # Ball model
-        self.ball_model.set_decelerating(len(bb_ball) == 0)
+        # self.ball_model.set_decelerating(len(bb_ball) == 0)
         self.ball_model.predict()
 
         is_in_dead_zone = self.is_meas_in_dead_zone(*self.model.pos)
