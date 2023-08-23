@@ -107,7 +107,7 @@ class YoloBallDetector(YoloDetector):
 
     @property
     def ball_threshold(self):
-        th_max = 2000
+        th_max = 1000
         th_min = 5
         th = th_max * self.ball_model.K_x
 
