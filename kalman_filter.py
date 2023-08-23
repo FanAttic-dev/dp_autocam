@@ -89,6 +89,10 @@ class KalmanFilterBase(Model):
 class KalmanFilterVel(KalmanFilterBase):
     def __init__(self, dt, std_acc, std_meas, decel_rate):
         super().__init__(dt, std_acc, std_meas, decel_rate)
+        self.__u = np.array([
+            [0],
+            [0]
+        ])
 
     @property
     def pos(self):
@@ -102,10 +106,11 @@ class KalmanFilterVel(KalmanFilterBase):
     def u(self):
         if self.is_decelerating:
             return -self.vel * self.decel_rate
-        return np.array([
-            [0],
-            [0]
-        ])
+        return self.__u
+
+    def set_u(self, x, y):
+        self.__u[0] = x
+        self.__u[1] = y
 
     def init_x(self):
         self.x = np.array([
