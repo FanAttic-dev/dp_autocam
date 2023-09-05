@@ -34,9 +34,9 @@ def parse_args():
 """ Init """
 args = parse_args()
 
-video_path = get_random_file(videos_dir)
-# video_path = Path(
-#     "/home/atti/source/datasets/SoccerTrack/wide_view/videos/F_20200220_1_0120_0150.mp4")
+# video_path = get_random_file(videos_dir)
+video_path = Path(
+    "/home/atti/source/datasets/SoccerTrack/wide_view/videos/F_20200220_1_0120_0150.mp4")
 player = VideoPlayer(video_path)
 delay = player.get_delay(args.record)
 
@@ -102,9 +102,10 @@ while is_alive:
     """ ROI """
     camera.update_by_bbs(bbs_joined, bbs_ball_joined, top_down)
     camera.draw_ball_prediction_(frame_orig, colors["green"])
+    camera.ball_model.draw_particles_(frame_orig)
     frame = camera.get_frame(frame_orig)
 
-    camera.draw_dead_zone_(frame)
+    # camera.draw_dead_zone_(frame)
     # player.show_frame(frame, "ROI")
     # camera.print()
     # camera.draw_center_(frame_orig)
