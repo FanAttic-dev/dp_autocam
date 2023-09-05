@@ -59,10 +59,11 @@ class PerspectiveCamera(Camera):
         # self.model = KalmanFilterVel(
         #     dt=0.1, std_acc=0.1, std_meas=100, decel_rate=1)
         self.model.set_pos(*self.center)
-        self.ball_model = ParticleFilter(dt=0.1, std_meas=1)
+        self.ball_model = ParticleFilter()
         # self.ball_model = KalmanFilterVel(
         #     dt=0.1, std_acc=0.1, std_meas=0.05, decel_rate=0.1)
-        self.ball_model.set_pos(*self.center)
+        self.ball_model.init(self.center)
+
         self.pause_measurements = False
         self.init_dead_zone()
 
@@ -87,27 +88,27 @@ class PerspectiveCamera(Camera):
 
             return dz
 
-        # Init: Wait for first ball detection
-        if not self.is_initialized and len(bbs_ball) == 0:
-            return
-
-        x_meas, y_meas = self.ball_model.pos
-
-        self.ball_model.update(x_meas, y_meas)
-
-        if not self.is_initialized:
-            self.ball_model.set_pos(*self.ball_model.last_measurement)
-            self.model.set_pos(x_meas, y_meas)
-            self.model.update(x_meas, y_meas)
-            self.set_center(*self.model.pos)
-            self.is_initialized = True
+        if len(bbs_ball['boxes']) == 0:
             return
 
         # Ball model
+        mean, var = self.ball_model.estimate
+
+        # Distance from estimate to measurement
+        ball_centers = [measure_ball(bb_ball) for bb_ball in bbs_ball['boxes']]
+        zs = np.linalg.norm(ball_centers - mean, axis=1)
+
+        # Use ball dynamics
         self.ball_model.predict()
 
+        # Incorporate measurements
+        self.ball_model.update(zs, ball_centers)
+
+        # Resample if too few effective particles
+        self.ball_model.resample()
+
         # Camera model
-        self.model.update(x_meas, y_meas)
+        self.model.update(*mean)
 
         # is_in_dead_zone = self.is_meas_in_dead_zone(*self.model.pos)
         # self.model.set_decelerating(is_decelerating=is_in_dead_zone)
@@ -237,7 +238,8 @@ class PerspectiveCamera(Camera):
                    radius=5, color=color, thickness=5)
 
     def draw_ball_prediction_(self, frame_orig, color=colors["violet"]):
-        x, y = self.ball_model.pos
+        mean, var = self.ball_model.estimate
+        x, y = mean
         cv2.circle(frame_orig, (int(x), int(y)),
                    radius=5, color=color, thickness=5)
 

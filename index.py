@@ -86,8 +86,9 @@ while is_alive:
         frames = frame_splitter.split(frame_orig)
 
         # Players
-        bbs, _ = detector.detect(frames)
-        bbs_joined = frame_splitter.join_bbs(bbs)
+        # bbs, _ = detector.detect(frames)
+        # bbs_joined = frame_splitter.join_bbs(bbs)
+        # detector.draw_bbs_(frame_orig, bbs_joined)
 
         # Balls
         bbs_ball, bbs_ball_frame = ball_detector.detect(frames)
@@ -95,9 +96,6 @@ while is_alive:
         #     player.show_frame(ball_frame, f"ball frame {i}")
         bbs_ball_joined = frame_splitter.join_bbs(bbs_ball)
         detector.draw_bbs_(frame_orig, bbs_ball_joined, colors["white"])
-
-        # Render
-        detector.draw_bbs_(frame_orig, bbs_joined)
 
     """ ROI """
     camera.update_by_bbs(bbs_joined, bbs_ball_joined, top_down)
