@@ -7,14 +7,14 @@ from model import Model
 
 
 class ParticleFilter(Model):
-    N = 1000
-
     def __init__(self, dt, std_meas):
         super().__init__(decel_rate=0)
         self.dt = dt
         self.std_meas = std_meas
+        self.N = 1000
         self.init_x()
         self.particles = None
+        self.weights = None
 
     @property
     def pos(self):
@@ -36,7 +36,8 @@ class ParticleFilter(Model):
         self.x[0] = x
         self.x[2] = y
 
-    def generate_gaussian_particles(self, mean, std, N):
+    def generate_gaussian_particles(self, mean, std):
+        N = self.N
         particles = np.empty((N, 2))
         particles[:, 0] = mean[0] + (randn(N) * std)
         particles[:, 1] = mean[1] + (randn(N) * std)
@@ -64,7 +65,8 @@ class ParticleFilter(Model):
 
         if not is_initialized:
             self.particles = self.generate_gaussian_particles(
-                mean=self.last_measurement, std=50, N=ParticleFilter.N)
+                mean=self.last_measurement, std=50)
+            self.weights = np.ones(self.N) / self.N
 
     def draw_particles_(self, frame, color=colors["red"]):
         for particle in self.particles:
