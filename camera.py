@@ -3,6 +3,7 @@ import numpy as np
 from constants import colors
 from dynamics import Dynamics
 from kalman_filter import KalmanFilterAcc, KalmanFilterVel
+from particle_filter import ParticleFilter
 from utils import apply_homography, average_point, get_bb_center, get_bounding_box, lies_in_rectangle
 
 
@@ -58,13 +59,14 @@ class PerspectiveCamera(Camera):
         # self.model = KalmanFilterVel(
         #     dt=0.1, std_acc=0.1, std_meas=100, decel_rate=1)
         self.model.set_pos(*self.center)
-        self.ball_model = KalmanFilterVel(
-            dt=0.1, std_acc=0.1, std_meas=0.05, decel_rate=0.1)
+        self.ball_model = ParticleFilter(dt=0.1, std_meas=1)
+        # self.ball_model = KalmanFilterVel(
+        #     dt=0.1, std_acc=0.1, std_meas=0.05, decel_rate=0.1)
         self.ball_model.set_pos(*self.center)
         self.pause_measurements = False
         self.init_dead_zone()
 
-    def update_by_bbs(self, bbs, bb_ball, top_down):
+    def update_by_bbs(self, bbs, bbs_ball, top_down):
         def measure_ball(bb_ball):
             return get_bb_center(bb_ball)
 
@@ -86,32 +88,12 @@ class PerspectiveCamera(Camera):
             return dz
 
         # Init: Wait for first ball detection
-        if not self.is_initialized and len(bb_ball) == 0:
+        if not self.is_initialized and len(bbs_ball) == 0:
             return
 
-        w_players = self.ball_model.K_x
-
         x_meas, y_meas = self.ball_model.pos
-        if bb_ball:
-            x_ball, y_ball = measure_ball(bb_ball)
-            self.ball_model.update(x_ball, y_ball)
-            self.ball_model.set_u(0, 0)
-        else:
-            x_ball, y_ball = (1-w_players) * \
-                self.ball_model.pos + w_players * self.model.pos
-            u_speed = 0.05
-            x_u = (x_ball - x_meas) * u_speed
-            y_u = (y_ball - y_meas) * u_speed
-            self.ball_model.set_u(x_u, y_u)
 
-        if bbs:
-            x_players, y_players = measure_players(bbs)
-            x_meas = (1-w_players) * x_meas + w_players * x_players
-            y_meas = (1-w_players) * y_meas + w_players * y_players
-
-            # dz = measure_zoom(bbs)
-            # print(f"DZ: {dz}")
-            # self.zoom(dz)
+        self.ball_model.update(x_meas, y_meas)
 
         if not self.is_initialized:
             self.ball_model.set_pos(*self.ball_model.last_measurement)
@@ -122,17 +104,13 @@ class PerspectiveCamera(Camera):
             return
 
         # Ball model
-        # self.ball_model.set_decelerating(len(bb_ball) == 0)
         self.ball_model.predict()
 
-        is_in_dead_zone = self.is_meas_in_dead_zone(*self.model.pos)
-
         # Camera model
-        # if not is_in_dead_zone:
-        # self.model.update(*self.ball_model.pos)
         self.model.update(x_meas, y_meas)
 
-        self.model.set_decelerating(is_decelerating=is_in_dead_zone)
+        # is_in_dead_zone = self.is_meas_in_dead_zone(*self.model.pos)
+        # self.model.set_decelerating(is_decelerating=is_in_dead_zone)
         self.model.predict()
         self.set_center(*self.model.pos)
 
