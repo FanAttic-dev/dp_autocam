@@ -53,7 +53,6 @@ class PerspectiveCamera(Camera):
         h, w, _ = frame_orig.shape
         self.frame_orig_center_x = w // 2
         self.frame_orig_center_y = h // 2
-        self.is_initialized = False
         self.set(pan_deg, tilt_deg)
         self.model = Dynamics(dt=0.01, accel_rate=0.1, decel_rate=0.1)
         # self.model = KalmanFilterVel(
@@ -61,11 +60,16 @@ class PerspectiveCamera(Camera):
         self.model.set_pos(*self.center)
         self.ball_model = ParticleFilter()
         self.ball_model.init(self.center)
+        self.ball_estimate_last = self.center
         # self.ball_model = KalmanFilterVel(
         #     dt=0.1, std_acc=0.1, std_meas=0.05, decel_rate=0.1)
 
         self.pause_measurements = False
         self.init_dead_zone()
+
+    @property
+    def variance_threshold(self):
+        return self.ball_model.std_pos ** 2 * 100
 
     def update_by_bbs(self, bbs, bbs_ball, top_down):
         def measure_ball(bb_ball):
@@ -88,30 +92,32 @@ class PerspectiveCamera(Camera):
 
             return dz
 
-        if not bbs_ball or len(bbs_ball['boxes']) == 0:
-            self.ball_model.predict()
-            return
+        is_ball_detected = len(bbs_ball) > 0 and len(bbs_ball['boxes']) > 0
 
-        # if not self.is_initialized:
-        #     ball_pos = measure_ball(bbs_ball['boxes'][0])
-        #     self.ball_model.init(ball_pos)
-        #     self.is_initialized = True
-        #     return
+        players_center = np.array(measure_players(bbs))
 
-        # Ball model
-        # Distance from estimate to measurement
-        ball_centers = [measure_ball(bb_ball) for bb_ball in bbs_ball['boxes']]
+        # Move to the players' center if no measurement for a long time
+        var = self.ball_model.var
+        if not is_ball_detected and np.mean(var) > self.variance_threshold:
+            u = players_center - self.ball_estimate_last
+            self.ball_model.set_u(u)
+        else:
+            self.ball_model.reset_u()
 
-        # Use ball dynamics
         self.ball_model.predict()
 
-        # Incorporate measurements
-        self.ball_model.update(ball_centers)
+        if is_ball_detected:
+            # Distance from estimate to measurement
+            ball_centers = [measure_ball(bb_ball)
+                            for bb_ball in bbs_ball['boxes']]
 
-        # Resample if too few effective particles
+            # Incorporate measurements
+            self.ball_model.update(players_center, ball_centers)
+
         self.ball_model.resample()
 
-        mu, var = self.ball_model.estimate
+        mu = self.ball_model.mu
+        self.ball_estimate_last = mu
 
         # Camera model
         # self.model.update(*mu)
@@ -245,8 +251,7 @@ class PerspectiveCamera(Camera):
                    radius=5, color=color, thickness=5)
 
     def draw_ball_prediction_(self, frame_orig, color=colors["violet"]):
-        mean, var = self.ball_model.estimate
-        x, y = mean
+        x, y = self.ball_model.mu
         cv2.circle(frame_orig, (int(x), int(y)),
                    radius=5, color=color, thickness=5)
 

@@ -34,9 +34,9 @@ def parse_args():
 """ Init """
 args = parse_args()
 
-# video_path = get_random_file(videos_dir)
-video_path = Path(
-    "/home/atti/source/datasets/SoccerTrack/wide_view/videos/F_20200220_1_0120_0150.mp4")
+video_path = get_random_file(videos_dir)
+# video_path = Path(
+#     "/home/atti/source/datasets/SoccerTrack/wide_view/videos/F_20200220_1_0120_0150.mp4")
 player = VideoPlayer(video_path)
 delay = player.get_delay(args.record)
 
@@ -88,9 +88,9 @@ while is_alive:
         frames = frame_splitter.split(frame_orig)
 
         # Players
-        # bbs, _ = detector.detect(frames)
-        # bbs_joined = frame_splitter.join_bbs(bbs)
-        # detector.draw_bbs_(frame_orig, bbs_joined)
+        bbs, _ = detector.detect(frames)
+        bbs_joined = frame_splitter.join_bbs(bbs)
+        detector.draw_bbs_(frame_orig, bbs_joined)
 
         # Balls
         bbs_ball, bbs_ball_frame = ball_detector.detect(frames)

@@ -9,10 +9,10 @@ from filterpy.monte_carlo import systematic_resample, stratified_resample
 class ParticleFilter():
     INIT_STD = 100
 
-    def __init__(self, dt=1, std_pos=20, N=1000):
+    def __init__(self, dt=0.01, std_pos=5, N=1000):
         self.dt = dt
         self.std_pos = std_pos
-        self.u = np.array([0, 0])
+        self.reset_u()
         self.N = N
         self.particles = None
         self.weights = None
@@ -23,20 +23,28 @@ class ParticleFilter():
             mu, std=ParticleFilter.INIT_STD)
         self.weights = np.ones(self.N) / self.N
 
+    def reset_u(self):
+        self.u = np.array([0, 0])
+
     def generate_gaussian_particles(self, mu, std):
         particles = mu + randn(self.N, 2) * std
         return particles
 
     @property
-    def estimate(self):
-        mu = np.average(self.particles, weights=self.weights, axis=0)
-        var = np.average((self.particles - mu)**2,
-                         weights=self.weights, axis=0)
-        return mu, var
+    def mu(self):
+        return np.average(self.particles, weights=self.weights, axis=0)
+
+    @property
+    def var(self):
+        return np.average((self.particles - self.mu)**2,
+                          weights=self.weights, axis=0)
 
     @property
     def neff(self):
         return 1. / np.sum(np.square(self.weights))
+
+    def set_u(self, u):
+        self.u = u
 
     def resample_from_index(self, indexes):
         self.particles = self.particles[indexes]
@@ -46,10 +54,11 @@ class ParticleFilter():
     def predict(self):
         self.particles += self.u * self.dt + randn(self.N, 2) * self.std_pos
 
-    def update(self, ball_centers):
+    def update(self, players_center, ball_centers):
+        dist_players = np.linalg.norm(self.particles - players_center, axis=1)
         for ball in ball_centers:
-            dist = np.linalg.norm(self.particles - ball, axis=1)
-            self.weights *= 1/dist
+            dist_ball = np.linalg.norm(self.particles - ball, axis=1)
+            self.weights *= 1/(2*dist_ball + dist_players)
 
         self.weights += 1.e-300  # avoid round-off to zero
         self.weights /= sum(self.weights)
@@ -69,13 +78,12 @@ class ParticleFilter():
                        color=color, thickness=-1)
 
     def get_stats(self):
-        mu, var = self.estimate
         return {
             "Name": "Particle Filter",
             "N": self.N,
             "dt": self.dt,
             "std_pos": self.std_pos,
             "u": self.u,
-            "mu": mu,
-            "var": var
+            "mu": self.mu,
+            "var": self.var
         }
