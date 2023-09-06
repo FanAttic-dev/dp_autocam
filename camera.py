@@ -88,6 +88,7 @@ class PerspectiveCamera(Camera):
             return dz
 
         if not bbs_ball or len(bbs_ball['boxes']) == 0:
+            self.ball_model.predict()
             return
 
         if not self.is_initialized:
@@ -101,13 +102,12 @@ class PerspectiveCamera(Camera):
 
         # Distance from estimate to measurement
         ball_centers = [measure_ball(bb_ball) for bb_ball in bbs_ball['boxes']]
-        zs = np.linalg.norm(ball_centers - mean, axis=1)
 
         # Use ball dynamics
         self.ball_model.predict()
 
         # Incorporate measurements
-        self.ball_model.update(zs, ball_centers)
+        self.ball_model.update(ball_centers)
 
         # Resample if too few effective particles
         self.ball_model.resample()

@@ -7,9 +7,9 @@ from filterpy.monte_carlo import systematic_resample, stratified_resample, resid
 
 
 class ParticleFilter():
-    PARTICLES_STD = 50
+    INIT_STD = 100
 
-    def __init__(self, dt=1, std_pos=20, std_meas=80, N=1000):
+    def __init__(self, dt=.5, std_pos=50, std_meas=70, N=1000):
         self.dt = dt
         self.std_pos = std_pos
         self.std_meas = std_meas
@@ -17,26 +17,28 @@ class ParticleFilter():
         self.N = N
         self.particles = None
         self.weights = None
+        self.mean_last = None
 
-    def init(self, mean):
+    def init(self, mu):
         self.particles = self.generate_gaussian_particles(
-            mean, std=ParticleFilter.PARTICLES_STD)
+            mu, std=ParticleFilter.INIT_STD)
         self.weights = np.ones(self.N) / self.N
 
-    def generate_gaussian_particles(self, mean, std):
-        # particles = np.empty((self.N, 2))
-        # particles[:, 0] = mean[0] + (randn(self.N) * std)
-        # particles[:, 1] = mean[1] + (randn(self.N) * std)
-        # return particles
-        particles = mean + randn(self.N, 2) * std
+    def generate_gaussian_particles(self, mu, std):
+        particles = mu + randn(self.N, 2) * std
         return particles
 
     @property
     def estimate(self):
-        mean = np.average(self.particles, weights=self.weights, axis=0)
-        var = np.average((self.particles - mean)**2,
+        mu = np.average(self.particles, weights=self.weights, axis=0)
+        var = np.average((self.particles - mu)**2,
                          weights=self.weights, axis=0)
-        return mean, var
+
+        if self.mean_last is not None:
+            self.u = mu - self.mean_last
+
+        self.mean_last = mu
+        return mu, var
 
     @property
     def neff(self):
@@ -48,12 +50,12 @@ class ParticleFilter():
         self.weights.fill(1.0 / len(self.weights))
 
     def predict(self):
-        self.particles += randn(self.N, 2) * self.std_pos
+        self.particles += self.u * self.dt + randn(self.N, 2) * self.std_pos
 
-    def update(self, zs, ball_centers):
+    def update(self, ball_centers):
         for i, ball in enumerate(ball_centers):
-            dist = np.linalg.norm(self.particles[:, 0:2] - ball, axis=1)
-            self.weights *= scipy.stats.norm(dist, self.std_meas).pdf(zs[i])
+            dist = np.linalg.norm(self.particles - ball, axis=1)
+            self.weights *= 1/dist
 
         self.weights += 1.e-300  # avoid round-off to zero
         self.weights /= sum(self.weights)
@@ -75,8 +77,14 @@ class ParticleFilter():
                        color=color, thickness=-1)
 
     def get_stats(self):
+        mu, var = self.estimate
         return {
             "Name": "Particle Filter",
+            "N": self.N,
             "dt": self.dt,
+            "std_pos": self.std_pos,
             "std_meas": self.std_meas,
+            "u": self.u,
+            "mu": mu,
+            "var": var
         }
