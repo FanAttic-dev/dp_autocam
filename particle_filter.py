@@ -7,11 +7,13 @@ from filterpy.monte_carlo import systematic_resample, stratified_resample, resid
 
 
 class ParticleFilter():
-    PARTICLES_STD = 200
+    PARTICLES_STD = 50
 
-    def __init__(self, dt=0.1, std_meas=100, N=10000):
+    def __init__(self, dt=1, std_pos=20, std_meas=80, N=1000):
         self.dt = dt
+        self.std_pos = std_pos
         self.std_meas = std_meas
+        self.u = np.array([0, 0])
         self.N = N
         self.particles = None
         self.weights = None
@@ -46,9 +48,7 @@ class ParticleFilter():
         self.weights.fill(1.0 / len(self.weights))
 
     def predict(self):
-        # self.particles += self.vel * self.dt + randn(self.N, 2) * self.std_u
-        # TODO use ball dynamics
-        ...
+        self.particles += randn(self.N, 2) * self.std_pos
 
     def update(self, zs, ball_centers):
         for i, ball in enumerate(ball_centers):
@@ -61,17 +61,17 @@ class ParticleFilter():
     def resample(self):
         if self.neff < self.N / 2:
             print("Resampling")
-            # indexes = systematic_resample(self.weights)
+            indexes = systematic_resample(self.weights)
             # indexes = stratified_resample(self.weights)
             # indexes = multinomial_resample(self.weights)
-            indexes = residual_resample(self.weights)
+            # indexes = residual_resample(self.weights)
             self.resample_from_index(indexes)
             assert np.allclose(self.weights, 1/self.N)
 
     def draw_particles_(self, frame, color=colors["red"]):
         for particle, weight in zip(self.particles, self.weights):
             x, y = particle
-            cv2.circle(frame, (int(x), int(y)), radius=1,
+            cv2.circle(frame, (int(x), int(y)), radius=int(weight * self.N),
                        color=color, thickness=-1)
 
     def get_stats(self):

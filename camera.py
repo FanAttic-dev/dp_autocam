@@ -87,13 +87,14 @@ class PerspectiveCamera(Camera):
 
             return dz
 
-        if len(bbs_ball['boxes']) == 0:
+        if not bbs_ball or len(bbs_ball['boxes']) == 0:
             return
 
         if not self.is_initialized:
             ball_pos = measure_ball(bbs_ball['boxes'][0])
             self.ball_model.init(ball_pos)
             self.is_initialized = True
+            return
 
         # Ball model
         mean, var = self.ball_model.estimate
