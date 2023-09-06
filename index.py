@@ -77,10 +77,12 @@ while is_alive:
         bbs_ball_joined = []
     elif args.mouse:
         ball_size = 5
-        bbs_ball = [
-            mousePos["x"] - ball_size, mousePos["y"] - ball_size,
-            mousePos["x"] + ball_size, mousePos["y"] + ball_size
-        ]
+        bbs_ball_joined = {
+            "boxes": [[
+                mousePos["x"] - ball_size, mousePos["y"] - ball_size,
+                mousePos["x"] + ball_size, mousePos["y"] + ball_size
+            ]]
+        }
     else:
         """ Split frame, detect objects, merge & draw bounding boxes """
         frames = frame_splitter.split(frame_orig)

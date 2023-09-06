@@ -60,6 +60,7 @@ class PerspectiveCamera(Camera):
         #     dt=0.1, std_acc=0.1, std_meas=100, decel_rate=1)
         self.model.set_pos(*self.center)
         self.ball_model = ParticleFilter()
+        self.ball_model.init(self.center)
         # self.ball_model = KalmanFilterVel(
         #     dt=0.1, std_acc=0.1, std_meas=0.05, decel_rate=0.1)
 
@@ -91,15 +92,13 @@ class PerspectiveCamera(Camera):
             self.ball_model.predict()
             return
 
-        if not self.is_initialized:
-            ball_pos = measure_ball(bbs_ball['boxes'][0])
-            self.ball_model.init(ball_pos)
-            self.is_initialized = True
-            return
+        # if not self.is_initialized:
+        #     ball_pos = measure_ball(bbs_ball['boxes'][0])
+        #     self.ball_model.init(ball_pos)
+        #     self.is_initialized = True
+        #     return
 
         # Ball model
-        mean, var = self.ball_model.estimate
-
         # Distance from estimate to measurement
         ball_centers = [measure_ball(bb_ball) for bb_ball in bbs_ball['boxes']]
 
@@ -112,13 +111,16 @@ class PerspectiveCamera(Camera):
         # Resample if too few effective particles
         self.ball_model.resample()
 
+        mu, var = self.ball_model.estimate
+
         # Camera model
-        # self.model.update(*mean)
+        # self.model.update(*mu)
 
         # is_in_dead_zone = self.is_meas_in_dead_zone(*self.model.pos)
         # self.model.set_decelerating(is_decelerating=is_in_dead_zone)
         # self.model.predict()
         # self.set_center(*self.model.pos)
+        self.set_center(*mu)
 
     @property
     def fov_horiz_deg(self):

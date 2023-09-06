@@ -3,16 +3,15 @@ import numpy as np
 from numpy.random import random, randn
 import scipy
 from constants import colors
-from filterpy.monte_carlo import systematic_resample, stratified_resample, residual_resample, multinomial_resample
+from filterpy.monte_carlo import systematic_resample, stratified_resample
 
 
 class ParticleFilter():
     INIT_STD = 100
 
-    def __init__(self, dt=.5, std_pos=50, std_meas=70, N=1000):
+    def __init__(self, dt=1, std_pos=20, N=1000):
         self.dt = dt
         self.std_pos = std_pos
-        self.std_meas = std_meas
         self.u = np.array([0, 0])
         self.N = N
         self.particles = None
@@ -33,11 +32,6 @@ class ParticleFilter():
         mu = np.average(self.particles, weights=self.weights, axis=0)
         var = np.average((self.particles - mu)**2,
                          weights=self.weights, axis=0)
-
-        if self.mean_last is not None:
-            self.u = mu - self.mean_last
-
-        self.mean_last = mu
         return mu, var
 
     @property
@@ -53,7 +47,7 @@ class ParticleFilter():
         self.particles += self.u * self.dt + randn(self.N, 2) * self.std_pos
 
     def update(self, ball_centers):
-        for i, ball in enumerate(ball_centers):
+        for ball in ball_centers:
             dist = np.linalg.norm(self.particles - ball, axis=1)
             self.weights *= 1/dist
 
@@ -65,10 +59,8 @@ class ParticleFilter():
             print("Resampling")
             indexes = systematic_resample(self.weights)
             # indexes = stratified_resample(self.weights)
-            # indexes = multinomial_resample(self.weights)
-            # indexes = residual_resample(self.weights)
             self.resample_from_index(indexes)
-            assert np.allclose(self.weights, 1/self.N)
+            # assert np.allclose(self.weights, 1/self.N)
 
     def draw_particles_(self, frame, color=colors["red"]):
         for particle, weight in zip(self.particles, self.weights):
@@ -83,7 +75,6 @@ class ParticleFilter():
             "N": self.N,
             "dt": self.dt,
             "std_pos": self.std_pos,
-            "std_meas": self.std_meas,
             "u": self.u,
             "mu": mu,
             "var": var
