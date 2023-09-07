@@ -5,32 +5,38 @@ class PID:
     def __init__(self):
         self.dt = 0.01
         self.kp = 0.05
-        self.ki = 0.1
+        self.ki = 0  # 0.009
+        self.kd = 0  # 0.006
 
-        self.th = 50
-
-        self.e_prev = None
+        self.P = 0
         self.I = 0
+        self.D = 0
 
-        self.set(0)
+        self.target = 0
+        self.init(0)
 
-    def set(self, signal):
+    def init(self, signal):
         self.signal = signal
-        self.target = signal
+        self.set_target(signal)
+
+    def set_target(self, target):
+        if np.isclose(target, self.target):
+            return
+        self.target = target
+        self.e_prev = self.target - self.signal
 
     def get(self):
         return self.signal
 
-    def update(self, target):
-        self.target = target
-        e = target - self.signal
+    def update(self):
+        e = self.target - self.signal
 
-        e = np.clip(e, -self.th, self.th)
-
-        P = self.kp * e
+        self.P = self.kp * e
         self.I += self.ki * e * self.dt
-        # D = self.kd * (e - self.e_prev) / self.dt
-        self.signal += P + self.I
+        self.D = self.kd * (e - self.e_prev) / self.dt
+        self.signal += self.P + self.I + self.D
+
+        self.e_prev = e
 
     def get_stats(self):
         stats = {
@@ -38,7 +44,11 @@ class PID:
             "dt": self.dt,
             "Kp": self.kp,
             "Ki": self.ki,
+            "Kd": self.kd,
             "signal": self.signal,
-            "target": self.target
+            "target": self.target,
+            "P": self.P,
+            "I": self.I,
+            "D": self.D,
         }
         return stats

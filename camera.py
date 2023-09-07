@@ -62,7 +62,7 @@ class PerspectiveCamera(Camera):
         # self.model = KalmanFilterVel(
         #     dt=0.1, std_acc=0.1, std_meas=100, decel_rate=1)
         x_center, y_center = self.center
-        self.model.set(x_center)
+        self.model.init(x_center)
 
         self.ball_model = ParticleFilter()
         self.ball_model.init(self.center)
@@ -71,6 +71,7 @@ class PerspectiveCamera(Camera):
         #     dt=0.1, std_acc=0.1, std_meas=0.05, decel_rate=0.1)
 
         self.pause_measurements = False
+        self.init_dead_zone()
 
     @property
     def variance_threshold(self):
@@ -128,13 +129,11 @@ class PerspectiveCamera(Camera):
         mu = self.ball_model.mu
         self.ball_estimate_last = mu
 
+        is_in_dead_zone = self.is_meas_in_dead_zone(*mu)
+        print(f"Is in dead zone: {is_in_dead_zone}")
+
         # Camera model
         # self.model.update(*mu)
-
-        # is_in_dead_zone = self.is_meas_in_dead_zone(*self.model.pos)
-        # self.model.set_decelerating(is_decelerating=is_in_dead_zone)
-        # self.model.predict()
-        # self.set_center(*self.model.pos)
         self.set_center(*mu)
 
     @property
@@ -191,19 +190,18 @@ class PerspectiveCamera(Camera):
         pan_deg, tilt_deg = self.coords2ptz(x, y)
         self.set(pan_deg, tilt_deg, self.f)
 
-    @property
-    def dead_zone(self):
-        left = self.model.signal - self.model.th
-        right = self.model.signal + self.model.th
-        return np.array([
-            [int(left), 0],  # start point (top left)
-            # end point (bottom right)
-            [int(right), self.frame_orig_shape[0]-1]
-        ])
-        # self.dead_zone = np.array([
-        #     [640, 0],  # start point (top left)
-        #     [1280, 1079]  # end point (bottom right)
+    def init_dead_zone(self):
+        # left = self.model.signal - self.model.th
+        # right = self.model.signal + self.model.th
+        # return np.array([
+        #     [int(left), 0],  # start point (top left)
+        #     # end point (bottom right)
+        #     [int(right), self.frame_orig_shape[0]-1]
         # ])
+        self.dead_zone = np.array([
+            [640, 0],  # start point (top left)
+            [1280, 1079]  # end point (bottom right)
+        ])
 
     def is_meas_in_dead_zone(self, meas_x, meas_y):
         meas = np.array([[[meas_x.item(), meas_y.item()]]], dtype=np.float32)

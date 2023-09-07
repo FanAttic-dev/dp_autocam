@@ -95,8 +95,8 @@ while is_alive:
 
     """ ROI """
     if args.mouse:
-        camera.model.update(mousePos["x"])
-        # camera.model.update(mousePos["x"], mousePos["y"])
+        camera.model.set_target(mousePos["x"])
+        camera.model.update()
         _, y_center = camera.center
         x_center = camera.model.get()
         camera.set_center(x_center, y_center)
@@ -107,9 +107,9 @@ while is_alive:
         camera.draw_ball_prediction_(frame_orig, colors["green"])
         camera.ball_model.draw_particles_(frame_orig)
 
-    camera.draw_dead_zone_(frame_orig)
     frame = camera.get_frame(frame_orig)
 
+    # camera.draw_dead_zone_(frame)
     # player.show_frame(frame, "ROI")
     # camera.print()
     # frame_splitter.draw_roi_(frame_orig)
