@@ -54,10 +54,12 @@ class PerspectiveCamera(Camera):
         self.frame_orig_center_x = w // 2
         self.frame_orig_center_y = h // 2
         self.set(pan_deg, tilt_deg)
-        self.model = Dynamics(dt=0.01, accel_rate=0.1, decel_rate=0.1)
+
+        self.model = Dynamics(dt=0.1, accel_rate=0.1, decel_rate=0.1)
         # self.model = KalmanFilterVel(
         #     dt=0.1, std_acc=0.1, std_meas=100, decel_rate=1)
         self.model.set_pos(*self.center)
+
         self.ball_model = ParticleFilter()
         self.ball_model.init(self.center)
         self.ball_estimate_last = self.center
@@ -92,13 +94,17 @@ class PerspectiveCamera(Camera):
 
             return dz
 
-        is_ball_detected = len(bbs_ball) > 0 and len(bbs_ball['boxes']) > 0
+        players_detected = len(bbs) > 0 and len(bbs["boxes"]) > 0
+        balls_detected = len(bbs_ball) > 0 and len(bbs_ball['boxes']) > 0
+
+        if not players_detected:
+            return
 
         players_center = np.array(measure_players(bbs))
 
         # Move to the players' center if no measurement for a long time
         var = self.ball_model.var
-        if not is_ball_detected and np.mean(var) > self.variance_threshold:
+        if not balls_detected and np.mean(var) > self.variance_threshold:
             u = players_center - self.ball_estimate_last
             self.ball_model.set_u(u)
         else:
@@ -106,7 +112,7 @@ class PerspectiveCamera(Camera):
 
         self.ball_model.predict()
 
-        if is_ball_detected:
+        if balls_detected:
             # Distance from estimate to measurement
             ball_centers = [measure_ball(bb_ball)
                             for bb_ball in bbs_ball['boxes']]

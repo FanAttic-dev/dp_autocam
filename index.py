@@ -73,17 +73,11 @@ while is_alive:
         "boxes": [],
         "cls": []
     }
-    if camera.pause_measurements:
-        bbs_ball_joined = []
-    elif args.mouse:
-        ball_size = 5
-        bbs_ball_joined = {
-            "boxes": [[
-                mousePos["x"] - ball_size, mousePos["y"] - ball_size,
-                mousePos["x"] + ball_size, mousePos["y"] + ball_size
-            ]]
-        }
-    else:
+    bbs_ball_joined = {
+        "boxes": [],
+        "cls": []
+    }
+    if not camera.pause_measurements and not args.mouse:
         """ Split frame, detect objects, merge & draw bounding boxes """
         frames = frame_splitter.split(frame_orig)
 
@@ -100,15 +94,19 @@ while is_alive:
         detector.draw_bbs_(frame_orig, bbs_ball_joined, colors["white"])
 
     """ ROI """
-    camera.update_by_bbs(bbs_joined, bbs_ball_joined, top_down)
-    camera.draw_ball_prediction_(frame_orig, colors["green"])
-    camera.ball_model.draw_particles_(frame_orig)
+    if args.mouse:
+        camera.model.update(mousePos["x"], mousePos["y"])
+        camera.set_center(*camera.model.pos)
+        camera.draw_center_(frame_orig)
+    else:
+        camera.update_by_bbs(bbs_joined, bbs_ball_joined, top_down)
+        camera.draw_ball_prediction_(frame_orig, colors["green"])
+        camera.ball_model.draw_particles_(frame_orig)
     frame = camera.get_frame(frame_orig)
 
     # camera.draw_dead_zone_(frame)
     # player.show_frame(frame, "ROI")
     # camera.print()
-    # camera.draw_center_(frame_orig)
     # frame_splitter.draw_roi_(frame_orig)
     # camera.draw_roi_(frame_orig)
 
