@@ -106,9 +106,10 @@ while is_alive:
         camera.update_by_bbs(bbs_joined, bbs_ball_joined, top_down)
         camera.draw_ball_prediction_(frame_orig, colors["green"])
         camera.ball_model.draw_particles_(frame_orig)
+
+    camera.draw_dead_zone_(frame_orig)
     frame = camera.get_frame(frame_orig)
 
-    # camera.draw_dead_zone_(frame)
     # player.show_frame(frame, "ROI")
     # camera.print()
     # frame_splitter.draw_roi_(frame_orig)

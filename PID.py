@@ -1,8 +1,16 @@
+import numpy as np
+
+
 class PID:
-    def __init__(self, dt):
-        self.dt = dt
-        self.kp = 0.1
-        # self.kd = 0
+    def __init__(self):
+        self.dt = 0.01
+        self.kp = 0.05
+        self.ki = 0.1
+
+        self.th = 50
+
+        self.e_prev = None
+        self.I = 0
 
         self.set(0)
 
@@ -17,13 +25,19 @@ class PID:
         self.target = target
         e = target - self.signal
 
-        self.signal += e * self.kp
+        e = np.clip(e, -self.th, self.th)
+
+        P = self.kp * e
+        self.I += self.ki * e * self.dt
+        # D = self.kd * (e - self.e_prev) / self.dt
+        self.signal += P + self.I
 
     def get_stats(self):
         stats = {
             "Name": "PID Controller",
             "dt": self.dt,
-            "kp": self.kp,
+            "Kp": self.kp,
+            "Ki": self.ki,
             "signal": self.signal,
             "target": self.target
         }

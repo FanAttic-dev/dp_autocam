@@ -52,12 +52,13 @@ class PerspectiveCamera(Camera):
 
     def __init__(self, frame_orig, pan_deg=DEFAULT_PAN_DEG, tilt_deg=DEFAULT_TILT_DEG):
         h, w, _ = frame_orig.shape
+        self.frame_orig_shape = frame_orig.shape
         self.frame_orig_center_x = w // 2
         self.frame_orig_center_y = h // 2
         self.set(pan_deg, tilt_deg)
 
         # self.model = Dynamics(dt=0.1, accel_rate=0.1, decel_rate=0.1)
-        self.model = PID(dt=1)
+        self.model = PID()
         # self.model = KalmanFilterVel(
         #     dt=0.1, std_acc=0.1, std_meas=100, decel_rate=1)
         x_center, y_center = self.center
@@ -70,7 +71,6 @@ class PerspectiveCamera(Camera):
         #     dt=0.1, std_acc=0.1, std_meas=0.05, decel_rate=0.1)
 
         self.pause_measurements = False
-        self.init_dead_zone()
 
     @property
     def variance_threshold(self):
@@ -191,11 +191,19 @@ class PerspectiveCamera(Camera):
         pan_deg, tilt_deg = self.coords2ptz(x, y)
         self.set(pan_deg, tilt_deg, self.f)
 
-    def init_dead_zone(self):
-        self.dead_zone = np.array([
-            [640, 0],  # start point (top left)
-            [1280, 1079]  # end point (bottom right)
+    @property
+    def dead_zone(self):
+        left = self.model.signal - self.model.th
+        right = self.model.signal + self.model.th
+        return np.array([
+            [int(left), 0],  # start point (top left)
+            # end point (bottom right)
+            [int(right), self.frame_orig_shape[0]-1]
         ])
+        # self.dead_zone = np.array([
+        #     [640, 0],  # start point (top left)
+        #     [1280, 1079]  # end point (bottom right)
+        # ])
 
     def is_meas_in_dead_zone(self, meas_x, meas_y):
         meas = np.array([[[meas_x.item(), meas_y.item()]]], dtype=np.float32)
