@@ -129,12 +129,16 @@ class PerspectiveCamera(Camera):
         mu = self.ball_model.mu
         self.ball_estimate_last = mu
 
-        is_in_dead_zone = self.is_meas_in_dead_zone(*mu)
-        print(f"Is in dead zone: {is_in_dead_zone}")
+        # is_in_dead_zone = self.is_meas_in_dead_zone(*mu)
+        # print(f"Is in dead zone: {is_in_dead_zone}")
 
         # Camera model
-        # self.model.update(*mu)
-        self.set_center(*mu)
+        self.model.set_target(mu[0])
+        self.model.update()
+
+        center_x, center_y = self.center
+        pid_x = self.model.get()
+        self.set_center(pid_x, center_y)
 
     @property
     def fov_horiz_deg(self):

@@ -4,7 +4,7 @@ import numpy as np
 class PID:
     def __init__(self):
         self.dt = 0.01
-        self.kp = 0.05
+        self.kp = 0.03
         self.ki = 0  # 0.009
         self.kd = 0  # 0.006
 
