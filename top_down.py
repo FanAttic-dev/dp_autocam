@@ -105,5 +105,5 @@ class TopDown:
         self.draw_roi_(top_down_frame)
 
         self.draw_bbs_(top_down_frame, bbs)
-        self.draw_last_measurement_(top_down_frame)
+        # self.draw_last_measurement_(top_down_frame)
         return top_down_frame

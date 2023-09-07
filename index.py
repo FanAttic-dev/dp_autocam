@@ -95,8 +95,12 @@ while is_alive:
 
     """ ROI """
     if args.mouse:
-        camera.model.update(mousePos["x"], mousePos["y"])
-        camera.set_center(*camera.model.pos)
+        camera.model.update(mousePos["x"])
+        # camera.model.update(mousePos["x"], mousePos["y"])
+        _, y_center = camera.center
+        x_center = camera.model.get()
+        camera.set_center(x_center, y_center)
+
         camera.draw_center_(frame_orig)
     else:
         camera.update_by_bbs(bbs_joined, bbs_ball_joined, top_down)

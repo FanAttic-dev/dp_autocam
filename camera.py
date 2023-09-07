@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+from PID import PID
 from constants import colors
 from dynamics import Dynamics
 from kalman_filter import KalmanFilterAcc, KalmanFilterVel
@@ -55,10 +56,12 @@ class PerspectiveCamera(Camera):
         self.frame_orig_center_y = h // 2
         self.set(pan_deg, tilt_deg)
 
-        self.model = Dynamics(dt=0.1, accel_rate=0.1, decel_rate=0.1)
+        # self.model = Dynamics(dt=0.1, accel_rate=0.1, decel_rate=0.1)
+        self.model = PID(dt=1)
         # self.model = KalmanFilterVel(
         #     dt=0.1, std_acc=0.1, std_meas=100, decel_rate=1)
-        self.model.set_pos(*self.center)
+        x_center, y_center = self.center
+        self.model.set(x_center)
 
         self.ball_model = ParticleFilter()
         self.ball_model.init(self.center)
