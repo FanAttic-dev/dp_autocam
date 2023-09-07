@@ -87,16 +87,19 @@ class PerspectiveCamera(Camera):
             x, y = apply_homography(top_down.H_inv, x, y)
             return x, y
 
-        def measure_zoom(bbs):
-            bb_x_min, bb_y_min, bb_x_max, bb_y_max = get_bounding_box(bbs)
+        def measure_zoom():
+            self.ball_model.var
 
-            corner_pts = self.get_corner_pts()
-            roi_x_min, roi_y_min = corner_pts[0]
-            roi_x_max, roi_y_max = corner_pts[2]
+        # def measure_zoom(bbs):
+        #     bb_x_min, bb_y_min, bb_x_max, bb_y_max = get_bounding_box(bbs)
 
-            dz = (bb_x_min - roi_x_min) + (roi_x_max - bb_x_max)
+        #     corner_pts = self.get_corner_pts()
+        #     roi_x_min, roi_y_min = corner_pts[0]
+        #     roi_x_max, roi_y_max = corner_pts[2]
 
-            return dz
+        #     dz = (bb_x_min - roi_x_min) + (roi_x_max - bb_x_max)
+
+        #     return dz
 
         players_detected = len(bbs) > 0 and len(bbs["boxes"]) > 0
         balls_detected = len(bbs_ball) > 0 and len(bbs_ball['boxes']) > 0
@@ -105,14 +108,15 @@ class PerspectiveCamera(Camera):
             return
 
         players_center = np.array(measure_players(bbs))
+        ball_centers = []
 
         # Move to the players' center if no measurement for a long time
-        var = self.ball_model.var
-        if not balls_detected and np.mean(var) > self.variance_threshold:
-            u = players_center - self.ball_estimate_last
-            self.ball_model.set_u(u)
-        else:
-            self.ball_model.reset_u()
+        # var = self.ball_model.var
+        # if not balls_detected and np.mean(var) > self.variance_threshold:
+        #     u = players_center - self.ball_estimate_last
+        #     self.ball_model.set_u(u)
+        # else:
+        #     self.ball_model.reset_u()
 
         self.ball_model.predict()
 
