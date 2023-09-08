@@ -1,9 +1,9 @@
 import cv2
 import numpy as np
-from numpy.random import random, randn
+from numpy.random import randn
 import scipy
 from constants import colors
-from filterpy.monte_carlo import systematic_resample, stratified_resample
+from filterpy.monte_carlo import systematic_resample
 
 
 class ParticleFilter():

@@ -2,8 +2,6 @@ import cv2
 import numpy as np
 from PID import PID
 from constants import colors
-from dynamics import Dynamics
-from kalman_filter import KalmanFilterAcc, KalmanFilterVel
 from particle_filter import ParticleFilter
 from utils import apply_homography, average_point, get_bb_center, get_bounding_box, lies_in_rectangle
 
@@ -61,9 +59,6 @@ class PerspectiveCamera(Camera):
         self.frame_orig_center_y = h // 2
         self.set(pan_deg, tilt_deg)
 
-        # self.model = Dynamics(dt=0.1, accel_rate=0.1, decel_rate=0.1)
-        # self.model = KalmanFilterVel(
-        #     dt=0.1, std_acc=0.1, std_meas=100, decel_rate=1)
         self.pid_x = PID()
         self.pid_y = PID()
         self.pid_f = PID(kp=0.005)
@@ -75,43 +70,43 @@ class PerspectiveCamera(Camera):
         self.ball_model = ParticleFilter()
         self.ball_model.init(self.center)
         self.ball_estimate_last = self.center
-        # self.ball_model = KalmanFilterVel(
-        #     dt=0.1, std_acc=0.1, std_meas=0.05, decel_rate=0.1)
 
         self.pause_measurements = False
         self.init_dead_zone()
 
     def update_by_bbs(self, bbs, bbs_ball, top_down):
         def measure_ball(bb_ball):
+            """ Get the ball center point. """
             return get_bb_center(bb_ball)
 
         def measure_players(bbs):
+            """ Get the players' center point. """
             pts = top_down.bbs2points(bbs)
             x, y = average_point(pts)
             x, y = apply_homography(top_down.H_inv, x, y)
-            return x, y
+            return np.array([x, y])
 
         def measure_zoom():
+            """ Map the PF variance to the camera zoom bounds. """
             var = np.mean(self.ball_model.var)
             var_min = self.ball_model.std_pos ** 2
             var_max = self.ball_model.std_pos ** 2 * 10
             var = np.clip(var, var_min, var_max)
 
-            # zoom in inversely proportional to the variance
-            zoom_factor = 1 - (var - var_min) / (var_max - var_min)
-            f = PerspectiveCamera.F_MIN + zoom_factor * PerspectiveCamera.F_MAX
+            # zoom is inversely proportional to the variance
+            zoom_level = 1 - (var - var_min) / (var_max - var_min)
+            f = PerspectiveCamera.F_MIN + zoom_level * PerspectiveCamera.F_MAX
             return f
 
-        # def measure_zoom(bbs):
-        #     bb_x_min, bb_y_min, bb_x_max, bb_y_max = get_bounding_box(bbs)
+        def measure_u(balls_detected, players_center):
+            """ Move to the players' center if no measurement for a long time. """
+            var = self.ball_model.var
+            var_u_th = self.ball_model.std_pos ** 2 * 50
+            if not balls_detected and np.mean(var) > var_u_th:
+                u = players_center - self.ball_estimate_last
+                return u
 
-        #     corner_pts = self.get_corner_pts()
-        #     roi_x_min, roi_y_min = corner_pts[0]
-        #     roi_x_max, roi_y_max = corner_pts[2]
-
-        #     dz = (bb_x_min - roi_x_min) + (roi_x_max - bb_x_max)
-
-        #     return dz
+            return np.array([0, 0])
 
         players_detected = len(bbs) > 0 and len(bbs["boxes"]) > 0
         balls_detected = len(bbs_ball) > 0 and len(bbs_ball['boxes']) > 0
@@ -119,46 +114,36 @@ class PerspectiveCamera(Camera):
         if not players_detected:
             return
 
-        players_center = np.array(measure_players(bbs))
-        ball_centers = []
+        players_center = measure_players(bbs)
 
-        # Move to the players' center if no measurement for a long time
-        var = self.ball_model.var
-        var_u_th = self.ball_model.std_pos ** 2 * 50
-        if not balls_detected and np.mean(var) > var_u_th:
-            u = players_center - self.ball_estimate_last
-            self.ball_model.set_u(u)
-        else:
-            self.ball_model.reset_u()
+        # Set control input
+        u = measure_u(balls_detected, players_center)
+        self.ball_model.set_u(u)
 
+        # Apply motion model with uncertainty to PF
         self.ball_model.predict()
 
         if balls_detected:
-            # Distance from estimate to measurement
             ball_centers = [measure_ball(bb_ball)
                             for bb_ball in bbs_ball['boxes']]
 
-            # Incorporate measurements
+            # Incorporate measurements into PF
             self.ball_model.update(players_center, ball_centers)
 
         self.ball_model.resample()
 
+        # Camera model
         mu = self.ball_model.mu
         self.ball_estimate_last = mu
+        mu_x, mu_y = mu
+        f = measure_zoom()
 
+        self.pid_x.update(mu_x)
+        self.pid_y.update(mu_y)
+        self.pid_f.update(f)
         # is_in_dead_zone = self.is_meas_in_dead_zone(*mu)
         # print(f"Is in dead zone: {is_in_dead_zone}")
 
-        # Camera model
-        mu_x, mu_y = mu
-        self.pid_x.update(mu_x)
-        self.pid_y.update(mu_y)
-
-        # Zoom
-        f = measure_zoom()
-        self.pid_f.update(f)
-
-        # center_x, center_y = self.center
         pid_x = self.pid_x.get()
         pid_y = self.pid_y.get()
         pid_f = self.pid_f.get()
@@ -220,13 +205,6 @@ class PerspectiveCamera(Camera):
         self.set(pan_deg, tilt_deg, f)
 
     def init_dead_zone(self):
-        # left = self.model.signal - self.model.th
-        # right = self.model.signal + self.model.th
-        # return np.array([
-        #     [int(left), 0],  # start point (top left)
-        #     # end point (bottom right)
-        #     [int(right), self.frame_orig_shape[0]-1]
-        # ])
         self.dead_zone = np.array([
             [640, 0],  # start point (top left)
             [1280, 1079]  # end point (bottom right)
