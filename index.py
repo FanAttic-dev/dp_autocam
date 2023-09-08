@@ -97,9 +97,9 @@ while is_alive:
     if args.mouse:
         camera.model.set_target(mousePos["x"])
         camera.model.update()
-        _, y_center = camera.center
-        x_center = camera.model.get()
-        camera.set_center(x_center, y_center)
+        _, center_y = camera.center
+        center_x = camera.model.get()
+        camera.set_center(center_x, center_y)
 
         camera.draw_center_(frame_orig)
     else:

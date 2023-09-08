@@ -61,8 +61,8 @@ class PerspectiveCamera(Camera):
         self.model = PID()
         # self.model = KalmanFilterVel(
         #     dt=0.1, std_acc=0.1, std_meas=100, decel_rate=1)
-        x_center, y_center = self.center
-        self.model.init(x_center)
+        center_x, center_y = self.center
+        self.model.init(center_x)
 
         self.ball_model = ParticleFilter()
         self.ball_model.init(self.center)

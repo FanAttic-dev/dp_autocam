@@ -65,12 +65,12 @@ class Dynamics(Model):
             self.u = -self.decel_rate * self.vel
             self.x = self.x + self.G @ self.u
 
-    def update(self, x_meas, y_meas):
-        self.set_last_measurement(x_meas, y_meas)
+    def update(self, meas_x, meas_y):
+        self.set_last_measurement(meas_x, meas_y)
 
-        x_pos, y_pos = self.pos
-        dx = x_meas - x_pos
-        dy = y_meas - y_pos
+        pos_x, pos_y = self.pos
+        dx = meas_x - pos_x
+        dy = meas_y - pos_y
 
         self.set_u(dx, dy)
         self.x = self.x + self.G @ self.u

@@ -30,8 +30,8 @@ class Model:
     def predict(self):
         ...
 
-    def set_last_measurement(self, x_meas, y_meas):
-        self.last_measurement = x_meas, y_meas
+    def set_last_measurement(self, meas_x, meas_y):
+        self.last_measurement = meas_x, meas_y
 
-    def update(self, x_meas, y_meas):
+    def update(self, meas_x, meas_y):
         ...
