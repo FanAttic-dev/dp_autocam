@@ -56,17 +56,20 @@ class TopDown:
             cv2.circle(
                 top_down_frame,
                 pt,
-                radius=10,
+                radius=15,
                 color=YoloDetector.cls2color[cls],
                 thickness=-1
             )
 
     def draw_last_measurement_(self, top_down_frame):
+        if self.camera.model.last_measurement is None:
+            return
+        x_meas, y_meas = self.camera.model.last_measurement
         meas = np.array(
-            [[self.camera.model.last_measurement]], dtype=np.float32)
+            [[[np.array(x_meas).item(), np.array(y_meas).item()]]], np.float32)
         meas_top_down_coord = cv2.perspectiveTransform(meas, self.H)[0][0]
         self.draw_points_(
-            top_down_frame, [meas_top_down_coord], colors["violet"], radius=20)
+            top_down_frame, [meas_top_down_coord], colors["violet"], radius=30)
 
     def draw_points_(self, top_down_frame, points, color, radius=10):
         for pt in points:
@@ -102,5 +105,5 @@ class TopDown:
         self.draw_roi_(top_down_frame)
 
         self.draw_bbs_(top_down_frame, bbs)
-        # self.draw_last_measurement_(top_down_frame)
+        self.draw_last_measurement_(top_down_frame)
         return top_down_frame

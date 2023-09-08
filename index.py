@@ -34,9 +34,9 @@ def parse_args():
 """ Init """
 args = parse_args()
 
-# video_path = get_random_file(videos_dir)
-video_path = Path(
-    "/home/atti/source/datasets/SoccerTrack/wide_view/videos/F_20200220_1_0120_0150.mp4")
+video_path = get_random_file(videos_dir)
+# video_path = Path(
+#     "/home/atti/source/datasets/SoccerTrack/wide_view/videos/F_20200220_1_0120_0150.mp4")
 player = VideoPlayer(video_path)
 delay = player.get_delay(args.record)
 
@@ -47,7 +47,7 @@ frame_splitter = PerspectiveFrameSplitter(frame_orig)
 pitch_coords = load_json(coords_path)
 top_down = TopDown(pitch_coords, camera)
 detector = YoloPlayerDetector(pitch_coords)
-ball_detector = YoloBallDetector(pitch_coords)
+ball_detector = YoloBallDetector(pitch_coords, camera.ball_model)
 
 # args.record = True
 
@@ -86,8 +86,8 @@ while is_alive:
         frames = frame_splitter.split(frame_orig)
 
         # Players
-        # bbs, _ = detector.detect(frames)
-        # bbs_joined = frame_splitter.join_bbs(bbs)
+        bbs, _ = detector.detect(frames)
+        bbs_joined = frame_splitter.join_bbs(bbs)
 
         # Balls
         bb_ball = []
@@ -95,19 +95,20 @@ while is_alive:
         # for i, ball_frame in enumerate(bbs_ball_frame):
         #     player.show_frame(ball_frame, f"ball frame {i}")
         bbs_ball_joined = frame_splitter.join_bbs(bbs_ball)
-        detector.draw_bbs_(frame_orig, bbs_ball_joined, colors["blue"])
+        detector.draw_bbs_(frame_orig, bbs_ball_joined, colors["white"])
 
         bb_ball = ball_detector.filter_balls(
             bbs_ball_joined, camera.ball_model)
         add_bb_ball_(bbs_joined, bb_ball)
 
         # Render
-        detector.draw_bbs_(frame_orig, bbs_joined, colors["red"])
+        detector.draw_bbs_(frame_orig, bbs_joined)
 
     """ ROI """
     camera.update_by_bbs(bbs_joined, bb_ball, top_down)
     camera.draw_ball_prediction_(frame_orig, colors["green"])
-    detector.draw_ball_radius_(frame_orig, camera.ball_model, colors["green"])
+    ball_detector.draw_ball_radius_(
+        frame_orig, colors["green"])
     frame = camera.get_frame(frame_orig)
 
     camera.draw_dead_zone_(frame)
@@ -115,7 +116,7 @@ while is_alive:
     # camera.print()
     # camera.draw_center_(frame_orig)
     # frame_splitter.draw_roi_(frame_orig)
-    camera.draw_roi_(frame_orig)
+    # camera.draw_roi_(frame_orig)
 
     # x1, y1, x2, y2 = get_bounding_box(bbs_joined)
     # cv2.rectangle(frame_orig, (x1, y1), (x2, y2),
@@ -125,18 +126,19 @@ while is_alive:
 
     """ Top-down """
     top_down_frame = top_down.get_frame(bbs_joined)
-    #     player.show_frame(top_down_frame, "top down")
+    # player.show_frame(top_down_frame, "top down")
 
     """ Warp frame """
     # frame_warped = top_down.warp_frame(frame_orig)
     # player.show_frame(frame_warped, "warped")
 
-    """ Input """
+    """ Recorder """
     recorder_frame = recorder.get_frame(frame, top_down_frame)
     player.show_frame(recorder_frame, "ROI")
     if args.record:
         recorder.write(recorder_frame)
 
+    """ Input """
     key = cv2.waitKey(delay)
     is_alive = camera.process_input(key, mousePos["x"], mousePos["y"])
 
