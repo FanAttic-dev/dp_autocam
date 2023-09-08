@@ -14,7 +14,7 @@ class VideoRecorder:
     TEXT_MARGIN = 20
     TEXT_FORMAT = {
         "fontFace": cv2.FONT_HERSHEY_DUPLEX,
-        "fontScale": 0.8,
+        "fontScale": 0.5,
         "thickness": 1
     }
 
@@ -101,16 +101,22 @@ class VideoRecorder:
             stats["Name"] = f"{name}: {stats['Name']}"
             return stats
 
-        ball_stats = get_stats(self.camera.ball_model, "Ball")
-        camera_stats = get_stats(self.camera.model, "Camera")
         detector_stats = get_stats(self.detector, "Detector")
+        camera_stats = get_stats(self.camera, "Camera")
+        pid_x_stats = get_stats(self.camera.pid_x, "PID_X")
+        pid_y_stats = get_stats(self.camera.pid_y, "PID_Y")
+        pid_f_stats = get_stats(self.camera.pid_f, "PID_F")
+        ball_stats = get_stats(self.camera.ball_model, "Ball")
 
         text_y = self.spacing
 
         frame = add_border(frame)
 
-        put_dict_items_(frame, detector_stats)
+        # put_dict_items_(frame, detector_stats)
         put_dict_items_(frame, camera_stats)
+        put_dict_items_(frame, pid_x_stats)
+        put_dict_items_(frame, pid_y_stats)
+        put_dict_items_(frame, pid_f_stats)
         put_dict_items_(frame, ball_stats)
 
         return frame

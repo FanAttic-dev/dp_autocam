@@ -26,20 +26,24 @@ class Camera:
 
 
 class PerspectiveCamera(Camera):
-    PAN_DX = 1
-    TILT_DY = 1
-    ZOOM_DZ = 60
     SENSOR_W = 836  # 25
-    DEFAULT_F = 1003  # 30
-    MIN_F = 1003
-    MAX_F = 2083
     CYLLINDER_RADIUS = 1000
+
+    PAN_DX = 1
     DEFAULT_PAN_DEG = 12
-    MIN_PAN_DEG = -60
-    MAX_PAN_DEG = 60
+    PAN_DEG_MIN = -60
+    PAN_DEG_MAX = 60
+
+    TILT_DY = 1
     DEFAULT_TILT_DEG = 9
-    MIN_TILT_DEG = 9  # 5
-    MAX_TILT_DEG = 9  # 12
+    TILT_DEG_MIN = 5
+    TILT_DEG_MAX = 12
+
+    ZOOM_DZ = 60
+    DEFAULT_F = 1003  # 30
+    F_MIN = 900
+    F_MAX = 1300
+
     FRAME_ASPECT_RATIO = 16/9
     FRAME_W = 1920
     FRAME_H = int(FRAME_W / FRAME_ASPECT_RATIO)
@@ -58,11 +62,15 @@ class PerspectiveCamera(Camera):
         self.set(pan_deg, tilt_deg)
 
         # self.model = Dynamics(dt=0.1, accel_rate=0.1, decel_rate=0.1)
-        self.model = PID()
         # self.model = KalmanFilterVel(
         #     dt=0.1, std_acc=0.1, std_meas=100, decel_rate=1)
+        self.pid_x = PID()
+        self.pid_y = PID()
+        self.pid_f = PID(kp=0.005)
         center_x, center_y = self.center
-        self.model.init(center_x)
+        self.pid_x.init(center_x)
+        self.pid_y.init(center_y)
+        self.pid_f.init(PerspectiveCamera.DEFAULT_F)
 
         self.ball_model = ParticleFilter()
         self.ball_model.init(self.center)
@@ -72,10 +80,6 @@ class PerspectiveCamera(Camera):
 
         self.pause_measurements = False
         self.init_dead_zone()
-
-    @property
-    def variance_threshold(self):
-        return self.ball_model.std_pos ** 2 * 100
 
     def update_by_bbs(self, bbs, bbs_ball, top_down):
         def measure_ball(bb_ball):
@@ -88,7 +92,15 @@ class PerspectiveCamera(Camera):
             return x, y
 
         def measure_zoom():
-            self.ball_model.var
+            var = np.mean(self.ball_model.var)
+            var_min = self.ball_model.std_pos ** 2
+            var_max = self.ball_model.std_pos ** 2 * 10
+            var = np.clip(var, var_min, var_max)
+
+            # zoom in inversely proportional to the variance
+            zoom_factor = 1 - (var - var_min) / (var_max - var_min)
+            f = PerspectiveCamera.F_MIN + zoom_factor * PerspectiveCamera.F_MAX
+            return f
 
         # def measure_zoom(bbs):
         #     bb_x_min, bb_y_min, bb_x_max, bb_y_max = get_bounding_box(bbs)
@@ -111,12 +123,13 @@ class PerspectiveCamera(Camera):
         ball_centers = []
 
         # Move to the players' center if no measurement for a long time
-        # var = self.ball_model.var
-        # if not balls_detected and np.mean(var) > self.variance_threshold:
-        #     u = players_center - self.ball_estimate_last
-        #     self.ball_model.set_u(u)
-        # else:
-        #     self.ball_model.reset_u()
+        var = self.ball_model.var
+        var_u_th = self.ball_model.std_pos ** 2 * 50
+        if not balls_detected and np.mean(var) > var_u_th:
+            u = players_center - self.ball_estimate_last
+            self.ball_model.set_u(u)
+        else:
+            self.ball_model.reset_u()
 
         self.ball_model.predict()
 
@@ -137,12 +150,19 @@ class PerspectiveCamera(Camera):
         # print(f"Is in dead zone: {is_in_dead_zone}")
 
         # Camera model
-        self.model.set_target(mu[0])
-        self.model.update()
+        mu_x, mu_y = mu
+        self.pid_x.update(mu_x)
+        self.pid_y.update(mu_y)
 
-        center_x, center_y = self.center
-        pid_x = self.model.get()
-        self.set_center(pid_x, center_y)
+        # Zoom
+        f = measure_zoom()
+        self.pid_f.update(f)
+
+        # center_x, center_y = self.center
+        pid_x = self.pid_x.get()
+        pid_y = self.pid_y.get()
+        pid_f = self.pid_f.get()
+        self.set_center(pid_x, pid_y, pid_f)
 
     @property
     def fov_horiz_deg(self):
@@ -180,23 +200,24 @@ class PerspectiveCamera(Camera):
     def set(self, pan_deg, tilt_deg, f=DEFAULT_F):
         self.pan_deg = np.clip(
             pan_deg,
-            PerspectiveCamera.MIN_PAN_DEG,
-            PerspectiveCamera.MAX_PAN_DEG,
+            PerspectiveCamera.PAN_DEG_MIN,
+            PerspectiveCamera.PAN_DEG_MAX,
         )
         self.tilt_deg = np.clip(
             tilt_deg,
-            PerspectiveCamera.MIN_TILT_DEG,
-            PerspectiveCamera.MAX_TILT_DEG
+            PerspectiveCamera.TILT_DEG_MIN,
+            PerspectiveCamera.TILT_DEG_MAX
         )
         self.f = np.clip(
             f,
-            PerspectiveCamera.MIN_F,
-            PerspectiveCamera.MAX_F
+            PerspectiveCamera.F_MIN,
+            PerspectiveCamera.F_MAX
         )
 
-    def set_center(self, x, y):
+    def set_center(self, x, y, f=None):
         pan_deg, tilt_deg = self.coords2ptz(x, y)
-        self.set(pan_deg, tilt_deg, self.f)
+        f = f if f is not None else self.f
+        self.set(pan_deg, tilt_deg, f)
 
     def init_dead_zone(self):
         # left = self.model.signal - self.model.th
@@ -219,14 +240,6 @@ class PerspectiveCamera(Camera):
     def reset(self):
         self.set(PerspectiveCamera.DEFAULT_PAN_DEG,
                  PerspectiveCamera.DEFAULT_TILT_DEG)
-
-    def print(self):
-        print(f"pan_deg = {self.pan_deg}")
-        print(f"tilt_deg = {self.tilt_deg}")
-        print(f"f = {self.f}")
-        print(f"fov_horiz = {self.fov_horiz_deg}")
-        print(f"fov_vert = {self.fov_vert_deg}")
-        print()
 
     def shift_coords(self, x, y):
         x = x + self.frame_orig_center_x
@@ -326,6 +339,20 @@ class PerspectiveCamera(Camera):
         elif key == ord('n'):
             self.pause_measurements = not self.pause_measurements
         return is_alive
+
+    def get_stats(self):
+        stats = {
+            "Name": PerspectiveCamera.__name__,
+            "pan_deg": self.pan_deg,
+            "tilt_deg": self.tilt_deg,
+            "f": self.f,
+            "fov_horiz_deg": self.fov_horiz_deg,
+            "fov_vert_deg": self.fov_vert_deg,
+        }
+        return stats
+
+    def print(self):
+        print(self.get_stats())
 
 
 class FixedHeightCamera(Camera):

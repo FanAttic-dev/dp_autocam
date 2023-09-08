@@ -35,8 +35,10 @@ def parse_args():
 args = parse_args()
 
 video_path = get_random_file(videos_dir)
-video_path = Path(
-    "/home/atti/source/datasets/SoccerTrack/wide_view/videos/F_20200220_1_0120_0150.mp4")
+# video_path = Path(
+#     "/home/atti/source/datasets/SoccerTrack/wide_view/videos/F_20200220_1_0870_0900.mp4")
+# video_path = Path(
+#     "/home/atti/source/datasets/SoccerTrack/wide_view/videos/F_20200220_1_0120_0150.mp4")
 player = VideoPlayer(video_path)
 delay = player.get_delay(args.record)
 
@@ -95,10 +97,10 @@ while is_alive:
 
     """ ROI """
     if args.mouse:
-        camera.model.set_target(mousePos["x"])
-        camera.model.update()
+        camera.pid_x.set_target(mousePos["x"])
+        camera.pid_x.update()
         _, center_y = camera.center
-        center_x = camera.model.get()
+        center_x = camera.pid_x.get()
         camera.set_center(center_x, center_y)
 
         camera.draw_center_(frame_orig)

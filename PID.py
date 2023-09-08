@@ -2,11 +2,11 @@ import numpy as np
 
 
 class PID:
-    def __init__(self):
+    def __init__(self, kp=0.03, ki=0, kd=0):
         self.dt = 0.01
-        self.kp = 0.03
-        self.ki = 0  # 0.009
-        self.kd = 0  # 0.006
+        self.kp = kp
+        self.ki = ki  # 0.009
+        self.kd = kd  # 0.006
 
         self.P = 0
         self.I = 0
@@ -28,7 +28,8 @@ class PID:
     def get(self):
         return self.signal
 
-    def update(self):
+    def update(self, target):
+        self.set_target(target)
         e = self.target - self.signal
 
         self.P = self.kp * e
@@ -41,14 +42,14 @@ class PID:
     def get_stats(self):
         stats = {
             "Name": "PID Controller",
-            "dt": self.dt,
+            # "dt": self.dt,
             "Kp": self.kp,
-            "Ki": self.ki,
-            "Kd": self.kd,
+            # "Ki": self.ki,
+            # "Kd": self.kd,
             "signal": self.signal,
             "target": self.target,
             "P": self.P,
-            "I": self.I,
-            "D": self.D,
+            # "I": self.I,
+            # "D": self.D,
         }
         return stats

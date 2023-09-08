@@ -9,7 +9,7 @@ from filterpy.monte_carlo import systematic_resample, stratified_resample
 class ParticleFilter():
     INIT_STD = 100
 
-    def __init__(self, dt=0.01, std_pos=10, std_meas=50, N=1000):
+    def __init__(self, dt=0.01, std_pos=10, std_meas=60, N=1000):
         self.dt = dt
         self.std_pos = std_pos
         self.std_meas = std_meas
@@ -56,12 +56,12 @@ class ParticleFilter():
         self.particles += self.u * self.dt + randn(self.N, 2) * self.std_pos
 
     def update(self, players_center, ball_centers):
-        # dist_players = np.linalg.norm(self.particles - players_center, axis=1)
+        dist_players = np.linalg.norm(self.particles - players_center, axis=1)
         for ball in ball_centers:
             dist_ball = np.linalg.norm(self.particles - ball, axis=1)
-            # self.weights *= scipy.stats.norm(0, self.std_meas).pdf(
-            #     (3 * dist_ball + dist_players)/4)
-            self.weights *= scipy.stats.norm(0, self.std_meas).pdf(dist_ball)
+            self.weights *= scipy.stats.norm(0, self.std_meas).pdf(
+                (2 * dist_ball + dist_players)/3)
+            # self.weights *= scipy.stats.norm(0, self.std_meas).pdf(dist_ball)
 
         self.weights += 1.e-300  # avoid round-off to zero
         self.weights /= sum(self.weights)
