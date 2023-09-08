@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+from PID import PID
 from constants import colors
 from dynamics import Dynamics
 from kalman_filter import KalmanFilterAcc, KalmanFilterVel
@@ -51,13 +52,18 @@ class PerspectiveCamera(Camera):
 
     def __init__(self, frame_orig, pan_deg=DEFAULT_PAN_DEG, tilt_deg=DEFAULT_TILT_DEG):
         h, w, _ = frame_orig.shape
+        self.frame_orig_shape = frame_orig.shape
         self.frame_orig_center_x = w // 2
         self.frame_orig_center_y = h // 2
         self.set(pan_deg, tilt_deg)
-        self.model = Dynamics(dt=0.01, accel_rate=0.1, decel_rate=0.1)
+
+        # self.model = Dynamics(dt=0.1, accel_rate=0.1, decel_rate=0.1)
+        self.model = PID()
         # self.model = KalmanFilterVel(
         #     dt=0.1, std_acc=0.1, std_meas=100, decel_rate=1)
-        self.model.set_pos(*self.center)
+        center_x, center_y = self.center
+        self.model.init(center_x)
+
         self.ball_model = ParticleFilter()
         self.ball_model.init(self.center)
         self.ball_estimate_last = self.center
@@ -81,32 +87,40 @@ class PerspectiveCamera(Camera):
             x, y = apply_homography(top_down.H_inv, x, y)
             return x, y
 
-        def measure_zoom(bbs):
-            bb_x_min, bb_y_min, bb_x_max, bb_y_max = get_bounding_box(bbs)
+        def measure_zoom():
+            self.ball_model.var
 
-            corner_pts = self.get_corner_pts()
-            roi_x_min, roi_y_min = corner_pts[0]
-            roi_x_max, roi_y_max = corner_pts[2]
+        # def measure_zoom(bbs):
+        #     bb_x_min, bb_y_min, bb_x_max, bb_y_max = get_bounding_box(bbs)
 
-            dz = (bb_x_min - roi_x_min) + (roi_x_max - bb_x_max)
+        #     corner_pts = self.get_corner_pts()
+        #     roi_x_min, roi_y_min = corner_pts[0]
+        #     roi_x_max, roi_y_max = corner_pts[2]
 
-            return dz
+        #     dz = (bb_x_min - roi_x_min) + (roi_x_max - bb_x_max)
 
-        is_ball_detected = len(bbs_ball) > 0 and len(bbs_ball['boxes']) > 0
+        #     return dz
+
+        players_detected = len(bbs) > 0 and len(bbs["boxes"]) > 0
+        balls_detected = len(bbs_ball) > 0 and len(bbs_ball['boxes']) > 0
+
+        if not players_detected:
+            return
 
         players_center = np.array(measure_players(bbs))
+        ball_centers = []
 
         # Move to the players' center if no measurement for a long time
-        var = self.ball_model.var
-        if not is_ball_detected and np.mean(var) > self.variance_threshold:
-            u = players_center - self.ball_estimate_last
-            self.ball_model.set_u(u)
-        else:
-            self.ball_model.reset_u()
+        # var = self.ball_model.var
+        # if not balls_detected and np.mean(var) > self.variance_threshold:
+        #     u = players_center - self.ball_estimate_last
+        #     self.ball_model.set_u(u)
+        # else:
+        #     self.ball_model.reset_u()
 
         self.ball_model.predict()
 
-        if is_ball_detected:
+        if balls_detected:
             # Distance from estimate to measurement
             ball_centers = [measure_ball(bb_ball)
                             for bb_ball in bbs_ball['boxes']]
@@ -119,14 +133,16 @@ class PerspectiveCamera(Camera):
         mu = self.ball_model.mu
         self.ball_estimate_last = mu
 
-        # Camera model
-        # self.model.update(*mu)
+        # is_in_dead_zone = self.is_meas_in_dead_zone(*mu)
+        # print(f"Is in dead zone: {is_in_dead_zone}")
 
-        # is_in_dead_zone = self.is_meas_in_dead_zone(*self.model.pos)
-        # self.model.set_decelerating(is_decelerating=is_in_dead_zone)
-        # self.model.predict()
-        # self.set_center(*self.model.pos)
-        self.set_center(*mu)
+        # Camera model
+        self.model.set_target(mu[0])
+        self.model.update()
+
+        center_x, center_y = self.center
+        pid_x = self.model.get()
+        self.set_center(pid_x, center_y)
 
     @property
     def fov_horiz_deg(self):
@@ -183,6 +199,13 @@ class PerspectiveCamera(Camera):
         self.set(pan_deg, tilt_deg, self.f)
 
     def init_dead_zone(self):
+        # left = self.model.signal - self.model.th
+        # right = self.model.signal + self.model.th
+        # return np.array([
+        #     [int(left), 0],  # start point (top left)
+        #     # end point (bottom right)
+        #     [int(right), self.frame_orig_shape[0]-1]
+        # ])
         self.dead_zone = np.array([
             [640, 0],  # start point (top left)
             [1280, 1079]  # end point (bottom right)

@@ -69,12 +69,12 @@ class KalmanFilterBase(Model):
 
         return self.pos
 
-    def update(self, x_meas, y_meas):
-        self.set_last_measurement(x_meas, y_meas)
+    def update(self, meas_x, meas_y):
+        self.set_last_measurement(meas_x, meas_y)
 
         z = np.array([
-            [np.array(x_meas).item()],
-            [np.array(y_meas).item()]
+            [np.array(meas_x).item()],
+            [np.array(meas_y).item()]
         ])
 
         K = self.K

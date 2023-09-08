@@ -76,11 +76,11 @@ def average_point(points):
 
 def lies_in_rectangle(pt, rect):
     start_pt, end_pt = rect
-    x_start, y_start = start_pt
-    x_end, y_end = end_pt
-    x_pt, y_pt = pt
-    return x_start <= x_pt and y_start <= y_pt \
-        and x_pt <= x_end and y_pt <= y_end
+    start_x, start_y = start_pt
+    end_x, end_y = end_pt
+    pt_x, pt_y = pt
+    return start_x <= pt_x and start_y <= pt_y \
+        and pt_x <= end_x and pt_y <= end_y
 
 
 def get_bounding_box(bbs):
