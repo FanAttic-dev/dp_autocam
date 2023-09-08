@@ -74,13 +74,15 @@ while is_alive:
         "cls": []
     }
     if camera.pause_measurements:
-        bb_ball = []
+        bbs_ball_joined = []
     elif args.mouse:
         ball_size = 5
-        bb_ball = [
-            mousePos["x"] - ball_size, mousePos["y"] - ball_size,
-            mousePos["x"] + ball_size, mousePos["y"] + ball_size
-        ]
+        bbs_ball_joined = {
+            "boxes": [[
+                mousePos["x"] - ball_size, mousePos["y"] - ball_size,
+                mousePos["x"] + ball_size, mousePos["y"] + ball_size
+            ]]
+        }
     else:
         """ Split frame, detect objects, merge & draw bounding boxes """
         frames = frame_splitter.split(frame_orig)
@@ -88,30 +90,22 @@ while is_alive:
         # Players
         bbs, _ = detector.detect(frames)
         bbs_joined = frame_splitter.join_bbs(bbs)
+        detector.draw_bbs_(frame_orig, bbs_joined)
 
         # Balls
-        bb_ball = []
         bbs_ball, bbs_ball_frame = ball_detector.detect(frames)
         # for i, ball_frame in enumerate(bbs_ball_frame):
         #     player.show_frame(ball_frame, f"ball frame {i}")
         bbs_ball_joined = frame_splitter.join_bbs(bbs_ball)
         detector.draw_bbs_(frame_orig, bbs_ball_joined, colors["white"])
 
-        bb_ball = ball_detector.filter_balls(
-            bbs_ball_joined, camera.ball_model)
-        add_bb_ball_(bbs_joined, bb_ball)
-
-        # Render
-        detector.draw_bbs_(frame_orig, bbs_joined)
-
     """ ROI """
-    camera.update_by_bbs(bbs_joined, bb_ball, top_down)
+    camera.update_by_bbs(bbs_joined, bbs_ball_joined, top_down)
     camera.draw_ball_prediction_(frame_orig, colors["green"])
-    ball_detector.draw_ball_radius_(
-        frame_orig, colors["green"])
+    camera.ball_model.draw_particles_(frame_orig)
     frame = camera.get_frame(frame_orig)
 
-    camera.draw_dead_zone_(frame)
+    # camera.draw_dead_zone_(frame)
     # player.show_frame(frame, "ROI")
     # camera.print()
     # camera.draw_center_(frame_orig)
