@@ -59,7 +59,7 @@ class PerspectiveCamera(Camera):
         self.frame_orig_center_y = h // 2
         self.set(pan_deg, tilt_deg)
 
-        self.pid_x = PID()
+        self.pid_x = PID(kp=0.03, ki=0.009)
         self.pid_y = PID()
         self.pid_f = PID(kp=0.005)
         center_x, center_y = self.center
