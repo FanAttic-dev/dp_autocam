@@ -40,7 +40,7 @@ class PerspectiveCamera(Camera):
     ZOOM_DZ = 60
     DEFAULT_F = 1003  # 30
     F_MIN = 900
-    F_MAX = 1300
+    F_MAX = 1200
 
     FRAME_ASPECT_RATIO = 16/9
     FRAME_W = 1920
@@ -71,6 +71,8 @@ class PerspectiveCamera(Camera):
         self.ball_model.init(self.center)
         self.ball_estimate_last = self.center
 
+        self.players_center_last = None
+
         self.pause_measurements = False
         self.init_dead_zone()
 
@@ -89,7 +91,7 @@ class PerspectiveCamera(Camera):
         def measure_zoom():
             """ Map the PF variance to the camera zoom bounds. """
             var = np.mean(self.ball_model.var)
-            var_min = self.ball_model.std_pos ** 2
+            var_min = self.ball_model.std_pos ** 2 / 2
             var_max = self.ball_model.std_pos ** 2 * 10
             var = np.clip(var, var_min, var_max)
 
@@ -99,14 +101,23 @@ class PerspectiveCamera(Camera):
             return f
 
         def measure_u(balls_detected, players_center):
-            """ Move to the players' center if no measurement for a long time. """
+            center_alpha = 0.1
+            movement_alpha = 10
+
+            u = np.array([0., 0.])
+
+            # Move to the players' center if no measurement for a long time.
             var = self.ball_model.var
             var_u_th = self.ball_model.std_pos ** 2 * 50
             if not balls_detected and np.mean(var) > var_u_th:
-                u = players_center - self.ball_estimate_last
-                return u
+                u += center_alpha * (players_center - self.ball_estimate_last)
 
-            return np.array([0, 0])
+            # Move with players
+            if self.players_center_last is not None:
+                u += movement_alpha * \
+                    (players_center - self.players_center_last)
+
+            return u
 
         players_detected = len(bbs) > 0 and len(bbs["boxes"]) > 0
         balls_detected = len(bbs_ball) > 0 and len(bbs_ball['boxes']) > 0
@@ -134,7 +145,6 @@ class PerspectiveCamera(Camera):
 
         # Camera model
         mu = self.ball_model.mu
-        self.ball_estimate_last = mu
         mu_x, mu_y = mu
         f = measure_zoom()
 
@@ -148,6 +158,9 @@ class PerspectiveCamera(Camera):
         pid_y = self.pid_y.get()
         pid_f = self.pid_f.get()
         self.set_center(pid_x, pid_y, pid_f)
+
+        self.ball_estimate_last = mu
+        self.players_center_last = players_center
 
     @property
     def fov_horiz_deg(self):

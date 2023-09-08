@@ -57,16 +57,34 @@ class YoloDetector(Detector):
                 "cls": [
                     cls.cpu().numpy().astype(int).item()
                     for cls in det_frame.boxes.cls
-                ]
+                ],
+                "ids": [
+                    id.cpu().numpy().astype(int).item()
+                    for id in det_frame.boxes.id
+                ] if det_frame.boxes.is_track else []
             }
             bbs_frames.append(bbs)
         return bbs_frames
 
     def draw_bbs_(self, img, bbs, color=None):
-        for bb, cls in zip(bbs["boxes"], bbs["cls"]):
+        for i, (bb, cls) in enumerate(zip(bbs["boxes"], bbs["cls"])):
             x1, y1, x2, y2 = bb
             bb_color = YoloDetector.cls2color[cls] if color is None else color
             cv2.rectangle(img, (x1, y1), (x2, y2), bb_color, 2)
+
+            if len(bbs["ids"]) == 0:
+                continue
+
+            id = bbs["ids"][i]
+            cv2.putText(
+                img=img,
+                text=f"{id}",
+                org=(x1, y1),
+                color=colors["white"],
+                fontFace=cv2.FONT_HERSHEY_DUPLEX,
+                fontScale=0.3,
+                thickness=1
+            )
 
     def plot(self, res):
         for i in range(len(res)):
@@ -120,7 +138,7 @@ class YoloBallDetector(YoloDetector):
         return np.clip(self.__ball_threshold, th_min, th_max)
 
     def detect(self, img):
-        res = self.model.track(
+        res = self.model.predict(
             img, **YoloBallDetector.args, tracker="bytetrack.yaml")
         return self.res2bbs(res), self.plot(res)
 
@@ -164,7 +182,7 @@ class YoloPlayerDetector(YoloDetector):
         f"./weights/yolov8_{YoloDetector.args['imgsz']}.pt")
 
     def detect(self, img):
-        res = self.model.predict(img, **YoloPlayerDetector.args)
+        res = self.model.track(img, **YoloPlayerDetector.args)
         return self.res2bbs(res), self.plot(res)
 
 

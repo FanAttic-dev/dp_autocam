@@ -35,8 +35,8 @@ def parse_args():
 args = parse_args()
 
 video_path = get_random_file(videos_dir)
-# video_path = Path(
-#     "/home/atti/source/datasets/SoccerTrack/wide_view/videos/F_20200220_1_0870_0900.mp4")
+video_path = Path(
+    "/home/atti/source/datasets/SoccerTrack/wide_view/videos/F_20220220_1_1830_1860.mp4")
 # video_path = Path(
 #     "/home/atti/source/datasets/SoccerTrack/wide_view/videos/F_20200220_1_0120_0150.mp4")
 player = VideoPlayer(video_path)
@@ -73,11 +73,13 @@ while is_alive:
     """ Detection """
     bbs_joined = {
         "boxes": [],
-        "cls": []
+        "cls": [],
+        "ids": []
     }
     bbs_ball_joined = {
         "boxes": [],
-        "cls": []
+        "cls": [],
+        "ids": []
     }
     if not camera.pause_measurements and not args.mouse:
         """ Split frame, detect objects, merge & draw bounding boxes """
@@ -89,7 +91,7 @@ while is_alive:
         detector.draw_bbs_(frame_orig, bbs_joined)
 
         # Balls
-        bbs_ball, bbs_ball_frame = ball_detector.detect(frames)
+        bbs_ball, _ = ball_detector.detect(frames)
         # for i, ball_frame in enumerate(bbs_ball_frame):
         #     player.show_frame(ball_frame, f"ball frame {i}")
         bbs_ball_joined = frame_splitter.join_bbs(bbs_ball)
