@@ -34,3 +34,14 @@ class ImageProcessor:
     @staticmethod
     def gaussian_blur(img, sigma=1):
         return cv2.GaussianBlur(img, (3, 3), sigma)
+
+    @staticmethod
+    def draw_mask(img, pitch_coords, margin):
+        pts = coords_to_pts(pitch_coords)
+        mask = np.zeros(img.shape[:2], dtype=np.uint8)
+        cv2.fillPoly(mask, pts=[pts], color=colors["white"])
+
+        se = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+        mask = cv2.dilate(mask, se, iterations=margin)
+
+        return cv2.bitwise_and(img, img, mask=mask)

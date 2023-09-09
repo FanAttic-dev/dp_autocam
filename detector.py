@@ -46,6 +46,10 @@ class YoloDetector(Detector):
         super().__init__(pitch_coords)
         self.model = YOLO(self.__class__.model_path)
 
+    def preprocess(self, img):
+        img = ImageProcessor.draw_mask(img, self.pitch_coords, margin=1)
+        return img
+
     def res2bbs(self, res):
         bbs_frames = []
         for det_frame in res:
@@ -208,6 +212,7 @@ class BgDetector(Detector):
         self.bgSubtractor = BgDetector.BackgroundSubtractor()
 
     def preprocess(self, img):
+        img = ImageProcessor.draw_mask(img, self.pitch_coords, margin=0)
         img = ImageProcessor.gaussian_blur(img, 1)
         return img
 

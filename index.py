@@ -5,7 +5,6 @@ from camera import PerspectiveCamera
 from constants import videos_dir, coords_path
 from detector import YoloBallDetector, YoloPlayerDetector
 from frame_splitter import PerspectiveFrameSplitter
-from image_preprocessor import ImagePreprocessor
 from utils import get_random_file
 from top_down import TopDown
 from utils import load_json
@@ -49,7 +48,6 @@ pitch_coords = load_json(coords_path)
 top_down = TopDown(pitch_coords, camera)
 detector = YoloPlayerDetector(pitch_coords)
 ball_detector = YoloBallDetector(pitch_coords, camera.ball_model)
-preprocessor = ImagePreprocessor(frame_orig, pitch_coords)
 
 # args.record = True
 args.mouse = True
@@ -69,7 +67,7 @@ while is_alive:
         break
 
     h, w, _ = frame_orig.shape
-    frame_orig = preprocessor.preprocess(frame_orig)
+    frame_orig = detector.preprocess(frame_orig)
 
     """ Detection """
     bbs_joined = {
