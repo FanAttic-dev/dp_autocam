@@ -9,7 +9,7 @@ from filterpy.monte_carlo import systematic_resample
 class ParticleFilter():
     INIT_STD = 100
 
-    def __init__(self, dt=0.1, std_pos=10, std_meas=90, N=1000):
+    def __init__(self, dt=0.1, std_pos=5, std_meas=150, N=1000):
         self.dt = dt
         self.std_pos = std_pos
         self.std_meas = std_meas
@@ -32,13 +32,20 @@ class ParticleFilter():
         return particles
 
     @property
+    def estimate(self):
+        mu = self.mu
+        var = np.average((self.particles - self.mu)**2,
+                         weights=self.weights, axis=0)
+        return mu, var
+
+    @property
     def mu(self):
         return np.average(self.particles, weights=self.weights, axis=0)
 
     @property
     def var(self):
-        return np.average((self.particles - self.mu)**2,
-                          weights=self.weights, axis=0)
+        _, var = self.estimate
+        return var
 
     @property
     def neff(self):

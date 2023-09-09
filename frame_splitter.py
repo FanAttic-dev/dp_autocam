@@ -14,11 +14,14 @@ class FrameSplitter:
 
 
 class PerspectiveFrameSplitter(FrameSplitter):
-    def __init__(self, frame):
+    def __init__(self, frame, config):
         self.cameras = [
-            PerspectiveCamera(frame, pan_deg=-30, tilt_deg=9),
-            PerspectiveCamera(frame, pan_deg=9, tilt_deg=9),
-            PerspectiveCamera(frame, pan_deg=40, tilt_deg=9),
+            PerspectiveCamera(
+                frame, config,
+                pan_deg=camera_params["pan_deg"],
+                tilt_deg=camera_params["tilt_deg"],
+                zoom_f=camera_params["zoom_f"])
+            for camera_params in config["frame_splitter_params"]
         ]
 
     def split(self, frame):

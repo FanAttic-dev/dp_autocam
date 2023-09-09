@@ -74,6 +74,16 @@ def average_point(points):
     return np.mean(np.array(points["points"]), axis=0)
 
 
+def discard_extreme_points_(points):
+    pts = points["points"]
+    maxi = np.argmax(pts, axis=0)[0]
+    mini = np.argmin(pts, axis=0)[0]
+    points["points"] = np.delete(points["points"], maxi, axis=0)
+    points["points"] = np.delete(points["points"], mini, axis=0)
+    points["cls"] = np.delete(points["cls"], maxi, axis=0)
+    points["cls"] = np.delete(points["cls"], mini, axis=0)
+
+
 def lies_in_rectangle(pt, rect):
     start_pt, end_pt = rect
     start_x, start_y = start_pt

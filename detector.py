@@ -30,10 +30,10 @@ class YoloDetector(Detector):
     args = {
         'device': 0,  # 0 if gpu else 'cpu'
         'imgsz': 960,
-        'classes': [1],  # [0] for ball only, None for all
-        'conf': 0.35,
+        'classes': [1, 2, 3],  # [0] for ball only, None for all
+        'conf': 0.20,
         'max_det': 50,
-        'iou': 0.7
+        'iou': 0.5
     }
     cls2color = {
         0: colors["red"],  # ball
@@ -182,7 +182,7 @@ class YoloPlayerDetector(YoloDetector):
         f"./weights/yolov8_{YoloDetector.args['imgsz']}.pt")
 
     def detect(self, img):
-        res = self.model.track(img, **YoloPlayerDetector.args)
+        res = self.model.predict(img, **YoloPlayerDetector.args)
         return self.res2bbs(res), self.plot(res)
 
 

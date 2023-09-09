@@ -2,10 +2,10 @@ from pathlib import Path
 
 
 # videos_dir = Path("/home/atti/source/datasets/SoccerTrack/wide_view/videos")
-# coords_path = videos_dir / "../../coords.json"
+# config_path = videos_dir / "../../config.json"
 
 videos_dir = Path("/home/atti/source/datasets/TrnavaZilina/videos")
-coords_path = videos_dir / "../coords.json"
+config_path = videos_dir / "../config.json"
 
 
 # BGR
