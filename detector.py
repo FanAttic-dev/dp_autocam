@@ -72,7 +72,7 @@ class YoloDetector(Detector):
             bb_color = YoloDetector.cls2color[cls] if color is None else color
             cv2.rectangle(img, (x1, y1), (x2, y2), bb_color, 2)
 
-            if len(bbs["ids"]) == 0:
+            if i >= len(bbs["ids"]):
                 continue
 
             id = bbs["ids"][i]

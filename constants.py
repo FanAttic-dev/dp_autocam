@@ -1,8 +1,10 @@
 from pathlib import Path
 
 
-videos_dir = Path("/home/atti/source/datasets/SoccerTrack/wide_view/videos")
-coords_path = videos_dir / "../../coords.json"
+videos_dir = Path("/home/atti/source/datasets/TrnavaZilina/videos")
+# videos_dir = Path("/home/atti/source/datasets/SoccerTrack/wide_view/videos")
+coords_path = videos_dir / "../coords.json"
+# coords_path = videos_dir / "../../coords.json"
 
 # BGR
 colors = {
