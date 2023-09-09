@@ -24,23 +24,23 @@ class Camera:
 
 
 class PerspectiveCamera(Camera):
-    SENSOR_W = 836  # 25
-    CYLLINDER_RADIUS = 1000
+    SENSOR_W = 100
+    CYLLINDER_RADIUS = 1860
 
     PAN_DX = 1
     DEFAULT_PAN_DEG = 12
-    PAN_DEG_MIN = -60
-    PAN_DEG_MAX = 60
+    PAN_DEG_MIN = -80
+    PAN_DEG_MAX = 80
 
     TILT_DY = 1
     DEFAULT_TILT_DEG = 9
-    TILT_DEG_MIN = 5
-    TILT_DEG_MAX = 12
+    TILT_DEG_MIN = -7
+    TILT_DEG_MAX = 7
 
-    ZOOM_DZ = 60
-    DEFAULT_F = 1003  # 30
-    F_MIN = 900
-    F_MAX = 1200
+    ZOOM_DZ = 1
+    DEFAULT_F = 150  # 30
+    F_MIN = 100
+    F_MAX = 250
 
     FRAME_ASPECT_RATIO = 16/9
     FRAME_W = 1920
@@ -53,6 +53,9 @@ class PerspectiveCamera(Camera):
     ], dtype=np.int16)
 
     def __init__(self, frame_orig, pan_deg=DEFAULT_PAN_DEG, tilt_deg=DEFAULT_TILT_DEG):
+        self.cyllinder_radius = PerspectiveCamera.CYLLINDER_RADIUS
+        self.sensor_w = PerspectiveCamera.SENSOR_W
+
         h, w, _ = frame_orig.shape
         self.frame_orig_shape = frame_orig.shape
         self.frame_orig_center_x = w // 2
@@ -164,7 +167,7 @@ class PerspectiveCamera(Camera):
 
     @property
     def fov_horiz_deg(self):
-        return np.rad2deg(2 * np.arctan(PerspectiveCamera.SENSOR_W / (2 * self.f)))
+        return np.rad2deg(2 * np.arctan(self.sensor_w / (2 * self.f)))
 
     @property
     def fov_vert_deg(self):
@@ -244,18 +247,19 @@ class PerspectiveCamera(Camera):
 
     def ptz2coords(self, theta_deg, phi_deg, f):
         theta_rad = np.deg2rad(theta_deg)
-        x = np.tan(theta_rad) * PerspectiveCamera.CYLLINDER_RADIUS
+        # PerspectiveCamera.CYLLINDER_RADIUS
+        x = np.tan(theta_rad) * self.cyllinder_radius
 
         phi_rad = np.deg2rad(phi_deg)
         y = np.tan(phi_rad) * \
-            np.sqrt(PerspectiveCamera.CYLLINDER_RADIUS**2 + x**2)
+            np.sqrt(self.cyllinder_radius**2 + x**2)
         return self.shift_coords(int(x), int(y))
 
     def coords2ptz(self, x, y):
         x, y = self.unshift_coords(x, y)
-        pan_deg = np.rad2deg(np.arctan(x / PerspectiveCamera.CYLLINDER_RADIUS))
+        pan_deg = np.rad2deg(np.arctan(x / self.cyllinder_radius))
         tilt_deg = np.rad2deg(
-            np.arctan(y / (np.sqrt(PerspectiveCamera.CYLLINDER_RADIUS**2 + x**2))))
+            np.arctan(y / (np.sqrt(self.cyllinder_radius**2 + x**2))))
         return pan_deg, tilt_deg
 
     def get_corner_pts(self):
@@ -321,6 +325,14 @@ class PerspectiveCamera(Camera):
             self.zoom(PerspectiveCamera.ZOOM_DZ)
         elif key == ord('m'):
             self.zoom(-PerspectiveCamera.ZOOM_DZ)
+        elif key == ord('+'):
+            self.sensor_w += 1
+        elif key == ord('-'):
+            self.sensor_w -= 1
+        elif key == ord('c'):
+            self.cyllinder_radius += 10
+        elif key == ord('v'):
+            self.cyllinder_radius -= 10
         elif key == ord('r'):
             self.reset()
         elif key == ord('f'):
@@ -334,11 +346,13 @@ class PerspectiveCamera(Camera):
     def get_stats(self):
         stats = {
             "Name": PerspectiveCamera.__name__,
-            "pan_deg": self.pan_deg,
-            "tilt_deg": self.tilt_deg,
             "f": self.f,
-            "fov_horiz_deg": self.fov_horiz_deg,
-            "fov_vert_deg": self.fov_vert_deg,
+            "sensor_w": self.sensor_w,
+            "cyllinder_r": self.cyllinder_radius,
+            # "pan_deg": self.pan_deg,
+            # "tilt_deg": self.tilt_deg,
+            # "fov_horiz_deg": self.fov_horiz_deg,
+            # "fov_vert_deg": self.fov_vert_deg,
         }
         return stats
 

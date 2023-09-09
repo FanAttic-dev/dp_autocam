@@ -91,10 +91,6 @@ class YoloDetector(Detector):
             res[i] = res[i].plot()
         return res
 
-    def preprocess(self, img):
-        img = ImageProcessor.draw_mask(img, self.pitch_coords, margin=1)
-        return img
-
     def get_stats(self):
         return {
             "Name": self.__class__.__name__,
@@ -212,7 +208,6 @@ class BgDetector(Detector):
         self.bgSubtractor = BgDetector.BackgroundSubtractor()
 
     def preprocess(self, img):
-        img = ImageProcessor.draw_mask(img, self.pitch_coords, margin=0)
         img = ImageProcessor.gaussian_blur(img, 1)
         return img
 
