@@ -2,13 +2,15 @@ from pathlib import Path
 
 from utils import get_random_file
 
-constants = {
+params = {
     "use_trnava_zilina": True,
     "correct_rotation": True,
+    "ball_confidence": 0.2,
+    "players_confidence": 0.25,
 }
 
 
-if constants["use_trnava_zilina"]:
+if params["use_trnava_zilina"]:
     videos_dir = Path("/home/atti/source/datasets/TrnavaZilina/videos")
     config_path = videos_dir / "../config.json"
     # video_path = videos_dir / "clip01.mp4"

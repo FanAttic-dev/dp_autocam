@@ -5,7 +5,7 @@ import tqdm
 from ultralytics import YOLO
 
 from image_processor import ImageProcessor
-from constants import colors
+from constants import colors, params
 from utils import get_bb_center
 
 
@@ -31,7 +31,7 @@ class YoloDetector(Detector):
         'device': 0,  # 0 if gpu else 'cpu'
         'imgsz': 960,
         'classes': [1, 2, 3],  # [0] for ball only, None for all
-        'conf': 0.25,
+        'conf': params["players_confidence"],
         'max_det': 50,
         'iou': 0.5
     }
@@ -110,7 +110,7 @@ class YoloBallDetector(YoloDetector):
         'device': 0,  # 0 if gpu else 'cpu'
         'imgsz': 960,
         'classes': None,  # [0] for ball only, None for all
-        'conf': 0.2,
+        'conf': params["ball_confidence"],
         'max_det': 1,
         'iou': 0.5
     }

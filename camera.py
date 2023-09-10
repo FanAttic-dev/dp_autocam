@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 from PID import PID
-from constants import colors, constants
+from constants import colors, params
 from particle_filter import ParticleFilter
 from utils import apply_homography, coords_to_pts, get_pitch_rotation_rad, points_average, discard_extreme_points_, get_bb_center, lies_in_rectangle, points_variance, rotate_pts
 
@@ -192,7 +192,7 @@ class PerspectiveCamera(Camera):
 
         H, _ = cv2.findHomography(src, dst)
 
-        if constants["correct_rotation"]:
+        if params["correct_rotation"]:
             # TODO: use lookup table
             pitch_coords_orig = coords_to_pts(self.config["pitch_coords"])
             pitch_coords_frame = cv2.perspectiveTransform(
