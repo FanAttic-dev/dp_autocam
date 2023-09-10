@@ -70,8 +70,13 @@ def add_bb_ball_(bbs, bb_ball):
     add_bb_(bbs, bb_ball, 0)
 
 
-def average_point(points, weights=None):
+def points_average(points, weights=None):
     return np.average(np.array(points["points"]), axis=0, weights=weights)
+
+
+def points_variance(points, mu=None, weights=None):
+    mu = mu if mu is not None else points_average(points, weights)
+    return np.average((points["points"] - mu)**2, axis=0, weights=weights)
 
 
 def discard_extreme_points_(points):

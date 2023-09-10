@@ -3,7 +3,7 @@ import numpy as np
 from PID import PID
 from constants import colors
 from particle_filter import ParticleFilter
-from utils import apply_homography, average_point, discard_extreme_points_, get_bb_center, get_bounding_box, lies_in_rectangle
+from utils import apply_homography, points_average, discard_extreme_points_, get_bb_center, get_bounding_box, lies_in_rectangle, points_variance
 
 
 class Camera:
@@ -66,6 +66,8 @@ class PerspectiveCamera(Camera):
         self.ball_mu_last = self.center
 
         self.players_center_last = None
+        self.players_speed = None
+        self.players_var = None
         self.u_last = None
         self.pause_measurements = False
         self.init_dead_zone()
@@ -79,15 +81,16 @@ class PerspectiveCamera(Camera):
             """ Get the players' center point. """
             points = top_down.bbs2points(bbs)
             discard_extreme_points_(points)
-            x, y = average_point(points)
-            x, y = apply_homography(top_down.H_inv, x, y)
+            points_mu = points_average(points)
+            self.players_var = points_variance(points, points_mu)
+            x, y = apply_homography(top_down.H_inv, *points_mu)
             return np.array([x, y])
 
         def measure_zoom(ball_var):
             """ Map the PF variance to the camera zoom bounds. """
             ball_var = np.mean(ball_var)
             var_min = 300  # self.ball_model.std_pos ** 2 * 2
-            var_max = 5000  # self.ball_model.std_pos ** 2 * 100
+            var_max = 8000  # self.ball_model.std_pos ** 2 * 100
             ball_var = np.clip(ball_var, var_min, var_max)
 
             # zoom is inversely proportional to the variance
@@ -98,7 +101,7 @@ class PerspectiveCamera(Camera):
 
         def measure_u(balls_detected, players_center, ball_var):
             center_alpha = 0.1
-            movement_alpha = 10
+            movement_alpha = 1
             # var_u_th_factor = 200
             # var_u_th = self.ball_model.std_pos ** 2 * var_u_th_factor
             var_u_th = 5000
@@ -110,9 +113,9 @@ class PerspectiveCamera(Camera):
                 u += center_alpha * (players_center - self.ball_mu_last)
 
             # Move with players
-            # if self.players_center_last is not None:
-            #     u += movement_alpha * \
-            #         (players_center - self.players_center_last)
+            if self.players_center_last is not None:
+                self.players_speed = players_center - self.players_center_last
+                # u += movement_alpha * self.players_vector
 
             return u
 
@@ -373,6 +376,8 @@ class PerspectiveCamera(Camera):
             "tilt_deg": self.tilt_deg,
             # "fov_horiz_deg": self.fov_horiz_deg,
             # "fov_vert_deg": self.fov_vert_deg,
+            "players_speed": self.players_speed,
+            "players_var": self.players_var,
         }
         return stats
 
