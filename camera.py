@@ -1,9 +1,9 @@
 import cv2
 import numpy as np
 from PID import PID
-from constants import colors
+from constants import colors, constants
 from particle_filter import ParticleFilter
-from utils import apply_homography, points_average, discard_extreme_points_, get_bb_center, get_bounding_box, lies_in_rectangle, points_variance
+from utils import apply_homography, get_pitch_rotation_rad, points_average, discard_extreme_points_, get_bb_center, lies_in_rectangle, points_variance, rotate_pts
 
 
 class Camera:
@@ -46,6 +46,8 @@ class PerspectiveCamera(Camera):
         pan_deg = pan_deg if pan_deg is not None else self.pan_deg_default
         tilt_deg = tilt_deg if tilt_deg is not None else self.tilt_deg_default
         zoom_f = zoom_f if zoom_f is not None else self.zoom_f_default
+        self.roll_rad = get_pitch_rotation_rad(
+            config["pitch_coords"]) if constants["rotate_cameras"] else None
         self.set(pan_deg, tilt_deg, zoom_f)
 
         h, w, _ = frame_orig.shape
@@ -283,6 +285,9 @@ class PerspectiveCamera(Camera):
                 self.zoom_f)
             for pan_deg, tilt_deg in self.corners_ang.values()
         ]
+
+        if self.roll_rad is not None:
+            pts = rotate_pts(pts, self.roll_rad)
 
         return np.array(pts, dtype=np.int32)
 

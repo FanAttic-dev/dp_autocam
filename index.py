@@ -3,7 +3,7 @@ import cv2
 import argparse
 from pathlib import Path
 from camera import PerspectiveCamera
-from constants import videos_dir, config_path
+from constants import videos_dir, config_path, video_path
 from detector import YoloBallDetector, YoloPlayerDetector
 from frame_splitter import PerspectiveFrameSplitter
 from utils import get_random_file
@@ -35,10 +35,6 @@ def parse_args():
 """ Init """
 args = parse_args()
 
-# video_path = get_random_file(videos_dir)
-# video_path = videos_dir / "F_20200220_1_0120_0150.mp4"
-# video_path = videos_dir / "clip01.mp4"
-video_path = videos_dir / "TZ_00_22_40__00_24_15.mp4"
 config = load_json(config_path)
 pitch_coords = config["pitch_coords"]
 
@@ -70,6 +66,8 @@ while is_alive:
         break
 
     h, w, _ = frame_orig.shape
+    frame_orig_masked = detector.preprocess(frame_orig)
+    # frame_orig = frame_orig_masked
 
     """ Detection """
     bbs_joined = {
@@ -84,7 +82,6 @@ while is_alive:
     }
     if not camera.pause_measurements and not args.mouse:
         """ Split frame, detect objects, merge & draw bounding boxes """
-        frame_orig_masked = detector.preprocess(frame_orig)
         frames = frame_splitter.split(frame_orig_masked)
 
         # Players

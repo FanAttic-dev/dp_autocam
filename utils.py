@@ -1,3 +1,4 @@
+import math
 import random
 import numpy as np
 import json
@@ -117,3 +118,27 @@ def get_bb_center(bb):
     x = (x1 + x2) // 2
     y = (y1 + y2) // 2
     return x, y
+
+
+def rotate_pts(pts, angle_rad):
+    center_x, center_y = np.mean(pts, axis=0)
+    pts_rot = []
+    for x, y in pts:
+        qx = center_x + \
+            math.cos(angle_rad) * (x - center_x) - \
+            math.sin(angle_rad) * (y - center_y)
+        qy = center_y + \
+            math.sin(angle_rad) * (x - center_x) + \
+            math.cos(angle_rad) * (y - center_y)
+        pts_rot.append([qx, qy])
+    return pts_rot
+
+
+def get_pitch_rotation_rad(pitch_coords):
+    pts = coords_to_pts(pitch_coords)
+    mid_left = pts[1]  # (pts[0] + pts[1]) / 2
+    mid_right = pts[4]  # (pts[2] + pts[3]) / 2
+    u = np.array(mid_right - mid_left, dtype=np.float64)
+    u /= np.linalg.norm(u)
+    v = np.array([[1, 0]])
+    return np.arccos(np.dot(u, v.T))
