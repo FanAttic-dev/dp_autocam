@@ -3,10 +3,6 @@
 		"x": 3,
 		"y": 1014
 	},
-	"left center": {
-		"x": 3,
-		"y": 509
-	},
 	"left top": {
 		"x": 3,
 		"y": 3
@@ -14,10 +10,6 @@
 	"right top": {
 		"x": 1568,
 		"y": 3
-	},
-	"right center": {
-		"x": 1568,
-		"y": 509
 	},
 	"right bottom": {
 		"x": 1568,

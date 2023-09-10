@@ -137,11 +137,8 @@ def rotate_pts(pts, angle_rad):
 def get_pitch_rotation_rad(pts):
     if pts is dict:
         pts = coords_to_pts(pts)
-    # mid_left = pts[1]  # (pts[0] + pts[1]) / 2
-    # mid_right = pts[4]  # (pts[2] + pts[3]) / 2
-    # u = np.array(mid_right - mid_left, dtype=np.float64)
-    left_top = pts[2]
-    right_top = pts[3]
+    left_top = pts[1]
+    right_top = pts[2]
     u = np.array(right_top - left_top, dtype=np.float64)
     u /= np.linalg.norm(u)
     v = np.array([[1, 0]])
