@@ -109,9 +109,9 @@ class PerspectiveCamera(Camera):
                 u += center_alpha * (players_center - self.ball_mu_last)
 
             # Move with players
-            if self.players_center_last is not None:
-                u += movement_alpha * \
-                    (players_center - self.players_center_last)
+            # if self.players_center_last is not None:
+            #     u += movement_alpha * \
+            #         (players_center - self.players_center_last)
 
             return u
 

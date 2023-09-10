@@ -60,15 +60,16 @@ class TopDown:
                 thickness=-1
             )
 
-    def draw_last_measurement_(self, top_down_frame):
-        if self.camera.model.last_measurement is None:
+    def draw_screen_point_(self, top_down_frame, pt, color=colors["violet"], radius=30):
+        if pt is None:
             return
-        meas_x, meas_y = self.camera.model.last_measurement
-        meas = np.array(
-            [[[np.array(meas_x).item(), np.array(meas_y).item()]]], np.float32)
-        meas_top_down_coord = cv2.perspectiveTransform(meas, self.H)[0][0]
+
+        pt_x, pt_y = pt
+        pt = np.array(
+            [[[np.array(pt_x).item(), np.array(pt_y).item()]]], np.float32)
+        pt_top_down_coord = cv2.perspectiveTransform(pt, self.H)[0][0]
         self.draw_points_(
-            top_down_frame, [meas_top_down_coord], colors["violet"], radius=30)
+            top_down_frame, [pt_top_down_coord], color, radius)
 
     def draw_points_(self, top_down_frame, points, color, radius=10):
         for pt in points:
@@ -104,5 +105,6 @@ class TopDown:
         self.draw_roi_(top_down_frame)
 
         self.draw_bbs_(top_down_frame, bbs)
-        # self.draw_last_measurement_(top_down_frame)
+        self.draw_screen_point_(
+            top_down_frame, self.camera.players_center_last)
         return top_down_frame

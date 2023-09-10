@@ -47,7 +47,7 @@ class YoloDetector(Detector):
         self.model = YOLO(self.__class__.model_path)
 
     def preprocess(self, img):
-        img = ImageProcessor.draw_mask(img, self.pitch_coords, margin=1)
+        img = ImageProcessor.draw_mask(img, self.pitch_coords, margin=0)
         return img
 
     def res2bbs(self, res):
