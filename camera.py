@@ -104,7 +104,7 @@ class PerspectiveCamera(Camera):
             movement_alpha = 1
             # var_u_th_factor = 200
             # var_u_th = self.ball_model.std_pos ** 2 * var_u_th_factor
-            var_u_th = 5000
+            var_u_th = 2000
 
             u = np.array([0., 0.])
 
