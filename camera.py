@@ -55,7 +55,7 @@ class PerspectiveCamera(Camera):
 
         self.pid_x = PID(kp=0.03, ki=0.009)
         self.pid_y = PID()
-        self.pid_f = PID(kp=0.005)
+        self.pid_f = PID(kp=0.01)
         center_x, center_y = self.center
         self.pid_x.init(center_x)
         self.pid_y.init(center_y)
@@ -66,6 +66,7 @@ class PerspectiveCamera(Camera):
         self.ball_mu_last = self.center
 
         self.players_center_last = None
+        self.u_last = None
         self.pause_measurements = False
         self.init_dead_zone()
 
@@ -76,9 +77,9 @@ class PerspectiveCamera(Camera):
 
         def measure_players(bbs):
             """ Get the players' center point. """
-            pts = top_down.bbs2points(bbs)
-            discard_extreme_points_(pts)
-            x, y = average_point(pts)
+            points = top_down.bbs2points(bbs)
+            discard_extreme_points_(points)
+            x, y = average_point(points)
             x, y = apply_homography(top_down.H_inv, x, y)
             return np.array([x, y])
 
@@ -157,6 +158,7 @@ class PerspectiveCamera(Camera):
 
         self.ball_mu_last = ball_mu
         self.players_center_last = players_center
+        self.u_last = u
 
     @property
     def fov_horiz_deg(self):
@@ -289,10 +291,20 @@ class PerspectiveCamera(Camera):
         cv2.circle(frame_orig, self.center,
                    radius=5, color=color, thickness=5)
 
-    def draw_ball_prediction_(self, frame_orig, color=colors["violet"]):
-        x, y = self.ball_model.mu
+    def draw_ball_prediction_(self, frame_orig, color):
+        x, y = self.ball_mu_last
         cv2.circle(frame_orig, (int(x), int(y)),
-                   radius=5, color=color, thickness=5)
+                   radius=4, color=color, thickness=5)
+
+    def draw_ball_u_(self, frame_orig, color):
+        if self.u_last is None:
+            return
+
+        u_x, u_y = self.u_last
+        mu_x, mu_y = self.ball_mu_last
+        pt1 = np.array([mu_x, mu_y], dtype=np.int32)
+        pt2 = np.array([mu_x + u_x, mu_y + u_y], dtype=np.int32)
+        cv2.line(frame_orig, pt1, pt2, color=color, thickness=2)
 
     def draw_dead_zone_(self, frame):
         start, end = self.dead_zone

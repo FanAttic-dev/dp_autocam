@@ -70,8 +70,8 @@ def add_bb_ball_(bbs, bb_ball):
     add_bb_(bbs, bb_ball, 0)
 
 
-def average_point(points):
-    return np.mean(np.array(points["points"]), axis=0)
+def average_point(points, weights=None):
+    return np.average(np.array(points["points"]), axis=0, weights=weights)
 
 
 def discard_extreme_points_(points):

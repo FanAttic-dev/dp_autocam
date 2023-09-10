@@ -112,7 +112,8 @@ while is_alive:
         camera.draw_center_(frame_orig)
     else:
         camera.update_by_bbs(bbs_joined, bbs_ball_joined, top_down)
-        camera.draw_ball_prediction_(frame_orig, colors["green"])
+        camera.draw_ball_prediction_(frame_orig, colors["red"])
+        camera.draw_ball_u_(frame_orig, colors["orange"])
         camera.ball_model.draw_particles_(frame_orig)
         ...
 

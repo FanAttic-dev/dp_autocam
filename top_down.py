@@ -2,7 +2,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 from detector import YoloDetector
-from utils import apply_homography, coords_to_pts, load_json
+from utils import apply_homography, coords_to_pts, discard_extreme_points_, load_json
 from constants import colors
 
 
@@ -47,11 +47,13 @@ class TopDown:
         h, w, _ = self.pitch_model.shape
         return x >= 0 and x < w and y >= 0 and y < h
 
-    def draw_bbs_(self, top_down_frame, bbs):
+    def draw_bbs_(self, top_down_frame, bbs, discard_extremes=False):
         points = self.bbs2points(bbs)
+
+        if discard_extremes:
+            discard_extreme_points_(points)
+
         for pt, cls in zip(points["points"], points["cls"]):
-            # if not self.check_bounds(*pt):
-            #     continue
             cv2.circle(
                 top_down_frame,
                 pt,
@@ -104,7 +106,7 @@ class TopDown:
         top_down_frame = self.pitch_model.copy()
         self.draw_roi_(top_down_frame)
 
-        self.draw_bbs_(top_down_frame, bbs)
+        self.draw_bbs_(top_down_frame, bbs, discard_extremes=True)
         self.draw_screen_point_(
             top_down_frame, self.camera.players_center_last)
         return top_down_frame

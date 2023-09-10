@@ -9,7 +9,7 @@ from filterpy.monte_carlo import systematic_resample
 class ParticleFilter():
     INIT_STD = 100
 
-    def __init__(self, dt=0.1, std_pos=5, std_meas=150, N=1000):
+    def __init__(self, dt=0.1, std_pos=10, std_meas=150, N=500):
         self.dt = dt
         self.std_pos = std_pos
         self.std_meas = std_meas
