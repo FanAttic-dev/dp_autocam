@@ -111,7 +111,7 @@ class YoloBallDetector(YoloDetector):
         'imgsz': 960,
         'classes': None,  # [0] for ball only, None for all
         'conf': params["ball_confidence"],
-        'max_det': 1,
+        'max_det': 5,
         'iou': 0.5
     }
 
