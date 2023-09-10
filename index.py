@@ -86,8 +86,8 @@ while is_alive:
 
         # Players
         bbs, bbs_frames = detector.detect(frames)
-        for i, bbs_frame in enumerate(bbs_frames):
-            player.show_frame(bbs_frame, f"bbs_frame {i}")
+        # for i, bbs_frame in enumerate(bbs_frames):
+        #     player.show_frame(bbs_frame, f"bbs_frame {i}")
         bbs_joined = frame_splitter.join_bbs(bbs)
         detector.draw_bbs_(frame_orig, bbs_joined)
 
