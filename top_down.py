@@ -48,6 +48,9 @@ class TopDown:
         return x >= 0 and x < w and y >= 0 and y < h
 
     def draw_bbs_(self, top_down_frame, bbs, discard_extremes=False):
+        if len(bbs) == 0 or len(bbs["boxes"]) == 0:
+            return
+
         points = self.bbs2points(bbs)
 
         if discard_extremes:
