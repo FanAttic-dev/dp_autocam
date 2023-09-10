@@ -43,13 +43,17 @@ class PID:
         stats = {
             "Name": "PID Controller",
             # "dt": self.dt,
-            "Kp": self.kp,
-            # "Ki": self.ki,
-            # "Kd": self.kd,
             "signal": self.signal,
             "target": self.target,
+            "Kp": self.kp,
             "P": self.P,
-            # "I": self.I,
-            # "D": self.D,
         }
+        if self.ki > 0:
+            stats["Ki"] = self.ki
+            stats["I"] = self.I
+
+        if self.kd > 0:
+            stats["Kd"] = self.kd
+            stats["D"] = self.D
+
         return stats
