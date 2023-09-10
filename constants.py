@@ -3,8 +3,8 @@ from pathlib import Path
 from utils import get_random_file
 
 constants = {
-    "rotate_cameras": False,
-    "use_trnava_zilina": True
+    "use_trnava_zilina": True,
+    "correct_rotation": True,
 }
 
 

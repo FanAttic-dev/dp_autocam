@@ -3,7 +3,7 @@ import numpy as np
 from PID import PID
 from constants import colors, constants
 from particle_filter import ParticleFilter
-from utils import apply_homography, get_pitch_rotation_rad, points_average, discard_extreme_points_, get_bb_center, lies_in_rectangle, points_variance, rotate_pts
+from utils import apply_homography, coords_to_pts, get_pitch_rotation_rad, points_average, discard_extreme_points_, get_bb_center, lies_in_rectangle, points_variance, rotate_pts
 
 
 class Camera:
@@ -41,13 +41,12 @@ class PerspectiveCamera(Camera):
 
     def __init__(self, frame_orig, config, pan_deg=None, tilt_deg=None, zoom_f=None):
         self.sensor_w = PerspectiveCamera.SENSOR_W
+        self.config = config
         self.load_config(config)
 
         pan_deg = pan_deg if pan_deg is not None else self.pan_deg_default
         tilt_deg = tilt_deg if tilt_deg is not None else self.tilt_deg_default
         zoom_f = zoom_f if zoom_f is not None else self.zoom_f_default
-        self.roll_rad = get_pitch_rotation_rad(
-            config["pitch_coords"]) if constants["rotate_cameras"] else None
         self.set(pan_deg, tilt_deg, zoom_f)
 
         h, w, _ = frame_orig.shape
@@ -192,6 +191,17 @@ class PerspectiveCamera(Camera):
         dst = PerspectiveCamera.FRAME_CORNERS
 
         H, _ = cv2.findHomography(src, dst)
+
+        if constants["correct_rotation"]:
+            # TODO: use lookup table
+            pitch_coords_orig = coords_to_pts(self.config["pitch_coords"])
+            pitch_coords_frame = cv2.perspectiveTransform(
+                pitch_coords_orig.astype(np.float64), H)
+            roll_rad = get_pitch_rotation_rad(pitch_coords_frame)
+
+            src = np.array(rotate_pts(src, roll_rad), dtype=np.int32)
+            H, _ = cv2.findHomography(src, dst)
+
         return H
 
     @property
@@ -285,9 +295,6 @@ class PerspectiveCamera(Camera):
                 self.zoom_f)
             for pan_deg, tilt_deg in self.corners_ang.values()
         ]
-
-        if self.roll_rad is not None:
-            pts = rotate_pts(pts, self.roll_rad)
 
         return np.array(pts, dtype=np.int32)
 
