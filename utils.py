@@ -144,3 +144,21 @@ def get_pitch_rotation_rad(pts):
     u /= np.linalg.norm(u)
     v = np.array([[1, 0]])
     return np.arccos(np.dot(u, v.T))
+
+
+def get_bbs_ball(bbs_joined):
+    bbs_ball = {
+        "boxes": [],
+        "cls": [],
+        "ids": []
+    }
+    bbs_joined_new = {
+        "boxes": [],
+        "cls": [],
+        "ids": []
+    }
+    for bb, cls in zip(bbs_joined["boxes"], bbs_joined["cls"]):
+        target = bbs_ball if cls == 0 else bbs_joined_new
+        target["boxes"].append(bb)
+        target["cls"].append(cls)
+    return bbs_ball, bbs_joined_new

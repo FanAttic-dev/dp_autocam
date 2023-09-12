@@ -111,5 +111,5 @@ class TopDown:
 
         self.draw_bbs_(top_down_frame, bbs, discard_extremes=True)
         self.draw_screen_point_(
-            top_down_frame, self.camera.players_center_last)
+            top_down_frame, self.camera.players_filter.pos)
         return top_down_frame

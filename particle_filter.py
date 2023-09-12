@@ -9,12 +9,12 @@ from filterpy.monte_carlo import systematic_resample
 class ParticleFilter():
     INIT_STD = 100
 
-    def __init__(self, dt=0.1, std_pos=10, std_meas=150, N=500):
-        self.dt = dt
-        self.std_pos = std_pos
-        self.std_meas = std_meas
+    def __init__(self, pf_params):
+        self.dt = pf_params["dt"]
+        self.std_pos = pf_params["std_pos"]
+        self.std_meas = pf_params["std_meas"]
         self.reset_u()
-        self.N = N
+        self.N = pf_params["N"]
         self.particles = None
         self.weights = None
         self.mean_last = None

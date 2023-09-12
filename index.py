@@ -3,10 +3,10 @@ import cv2
 import argparse
 from pathlib import Path
 from camera import PerspectiveCamera
-from constants import videos_dir, config_path, video_path
+from constants import videos_dir, config_path, video_path, params
 from detector import YoloBallDetector, YoloPlayerDetector
 from frame_splitter import PerspectiveFrameSplitter
-from utils import get_random_file
+from utils import get_bbs_ball, get_random_file
 from top_down import TopDown
 from utils import load_json
 from video_player import VideoPlayer
@@ -86,16 +86,20 @@ while is_alive:
 
         # Players
         bbs, bbs_frames = detector.detect(frames)
-        # for i, bbs_frame in enumerate(bbs_frames):
-        #     player.show_frame(bbs_frame, f"bbs_frame {i}")
+        if params["show_split_frames"]["players"]:
+            for i, bbs_frame in enumerate(bbs_frames):
+                player.show_frame(bbs_frame, f"bbs_frame {i}")
         bbs_joined = frame_splitter.join_bbs(bbs)
+        bbs_ball_joined, bbs_joined = get_bbs_ball(bbs_joined)
         detector.draw_bbs_(frame_orig, bbs_joined)
 
         # Balls
-        bbs_ball, _ = ball_detector.detect(frames)
-        # for i, ball_frame in enumerate(bbs_ball_frame):
-        #     player.show_frame(ball_frame, f"ball frame {i}")
-        bbs_ball_joined = frame_splitter.join_bbs(bbs_ball)
+        # bbs_ball, bbs_ball_frames = ball_detector.detect(frames)
+        # if params["show_split_frames"]["ball"]:
+        #     for i, ball_frame in enumerate(bbs_ball_frames):
+        #         player.show_frame(ball_frame, f"ball frame {i}")
+        # bbs_ball_joined = frame_splitter.join_bbs(bbs_ball)
+
         detector.draw_bbs_(frame_orig, bbs_ball_joined, colors["white"])
 
     """ ROI """
@@ -119,14 +123,10 @@ while is_alive:
     # camera.draw_dead_zone_(frame)
     # player.show_frame(frame, "ROI")
     # camera.print()
-    frame_splitter.draw_roi_(frame_orig)
-    camera.draw_roi_(frame_orig)
 
-    # x1, y1, x2, y2 = get_bounding_box(bbs_joined)
-    # cv2.rectangle(frame_orig, (x1, y1), (x2, y2),
-    #               colors["green"], thickness=10)
-
-    player.show_frame(frame_orig, "Original")
+    # frame_splitter.draw_roi_(frame_orig)
+    # camera.draw_roi_(frame_orig)
+    # player.show_frame(frame_orig, "Original")
 
     """ Top-down """
     top_down_frame = top_down.get_frame(bbs_joined)

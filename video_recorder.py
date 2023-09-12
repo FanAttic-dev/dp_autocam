@@ -106,7 +106,7 @@ class VideoRecorder:
         pid_x_stats = get_stats(self.camera.pid_x, "PID_X")
         pid_y_stats = get_stats(self.camera.pid_y, "PID_Y")
         pid_f_stats = get_stats(self.camera.pid_f, "PID_F")
-        ball_stats = get_stats(self.camera.ball_model, "Ball")
+        ball_stats = get_stats(self.camera.ball_filter, "Ball")
 
         text_y = self.spacing
 

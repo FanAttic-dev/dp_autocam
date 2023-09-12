@@ -5,8 +5,26 @@ from utils import get_random_file
 params = {
     "use_trnava_zilina": True,
     "correct_rotation": True,
-    "ball_confidence": 0.2,
-    "players_confidence": 0.25,
+    "show_split_frames": {
+        "ball": False,
+        "players": True
+    },
+    "detector": {
+        "ball_confidence": 0.35,
+        "ball_max_det": 1,
+        "players_confidence": 0.25,
+    },
+    "ball_pf": {
+        "dt": 0.1,
+        "N": 500,
+        "std_pos": 10,
+        "std_meas": 150,
+    },
+    "players_kf": {
+        "dt": 0.1,
+        "std_acc": 1,
+        "std_meas": 5
+    }
 }
 
 
