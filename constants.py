@@ -5,7 +5,7 @@ from utils import get_random_file
 params = {
     "use_trnava_zilina": True,
     "correct_rotation": True,
-    "show_split_frames": True,
+    "show_split_frames": False,
     "detector": {
         "ball_confidence": 0.35,
         "ball_max_det": 1,
@@ -16,6 +16,7 @@ params = {
         "N": 500,
         "std_pos": 10,
         "std_meas": 150,
+        "players_ball_alpha": 0.6
     },
     "players_kf": {
         "dt": 0.1,
@@ -23,15 +24,15 @@ params = {
         "std_meas": 5
     },
     "zoom": {
-        "var_min": 300,
-        "var_max": 6000
+        "var_min": 100,
+        "var_max": 5000
     },
     "u_control": {
         "center": {
             "alpha": 0.1,
-            "var_th": 3500
+            "var_th": 5000
         },
-        "players_vel": {
+        "velocity": {
             "alpha": 2
         }
     }

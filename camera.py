@@ -98,8 +98,10 @@ class PerspectiveCamera(Camera):
         def measure_zoom(ball_var):
             """ Map the PF variance to the camera zoom bounds. """
             ball_var = np.mean(ball_var)
-            var_min = params["zoom"]["var_min"]  # self.ball_filter.std_pos ** 2 * 2
-            var_max = params["zoom"]["var_max"]  # self.ball_filter.std_pos ** 2 * 100
+            # self.ball_filter.std_pos ** 2 * 2
+            var_min = params["zoom"]["var_min"]
+            # self.ball_filter.std_pos ** 2 * 100
+            var_max = params["zoom"]["var_max"]
             ball_var = np.clip(ball_var, var_min, var_max)
 
             # zoom is inversely proportional to the variance
@@ -111,7 +113,7 @@ class PerspectiveCamera(Camera):
         def measure_u(balls_detected, players_center, ball_var):
             def measure_players_center():
                 if not balls_detected and np.mean(ball_var) > params["u_control"]["center"]["var_th"]:
-                    return params["u_control"]["alpha"] * (players_center - self.ball_mu_last)
+                    return params["u_control"]["center"]["alpha"] * (players_center - self.ball_mu_last)
                 return np.array([0., 0.])
 
             def measure_players_movement():
@@ -119,7 +121,7 @@ class PerspectiveCamera(Camera):
                     self.players_filter.set_pos(*players_center)
                 self.players_filter.predict()
                 self.players_filter.update(*players_center)
-                return params["u_control"]["players_vel"]["alpha"] * self.players_filter.vel.T[0]
+                return params["u_control"]["velocity"]["alpha"] * self.players_filter.vel.T[0]
 
             u = np.array([0., 0.])
 
@@ -147,7 +149,7 @@ class PerspectiveCamera(Camera):
             # Incorporate measurements into PF
             self.ball_filter.update(players_center, ball_centers)
 
-        self.ball_filter.resample()
+            self.ball_filter.resample()
 
         # Camera model
         ball_mu, ball_var = self.ball_filter.estimate

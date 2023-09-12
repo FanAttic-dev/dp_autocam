@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from numpy.random import randn
 import scipy
-from constants import colors
+from constants import colors, params
 from filterpy.monte_carlo import systematic_resample
 
 
@@ -63,7 +63,7 @@ class ParticleFilter():
         self.particles += self.u * self.dt + randn(self.N, 2) * self.std_pos
 
     def update(self, players_center, ball_centers):
-        players_ball_alpha = 0.7
+        players_ball_alpha = params["ball_pf"]["players_ball_alpha"]
 
         dist_players = np.linalg.norm(self.particles - players_center, axis=1)
         for ball in ball_centers:
