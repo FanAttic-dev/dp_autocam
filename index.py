@@ -46,7 +46,7 @@ camera = PerspectiveCamera(frame_orig, config)
 frame_splitter = PerspectiveFrameSplitter(frame_orig, config)
 top_down = TopDown(pitch_coords, camera)
 detector = YoloPlayerDetector(pitch_coords)
-ball_detector = YoloBallDetector(pitch_coords, camera.ball_model)
+ball_detector = YoloBallDetector(pitch_coords, camera.ball_filter)
 
 # args.record = True
 # args.mouse = True
@@ -111,7 +111,7 @@ while is_alive:
         camera.update_by_bbs(bbs_joined, bbs_ball_joined, top_down)
         camera.draw_ball_prediction_(frame_orig, colors["red"])
         camera.draw_ball_u_(frame_orig, colors["orange"])
-        camera.ball_model.draw_particles_(frame_orig)
+        camera.ball_filter.draw_particles_(frame_orig)
         ...
 
     frame = camera.get_frame(frame_orig)

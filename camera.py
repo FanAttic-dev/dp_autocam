@@ -62,8 +62,8 @@ class PerspectiveCamera(Camera):
         self.pid_y.init(center_y)
         self.pid_f.init(self.zoom_f)
 
-        self.ball_model = ParticleFilter()
-        self.ball_model.init(self.center)
+        self.ball_filter = ParticleFilter()
+        self.ball_filter.init(self.center)
         self.ball_mu_last = self.center
 
         self.players_center_last = None
@@ -129,19 +129,19 @@ class PerspectiveCamera(Camera):
         players_center = measure_players(bbs)
 
         # Apply motion model with uncertainty to PF
-        self.ball_model.predict()
+        self.ball_filter.predict()
 
         if balls_detected:
             ball_centers = [measure_ball(bb_ball)
                             for bb_ball in bbs_ball['boxes']]
 
             # Incorporate measurements into PF
-            self.ball_model.update(players_center, ball_centers)
+            self.ball_filter.update(players_center, ball_centers)
 
-        self.ball_model.resample()
+        self.ball_filter.resample()
 
         # Camera model
-        ball_mu, ball_var = self.ball_model.estimate
+        ball_mu, ball_var = self.ball_filter.estimate
         f = measure_zoom(ball_var)
         mu_x, mu_y = ball_mu
         self.pid_x.update(mu_x)
@@ -158,7 +158,7 @@ class PerspectiveCamera(Camera):
 
         # Set control input
         u = measure_u(balls_detected, players_center, ball_var)
-        self.ball_model.set_u(u)
+        self.ball_filter.set_u(u)
 
         self.ball_mu_last = ball_mu
         self.players_center_last = players_center

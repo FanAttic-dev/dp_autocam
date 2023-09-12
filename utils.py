@@ -81,11 +81,12 @@ def points_variance(points, mu=None, weights=None):
 
 
 def discard_extreme_points_(points):
-    pts = points["points"]
-    maxi = np.argmax(pts, axis=0)[0]
-    mini = np.argmin(pts, axis=0)[0]
+    maxi = np.argmax(points["points"], axis=0)[0]
     points["points"] = np.delete(points["points"], maxi, axis=0)
+
+    mini = np.argmin(points["points"], axis=0)[0]
     points["points"] = np.delete(points["points"], mini, axis=0)
+
     points["cls"] = np.delete(points["cls"], maxi, axis=0)
     points["cls"] = np.delete(points["cls"], mini, axis=0)
 
