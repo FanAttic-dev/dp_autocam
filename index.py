@@ -75,32 +75,18 @@ while is_alive:
         "cls": [],
         "ids": []
     }
-    bbs_ball_joined = {
-        "boxes": [],
-        "cls": [],
-        "ids": []
-    }
     if not camera.pause_measurements and not args.mouse:
-        """ Split frame, detect objects, merge & draw bounding boxes """
+        # Split
         frames = frame_splitter.split(frame_orig_masked)
-
-        # Players
+        # Detect
         bbs, bbs_frames = detector.detect(frames)
-        if params["show_split_frames"]["players"]:
+        # Join
+        bbs_joined = frame_splitter.join_bbs(bbs)
+        # Render
+        detector.draw_bbs_(frame_orig, bbs_joined)
+        if params["show_split_frames"]:
             for i, bbs_frame in enumerate(bbs_frames):
                 player.show_frame(bbs_frame, f"bbs_frame {i}")
-        bbs_joined = frame_splitter.join_bbs(bbs)
-        bbs_ball_joined, bbs_joined = get_bbs_ball(bbs_joined)
-        detector.draw_bbs_(frame_orig, bbs_joined)
-
-        # Balls
-        # bbs_ball, bbs_ball_frames = ball_detector.detect(frames)
-        # if params["show_split_frames"]["ball"]:
-        #     for i, ball_frame in enumerate(bbs_ball_frames):
-        #         player.show_frame(ball_frame, f"ball frame {i}")
-        # bbs_ball_joined = frame_splitter.join_bbs(bbs_ball)
-
-        detector.draw_bbs_(frame_orig, bbs_ball_joined, colors["white"])
 
     """ ROI """
     if args.mouse:
@@ -112,18 +98,16 @@ while is_alive:
 
         camera.draw_center_(frame_orig)
     else:
-        camera.update_by_bbs(bbs_joined, bbs_ball_joined, top_down)
+        camera.update_by_bbs(bbs_joined, top_down)
         camera.draw_ball_prediction_(frame_orig, colors["red"])
         camera.draw_ball_u_(frame_orig, colors["orange"])
         camera.ball_filter.draw_particles_(frame_orig)
-        ...
 
     frame = camera.get_frame(frame_orig)
-
     # camera.draw_dead_zone_(frame)
-    # player.show_frame(frame, "ROI")
     # camera.print()
 
+    """ Original frame """
     # frame_splitter.draw_roi_(frame_orig)
     # camera.draw_roi_(frame_orig)
     # player.show_frame(frame_orig, "Original")

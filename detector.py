@@ -36,7 +36,7 @@ class YoloDetector(Detector):
         'iou': 0.5
     }
     cls2color = {
-        0: colors["red"],  # ball
+        0: colors["white"],  # ball
         1: colors["teal"],  # player
         2: colors["yellow"],  # referee
         3: colors["orange"],  # goalkeeper

@@ -4,7 +4,7 @@ from PID import PID
 from constants import colors, params
 from kalman_filter import KalmanFilterVel
 from particle_filter import ParticleFilter
-from utils import apply_homography, coords_to_pts, get_pitch_rotation_rad, points_average, discard_extreme_points_, get_bb_center, lies_in_rectangle, points_variance, rotate_pts
+from utils import apply_homography, coords_to_pts, filter_bbs_ball, get_pitch_rotation_rad, points_average, discard_extreme_points_, get_bb_center, lies_in_rectangle, points_variance, rotate_pts
 
 
 class Camera:
@@ -81,7 +81,7 @@ class PerspectiveCamera(Camera):
         self.pause_measurements = False
         self.init_dead_zone()
 
-    def update_by_bbs(self, bbs, bbs_ball, top_down):
+    def update_by_bbs(self, bbs, top_down):
         def measure_ball(bb_ball):
             """ Get the ball center point. """
             return get_bb_center(bb_ball)
@@ -131,6 +131,7 @@ class PerspectiveCamera(Camera):
 
             return u
 
+        bbs_ball = filter_bbs_ball(bbs)
         players_detected = len(bbs) > 0 and len(bbs["boxes"]) > 0
         balls_detected = len(bbs_ball) > 0 and len(bbs_ball['boxes']) > 0
 
