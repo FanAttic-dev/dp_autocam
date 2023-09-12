@@ -98,8 +98,8 @@ class PerspectiveCamera(Camera):
         def measure_zoom(ball_var):
             """ Map the PF variance to the camera zoom bounds. """
             ball_var = np.mean(ball_var)
-            var_min = 300  # self.ball_filter.std_pos ** 2 * 2
-            var_max = 8000  # self.ball_filter.std_pos ** 2 * 100
+            var_min = params["zoom"]["var_min"]  # self.ball_filter.std_pos ** 2 * 2
+            var_max = params["zoom"]["var_max"]  # self.ball_filter.std_pos ** 2 * 100
             ball_var = np.clip(ball_var, var_min, var_max)
 
             # zoom is inversely proportional to the variance
@@ -109,25 +109,22 @@ class PerspectiveCamera(Camera):
             return f
 
         def measure_u(balls_detected, players_center, ball_var):
-            center_alpha = 0.1
-            movement_alpha = 2
-            # var_u_th_factor = 200
-            # var_u_th = self.ball_filter.std_pos ** 2 * var_u_th_factor
-            var_u_th = 5000
+            def measure_players_center():
+                if not balls_detected and np.mean(ball_var) > params["u_control"]["center"]["var_th"]:
+                    return params["u_control"]["alpha"] * (players_center - self.ball_mu_last)
+                return np.array([0., 0.])
+
+            def measure_players_movement():
+                if not self.is_initialized:
+                    self.players_filter.set_pos(*players_center)
+                self.players_filter.predict()
+                self.players_filter.update(*players_center)
+                return params["u_control"]["players_vel"]["alpha"] * self.players_filter.vel.T[0]
 
             u = np.array([0., 0.])
 
-            # Move to the players' center if no measurement for a long time.
-            if not balls_detected and np.mean(ball_var) > var_u_th:
-                u += center_alpha * (players_center - self.ball_mu_last)
-
-            # Move with players
-            if not self.is_initialized:
-                self.players_filter.set_pos(*players_center)
-
-            self.players_filter.predict()
-            self.players_filter.update(*players_center)
-            u += movement_alpha * self.players_filter.vel.T[0]
+            u += measure_players_center()
+            u += measure_players_movement()
 
             return u
 

@@ -21,6 +21,19 @@ params = {
         "dt": 0.1,
         "std_acc": 1,
         "std_meas": 5
+    },
+    "zoom": {
+        "var_min": 300,
+        "var_max": 6000
+    },
+    "u_control": {
+        "center": {
+            "alpha": 0.1,
+            "var_th": 3500
+        },
+        "players_vel": {
+            "alpha": 2
+        }
     }
 }
 
