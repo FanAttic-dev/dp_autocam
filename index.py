@@ -29,11 +29,17 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-r', "--record", action='store_true')
     parser.add_argument('-m', "--mouse", action='store_true')
+    parser.add_argument('-v', "--video_path", action='store', required=False)
+    parser.add_argument('-c', "--config_path", action='store', required=False)
     return parser.parse_args()
 
 
 """ Init """
 args = parse_args()
+if args.video_path:
+    video_path = Path(args.video_path)
+if args.config_path:
+    config_path = Path(args.config_path)
 
 config = load_json(config_path)
 pitch_coords = config["pitch_coords"]
@@ -108,9 +114,9 @@ while is_alive:
     # camera.print()
 
     """ Original frame """
-    # frame_splitter.draw_roi_(frame_orig)
-    # camera.draw_roi_(frame_orig)
-    # player.show_frame(frame_orig, "Original")
+    frame_splitter.draw_roi_(frame_orig)
+    camera.draw_roi_(frame_orig)
+    player.show_frame(frame_orig, "Original")
 
     """ Top-down """
     top_down_frame = top_down.get_frame(bbs_joined)
