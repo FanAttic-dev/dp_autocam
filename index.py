@@ -29,8 +29,9 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-r', "--record", action='store_true')
     parser.add_argument('-m', "--mouse", action='store_true')
-    parser.add_argument('-v', "--video_path", action='store', required=False)
-    parser.add_argument('-c', "--config_path", action='store', required=False)
+    parser.add_argument('-v', "--video-path", action='store', required=False)
+    parser.add_argument("--config-path", action='store', required=False)
+    parser.add_argument("--hide-windows", action='store_true', default=False)
     return parser.parse_args()
 
 
@@ -116,7 +117,8 @@ while is_alive:
     """ Original frame """
     frame_splitter.draw_roi_(frame_orig)
     camera.draw_roi_(frame_orig)
-    player.show_frame(frame_orig, "Original")
+    if not args.hide_windows:
+        player.show_frame(frame_orig, "Original")
 
     """ Top-down """
     top_down_frame = top_down.get_frame(bbs_joined)
@@ -128,7 +130,9 @@ while is_alive:
 
     """ Recorder """
     recorder_frame = recorder.get_frame(frame, top_down_frame)
-    player.show_frame(recorder_frame, "ROI")
+    if not args.hide_windows:
+        player.show_frame(recorder_frame, "ROI")
+
     if args.record:
         recorder.write(recorder_frame)
 
