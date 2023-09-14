@@ -2,6 +2,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 import tqdm
+import torch
 from ultralytics import YOLO
 
 from image_processor import ImageProcessor
@@ -28,7 +29,7 @@ class Detector:
 
 class YoloDetector(Detector):
     args = {
-        'device': 0,  # 0 if gpu else 'cpu'
+        'device': torch.cuda.current_device(),  # 0 if gpu else 'cpu'
         'imgsz': 960,
         'classes': [0, 1, 2, 3],  # [0] for ball only, None for all
         'conf': params["detector"]["players_confidence"],
@@ -107,7 +108,7 @@ class YoloDetector(Detector):
 
 class YoloBallDetector(YoloDetector):
     args = {
-        'device': 0,  # 0 if gpu else 'cpu'
+        'device': torch.cuda.current_device(),  # 0 if gpu else 'cpu'
         'imgsz': 960,
         'classes': None,  # [0] for ball only, None for all
         'conf': params["detector"]["ball_confidence"],
