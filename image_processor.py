@@ -6,6 +6,7 @@ from constants import colors
 
 
 class ImageProcessor:
+    """Wrapper for image processing tasks."""
     @staticmethod
     def rescale(img, scale):
         h, w, _ = img.shape
@@ -31,8 +32,12 @@ class ImageProcessor:
         return ImageProcessor.roi(img, x1, y1, x2, y2)
 
     @staticmethod
-    def draw_mask(img, coords, margin=10):
-        pts = coords_to_pts(coords)
+    def gaussian_blur(img, sigma=1):
+        return cv2.GaussianBlur(img, (3, 3), sigma)
+
+    @staticmethod
+    def draw_mask(img, pitch_coords, margin):
+        pts = coords_to_pts(pitch_coords)
         mask = np.zeros(img.shape[:2], dtype=np.uint8)
         cv2.fillPoly(mask, pts=[pts], color=colors["white"])
 
@@ -40,7 +45,3 @@ class ImageProcessor:
         mask = cv2.dilate(mask, se, iterations=margin)
 
         return cv2.bitwise_and(img, img, mask=mask)
-
-    @staticmethod
-    def gaussian_blur(img, sigma=1):
-        return cv2.GaussianBlur(img, (3, 3), sigma)

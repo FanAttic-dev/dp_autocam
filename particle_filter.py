@@ -2,19 +2,19 @@ import cv2
 import numpy as np
 from numpy.random import randn
 import scipy
-from constants import colors
+from constants import colors, params
 from filterpy.monte_carlo import systematic_resample
 
 
 class ParticleFilter():
     INIT_STD = 100
 
-    def __init__(self, dt=0.1, std_pos=10, std_meas=90, N=1000):
-        self.dt = dt
-        self.std_pos = std_pos
-        self.std_meas = std_meas
+    def __init__(self, pf_params):
+        self.dt = pf_params["dt"]
+        self.std_pos = pf_params["std_pos"]
+        self.std_meas = pf_params["std_meas"]
         self.reset_u()
-        self.N = N
+        self.N = pf_params["N"]
         self.particles = None
         self.weights = None
         self.mean_last = None
@@ -32,13 +32,20 @@ class ParticleFilter():
         return particles
 
     @property
+    def estimate(self):
+        mu = self.mu
+        var = np.average((self.particles - self.mu)**2,
+                         weights=self.weights, axis=0)
+        return mu, var
+
+    @property
     def mu(self):
         return np.average(self.particles, weights=self.weights, axis=0)
 
     @property
     def var(self):
-        return np.average((self.particles - self.mu)**2,
-                          weights=self.weights, axis=0)
+        _, var = self.estimate
+        return var
 
     @property
     def neff(self):
@@ -56,7 +63,7 @@ class ParticleFilter():
         self.particles += self.u * self.dt + randn(self.N, 2) * self.std_pos
 
     def update(self, players_center, ball_centers):
-        players_ball_alpha = 0.7
+        players_ball_alpha = params["ball_pf"]["players_ball_alpha"]
 
         dist_players = np.linalg.norm(self.particles - players_center, axis=1)
         for ball in ball_centers:

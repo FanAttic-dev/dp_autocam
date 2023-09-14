@@ -14,7 +14,7 @@ class VideoRecorder:
     TEXT_MARGIN = 20
     TEXT_FORMAT = {
         "fontFace": cv2.FONT_HERSHEY_DUPLEX,
-        "fontScale": 0.5,
+        "fontScale": 0.6,
         "thickness": 1
     }
 
@@ -106,7 +106,7 @@ class VideoRecorder:
         pid_x_stats = get_stats(self.camera.pid_x, "PID_X")
         pid_y_stats = get_stats(self.camera.pid_y, "PID_Y")
         pid_f_stats = get_stats(self.camera.pid_f, "PID_F")
-        ball_stats = get_stats(self.camera.ball_model, "Ball")
+        ball_stats = get_stats(self.camera.ball_filter, "Ball")
 
         text_y = self.spacing
 
@@ -114,8 +114,8 @@ class VideoRecorder:
 
         # put_dict_items_(frame, detector_stats)
         put_dict_items_(frame, camera_stats)
-        put_dict_items_(frame, pid_x_stats)
-        put_dict_items_(frame, pid_y_stats)
+        # put_dict_items_(frame, pid_x_stats)
+        # put_dict_items_(frame, pid_y_stats)
         put_dict_items_(frame, pid_f_stats)
         put_dict_items_(frame, ball_stats)
 

@@ -1,3 +1,4 @@
+import math
 import random
 import numpy as np
 import json
@@ -70,8 +71,24 @@ def add_bb_ball_(bbs, bb_ball):
     add_bb_(bbs, bb_ball, 0)
 
 
-def average_point(points):
-    return np.mean(np.array(points["points"]), axis=0)
+def points_average(points, weights=None):
+    return np.average(np.array(points["points"]), axis=0, weights=weights)
+
+
+def points_variance(points, mu=None, weights=None):
+    mu = mu if mu is not None else points_average(points, weights)
+    return np.average((points["points"] - mu)**2, axis=0, weights=weights)
+
+
+def discard_extreme_points_(points):
+    maxi = np.argmax(points["points"], axis=0)[0]
+    points["points"] = np.delete(points["points"], maxi, axis=0)
+
+    mini = np.argmin(points["points"], axis=0)[0]
+    points["points"] = np.delete(points["points"], mini, axis=0)
+
+    points["cls"] = np.delete(points["cls"], maxi, axis=0)
+    points["cls"] = np.delete(points["cls"], mini, axis=0)
 
 
 def lies_in_rectangle(pt, rect):
@@ -102,3 +119,66 @@ def get_bb_center(bb):
     x = (x1 + x2) // 2
     y = (y1 + y2) // 2
     return x, y
+
+
+def rotate_pts(pts, angle_rad):
+    center_x, center_y = np.mean(pts, axis=0)
+    pts_rot = []
+    for x, y in pts:
+        qx = center_x + \
+            math.cos(angle_rad) * (x - center_x) - \
+            math.sin(angle_rad) * (y - center_y)
+        qy = center_y + \
+            math.sin(angle_rad) * (x - center_x) + \
+            math.cos(angle_rad) * (y - center_y)
+        pts_rot.append([qx, qy])
+    return pts_rot
+
+
+def get_pitch_rotation_rad(pts):
+    if pts is dict:
+        pts = coords_to_pts(pts)
+    left_top = pts[1]
+    right_top = pts[2]
+    u = np.array(right_top - left_top, dtype=np.float64)
+    u /= np.linalg.norm(u)
+    v = np.array([[1, 0]])
+    return np.arccos(np.dot(u, v.T))
+
+
+def get_bbs_ball(bbs_joined):
+    bbs_ball = {
+        "boxes": [],
+        "cls": [],
+        "ids": []
+    }
+    bbs_joined_new = {
+        "boxes": [],
+        "cls": [],
+        "ids": []
+    }
+    for bb, cls in zip(bbs_joined["boxes"], bbs_joined["cls"]):
+        target = bbs_ball if cls == 0 else bbs_joined_new
+        target["boxes"].append(bb)
+        target["cls"].append(cls)
+    return bbs_ball, bbs_joined_new
+
+
+def filter_bbs_ball(bbs):
+    bbs_ball = {
+        "boxes": [],
+        "cls": [],
+        "ids": []
+    }
+    for i, (bb, cls) in enumerate(zip(bbs["boxes"], bbs["cls"])):
+        if cls != 0:
+            continue
+
+        bbs_ball["boxes"].append(bb)
+        bbs_ball["cls"].append(cls)
+
+        if i >= len(bbs_ball["ids"]):
+            continue
+
+        bbs_ball["ids"].append(bbs_ball["ids"][i])
+    return bbs_ball

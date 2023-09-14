@@ -1,11 +1,12 @@
+import json
 import cv2
 import argparse
 from pathlib import Path
 from camera import PerspectiveCamera
-from constants import videos_dir, coords_path
+from constants import videos_dir, config_path, video_path, params
 from detector import YoloBallDetector, YoloPlayerDetector
 from frame_splitter import PerspectiveFrameSplitter
-from utils import get_random_file
+from utils import get_bbs_ball, get_random_file
 from top_down import TopDown
 from utils import load_json
 from video_player import VideoPlayer
@@ -28,30 +29,34 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-r', "--record", action='store_true')
     parser.add_argument('-m', "--mouse", action='store_true')
+    parser.add_argument('-v', "--video-path", action='store', required=False)
+    parser.add_argument("--config-path", action='store', required=False)
+    parser.add_argument("--hide-windows", action='store_true', default=False)
     return parser.parse_args()
 
 
 """ Init """
 args = parse_args()
+if args.video_path:
+    video_path = Path(args.video_path)
+if args.config_path:
+    config_path = Path(args.config_path)
 
-video_path = get_random_file(videos_dir)
-video_path = Path(
-    "/home/atti/source/datasets/SoccerTrack/wide_view/videos/F_20220220_1_1830_1860.mp4")
-# video_path = Path(
-#     "/home/atti/source/datasets/SoccerTrack/wide_view/videos/F_20200220_1_0120_0150.mp4")
+config = load_json(config_path)
+pitch_coords = config["pitch_coords"]
+
 player = VideoPlayer(video_path)
 delay = player.get_delay(args.record)
 
 is_alive, frame_orig = player.get_next_frame()
-camera = PerspectiveCamera(frame_orig)
-frame_splitter = PerspectiveFrameSplitter(frame_orig)
-
-pitch_coords = load_json(coords_path)
+camera = PerspectiveCamera(frame_orig, config)
+frame_splitter = PerspectiveFrameSplitter(frame_orig, config)
 top_down = TopDown(pitch_coords, camera)
 detector = YoloPlayerDetector(pitch_coords)
-ball_detector = YoloBallDetector(pitch_coords, camera.ball_model)
+ball_detector = YoloBallDetector(pitch_coords, camera.ball_filter)
 
 # args.record = True
+# args.mouse = True
 
 if args.mouse:
     player.create_window("Original")
@@ -68,7 +73,8 @@ while is_alive:
         break
 
     h, w, _ = frame_orig.shape
-    frame_orig = detector.preprocess(frame_orig)
+    frame_orig_masked = detector.preprocess(frame_orig)
+    # frame_orig = frame_orig_masked
 
     """ Detection """
     bbs_joined = {
@@ -76,54 +82,43 @@ while is_alive:
         "cls": [],
         "ids": []
     }
-    bbs_ball_joined = {
-        "boxes": [],
-        "cls": [],
-        "ids": []
-    }
     if not camera.pause_measurements and not args.mouse:
-        """ Split frame, detect objects, merge & draw bounding boxes """
-        frames = frame_splitter.split(frame_orig)
-
-        # Players
-        bbs, _ = detector.detect(frames)
+        # Split
+        frames = frame_splitter.split(frame_orig_masked)
+        # Detect
+        bbs, bbs_frames = detector.detect(frames)
+        # Join
         bbs_joined = frame_splitter.join_bbs(bbs)
+        # Render
         detector.draw_bbs_(frame_orig, bbs_joined)
-
-        # Balls
-        bbs_ball, _ = ball_detector.detect(frames)
-        # for i, ball_frame in enumerate(bbs_ball_frame):
-        #     player.show_frame(ball_frame, f"ball frame {i}")
-        bbs_ball_joined = frame_splitter.join_bbs(bbs_ball)
-        detector.draw_bbs_(frame_orig, bbs_ball_joined, colors["white"])
+        if params["show_split_frames"]:
+            for i, bbs_frame in enumerate(bbs_frames):
+                player.show_frame(bbs_frame, f"bbs_frame {i}")
 
     """ ROI """
     if args.mouse:
-        camera.pid_x.set_target(mousePos["x"])
-        camera.pid_x.update()
-        _, center_y = camera.center
-        center_x = camera.pid_x.get()
-        camera.set_center(center_x, center_y)
+        camera.pid_x.update(mousePos["x"])
+        camera.pid_y.update(mousePos["y"])
+        pid_x = camera.pid_x.get()
+        pid_y = camera.pid_y.get()
+        camera.set_center(pid_x, pid_y)
 
         camera.draw_center_(frame_orig)
     else:
-        camera.update_by_bbs(bbs_joined, bbs_ball_joined, top_down)
-        camera.draw_ball_prediction_(frame_orig, colors["green"])
-        camera.ball_model.draw_particles_(frame_orig)
+        camera.update_by_bbs(bbs_joined, top_down)
+        camera.draw_ball_prediction_(frame_orig, colors["red"])
+        camera.draw_ball_u_(frame_orig, colors["orange"])
+        camera.ball_filter.draw_particles_(frame_orig)
 
     frame = camera.get_frame(frame_orig)
-
     # camera.draw_dead_zone_(frame)
-    # player.show_frame(frame, "ROI")
     # camera.print()
-    # frame_splitter.draw_roi_(frame_orig)
-    # camera.draw_roi_(frame_orig)
 
-    # x1, y1, x2, y2 = get_bounding_box(bbs_joined)
-    # cv2.rectangle(frame_orig, (x1, y1), (x2, y2),
-    #               colors["green"], thickness=10)
-
-    player.show_frame(frame_orig, "Original")
+    """ Original frame """
+    frame_splitter.draw_roi_(frame_orig)
+    camera.draw_roi_(frame_orig)
+    if not args.hide_windows:
+        player.show_frame(frame_orig, "Original")
 
     """ Top-down """
     top_down_frame = top_down.get_frame(bbs_joined)
@@ -135,7 +130,9 @@ while is_alive:
 
     """ Recorder """
     recorder_frame = recorder.get_frame(frame, top_down_frame)
-    player.show_frame(recorder_frame, "ROI")
+    if not args.hide_windows:
+        player.show_frame(recorder_frame, "ROI")
+
     if args.record:
         recorder.write(recorder_frame)
 

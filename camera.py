@@ -1,9 +1,10 @@
 import cv2
 import numpy as np
 from PID import PID
-from constants import colors
+from constants import colors, params
+from kalman_filter import KalmanFilterVel
 from particle_filter import ParticleFilter
-from utils import apply_homography, average_point, get_bb_center, get_bounding_box, lies_in_rectangle
+from utils import apply_homography, coords_to_pts, filter_bbs_ball, get_pitch_rotation_rad, points_average, discard_extreme_points_, get_bb_center, lies_in_rectangle, points_variance, rotate_pts
 
 
 class Camera:
@@ -24,23 +25,10 @@ class Camera:
 
 
 class PerspectiveCamera(Camera):
-    SENSOR_W = 836  # 25
-    CYLLINDER_RADIUS = 1000
-
+    SENSOR_W = 100
     PAN_DX = 1
-    DEFAULT_PAN_DEG = 12
-    PAN_DEG_MIN = -60
-    PAN_DEG_MAX = 60
-
     TILT_DY = 1
-    DEFAULT_TILT_DEG = 9
-    TILT_DEG_MIN = 5
-    TILT_DEG_MAX = 12
-
-    ZOOM_DZ = 60
-    DEFAULT_F = 1003  # 30
-    F_MIN = 900
-    F_MAX = 1200
+    ZOOM_DZ = 1
 
     FRAME_ASPECT_RATIO = 16/9
     FRAME_W = 1920
@@ -52,73 +40,97 @@ class PerspectiveCamera(Camera):
         [FRAME_W-1, 0]
     ], dtype=np.int16)
 
-    def __init__(self, frame_orig, pan_deg=DEFAULT_PAN_DEG, tilt_deg=DEFAULT_TILT_DEG):
+    def __init__(self, frame_orig, config, pan_deg=None, tilt_deg=None, zoom_f=None):
+        self.sensor_w = PerspectiveCamera.SENSOR_W
+        self.config = config
+        self.load_config(config)
+
+        pan_deg = pan_deg if pan_deg is not None else self.pan_deg_default
+        tilt_deg = tilt_deg if tilt_deg is not None else self.tilt_deg_default
+        zoom_f = zoom_f if zoom_f is not None else self.zoom_f_default
+        self.set(pan_deg, tilt_deg, zoom_f)
+
         h, w, _ = frame_orig.shape
         self.frame_orig_shape = frame_orig.shape
         self.frame_orig_center_x = w // 2
         self.frame_orig_center_y = h // 2
-        self.set(pan_deg, tilt_deg)
 
         self.pid_x = PID(kp=0.03, ki=0.009)
         self.pid_y = PID()
-        self.pid_f = PID(kp=0.005)
+        self.pid_f = PID(kp=0.01)
         center_x, center_y = self.center
         self.pid_x.init(center_x)
         self.pid_y.init(center_y)
-        self.pid_f.init(PerspectiveCamera.DEFAULT_F)
+        self.pid_f.init(self.zoom_f)
 
-        self.ball_model = ParticleFilter()
-        self.ball_model.init(self.center)
-        self.ball_estimate_last = self.center
+        self.ball_filter = ParticleFilter(params["ball_pf"])
+        self.ball_filter.init(self.center)
+        self.ball_mu_last = self.center
 
-        self.players_center_last = None
+        self.players_filter = KalmanFilterVel(
+            params["players_kf"]["dt"],
+            params["players_kf"]["std_acc"],
+            params["players_kf"]["std_meas"],
+            0
+        )
+        self.players_filter.set_pos(*self.center)
 
+        self.is_initialized = False
+        self.players_var = None
+        self.u_last = None
         self.pause_measurements = False
         self.init_dead_zone()
 
-    def update_by_bbs(self, bbs, bbs_ball, top_down):
+    def update_by_bbs(self, bbs, top_down):
         def measure_ball(bb_ball):
             """ Get the ball center point. """
             return get_bb_center(bb_ball)
 
         def measure_players(bbs):
             """ Get the players' center point. """
-            pts = top_down.bbs2points(bbs)
-            x, y = average_point(pts)
-            x, y = apply_homography(top_down.H_inv, x, y)
+            points = top_down.bbs2points(bbs)
+            discard_extreme_points_(points)
+            points_mu = points_average(points)
+            self.players_var = points_variance(points, points_mu)
+            x, y = apply_homography(top_down.H_inv, *points_mu)
             return np.array([x, y])
 
-        def measure_zoom():
+        def measure_zoom(ball_var):
             """ Map the PF variance to the camera zoom bounds. """
-            var = np.mean(self.ball_model.var)
-            var_min = self.ball_model.std_pos ** 2 / 2
-            var_max = self.ball_model.std_pos ** 2 * 10
-            var = np.clip(var, var_min, var_max)
+            ball_var = np.mean(ball_var)
+            # self.ball_filter.std_pos ** 2 * 2
+            var_min = params["zoom"]["var_min"]
+            # self.ball_filter.std_pos ** 2 * 100
+            var_max = params["zoom"]["var_max"]
+            ball_var = np.clip(ball_var, var_min, var_max)
 
             # zoom is inversely proportional to the variance
-            zoom_level = 1 - (var - var_min) / (var_max - var_min)
-            f = PerspectiveCamera.F_MIN + zoom_level * PerspectiveCamera.F_MAX
+            zoom_level = 1 - (ball_var - var_min) / (var_max - var_min)
+            f = self.zoom_f_min + zoom_level * \
+                (self.zoom_f_max - self.zoom_f_min)
             return f
 
-        def measure_u(balls_detected, players_center):
-            center_alpha = 0.1
-            movement_alpha = 10
+        def measure_u(balls_detected, players_center, ball_var):
+            def measure_players_center():
+                if not balls_detected and np.mean(ball_var) > params["u_control"]["center"]["var_th"]:
+                    return params["u_control"]["center"]["alpha"] * (players_center - self.ball_mu_last)
+                return np.array([0., 0.])
+
+            def measure_players_movement():
+                if not self.is_initialized:
+                    self.players_filter.set_pos(*players_center)
+                self.players_filter.predict()
+                self.players_filter.update(*players_center)
+                return params["u_control"]["velocity"]["alpha"] * self.players_filter.vel.T[0]
 
             u = np.array([0., 0.])
 
-            # Move to the players' center if no measurement for a long time.
-            var = self.ball_model.var
-            var_u_th = self.ball_model.std_pos ** 2 * 50
-            if not balls_detected and np.mean(var) > var_u_th:
-                u += center_alpha * (players_center - self.ball_estimate_last)
-
-            # Move with players
-            if self.players_center_last is not None:
-                u += movement_alpha * \
-                    (players_center - self.players_center_last)
+            u += measure_players_center()
+            u += measure_players_movement()
 
             return u
 
+        bbs_ball = filter_bbs_ball(bbs)
         players_detected = len(bbs) > 0 and len(bbs["boxes"]) > 0
         balls_detected = len(bbs_ball) > 0 and len(bbs_ball['boxes']) > 0
 
@@ -127,30 +139,26 @@ class PerspectiveCamera(Camera):
 
         players_center = measure_players(bbs)
 
-        # Set control input
-        u = measure_u(balls_detected, players_center)
-        self.ball_model.set_u(u)
-
         # Apply motion model with uncertainty to PF
-        self.ball_model.predict()
+        self.ball_filter.predict()
 
         if balls_detected:
             ball_centers = [measure_ball(bb_ball)
                             for bb_ball in bbs_ball['boxes']]
 
             # Incorporate measurements into PF
-            self.ball_model.update(players_center, ball_centers)
+            self.ball_filter.update(players_center, ball_centers)
 
-        self.ball_model.resample()
+            self.ball_filter.resample()
 
         # Camera model
-        mu = self.ball_model.mu
-        mu_x, mu_y = mu
-        f = measure_zoom()
-
+        ball_mu, ball_var = self.ball_filter.estimate
+        f = measure_zoom(ball_var)
+        mu_x, mu_y = ball_mu
         self.pid_x.update(mu_x)
         self.pid_y.update(mu_y)
         self.pid_f.update(f)
+
         # is_in_dead_zone = self.is_meas_in_dead_zone(*mu)
         # print(f"Is in dead zone: {is_in_dead_zone}")
 
@@ -159,12 +167,17 @@ class PerspectiveCamera(Camera):
         pid_f = self.pid_f.get()
         self.set_center(pid_x, pid_y, pid_f)
 
-        self.ball_estimate_last = mu
-        self.players_center_last = players_center
+        # Set control input
+        u = measure_u(balls_detected, players_center, ball_var)
+        self.ball_filter.set_u(u)
+
+        self.ball_mu_last = ball_mu
+        self.u_last = u
+        self.is_initialized = True
 
     @property
     def fov_horiz_deg(self):
-        return np.rad2deg(2 * np.arctan(PerspectiveCamera.SENSOR_W / (2 * self.f)))
+        return np.rad2deg(2 * np.arctan(self.sensor_w / (2 * self.zoom_f)))
 
     @property
     def fov_vert_deg(self):
@@ -172,7 +185,7 @@ class PerspectiveCamera(Camera):
 
     @property
     def center(self):
-        return self.ptz2coords(self.pan_deg, self.tilt_deg, self.f)
+        return self.ptz2coords(self.pan_deg, self.tilt_deg, self.zoom_f)
 
     @property
     def corners_ang(self):
@@ -189,32 +202,59 @@ class PerspectiveCamera(Camera):
         dst = PerspectiveCamera.FRAME_CORNERS
 
         H, _ = cv2.findHomography(src, dst)
+
+        if params["correct_rotation"]:
+            # TODO: use lookup table
+            pitch_coords_orig = coords_to_pts(self.config["pitch_coords"])
+            pitch_coords_frame = cv2.perspectiveTransform(
+                pitch_coords_orig.astype(np.float64), H)
+            roll_rad = get_pitch_rotation_rad(pitch_coords_frame)
+
+            src = np.array(rotate_pts(src, roll_rad), dtype=np.int32)
+            H, _ = cv2.findHomography(src, dst)
+
         return H
 
     @property
     def H_inv(self):
         return np.linalg.inv(self.H)
 
-    def set(self, pan_deg, tilt_deg, f=DEFAULT_F):
+    def set(self, pan_deg, tilt_deg, zoom_f):
         self.pan_deg = np.clip(
             pan_deg,
-            PerspectiveCamera.PAN_DEG_MIN,
-            PerspectiveCamera.PAN_DEG_MAX,
+            self.pan_deg_min,
+            self.pan_deg_max,
         )
         self.tilt_deg = np.clip(
             tilt_deg,
-            PerspectiveCamera.TILT_DEG_MIN,
-            PerspectiveCamera.TILT_DEG_MAX
+            self.tilt_deg_min,
+            self.tilt_deg_max
         )
-        self.f = np.clip(
-            f,
-            PerspectiveCamera.F_MIN,
-            PerspectiveCamera.F_MAX
+        self.zoom_f = np.clip(
+            zoom_f,
+            self.zoom_f_min,
+            self.zoom_f_max
         )
+
+    def load_config(self, config):
+        camera_config = config["camera_params"]
+        self.cyllinder_radius = camera_config["cyllinder_radius"]
+
+        self.pan_deg_min = camera_config["pan_deg"]["min"]
+        self.pan_deg_max = camera_config["pan_deg"]["max"]
+        self.pan_deg_default = camera_config["pan_deg"]["default"]
+
+        self.tilt_deg_min = camera_config["tilt_deg"]["min"]
+        self.tilt_deg_max = camera_config["tilt_deg"]["max"]
+        self.tilt_deg_default = camera_config["tilt_deg"]["default"]
+
+        self.zoom_f_min = camera_config["zoom_f"]["min"]
+        self.zoom_f_max = camera_config["zoom_f"]["max"]
+        self.zoom_f_default = camera_config["zoom_f"]["default"]
 
     def set_center(self, x, y, f=None):
         pan_deg, tilt_deg = self.coords2ptz(x, y)
-        f = f if f is not None else self.f
+        f = f if f is not None else self.zoom_f
         self.set(pan_deg, tilt_deg, f)
 
     def init_dead_zone(self):
@@ -244,18 +284,18 @@ class PerspectiveCamera(Camera):
 
     def ptz2coords(self, theta_deg, phi_deg, f):
         theta_rad = np.deg2rad(theta_deg)
-        x = np.tan(theta_rad) * PerspectiveCamera.CYLLINDER_RADIUS
+        x = np.tan(theta_rad) * self.cyllinder_radius
 
         phi_rad = np.deg2rad(phi_deg)
         y = np.tan(phi_rad) * \
-            np.sqrt(PerspectiveCamera.CYLLINDER_RADIUS**2 + x**2)
+            np.sqrt(self.cyllinder_radius**2 + x**2)
         return self.shift_coords(int(x), int(y))
 
     def coords2ptz(self, x, y):
         x, y = self.unshift_coords(x, y)
-        pan_deg = np.rad2deg(np.arctan(x / PerspectiveCamera.CYLLINDER_RADIUS))
+        pan_deg = np.rad2deg(np.arctan(x / self.cyllinder_radius))
         tilt_deg = np.rad2deg(
-            np.arctan(y / (np.sqrt(PerspectiveCamera.CYLLINDER_RADIUS**2 + x**2))))
+            np.arctan(y / (np.sqrt(self.cyllinder_radius**2 + x**2))))
         return pan_deg, tilt_deg
 
     def get_corner_pts(self):
@@ -263,7 +303,7 @@ class PerspectiveCamera(Camera):
             self.ptz2coords(
                 self.pan_deg + pan_deg,
                 self.tilt_deg + tilt_deg,
-                self.f)
+                self.zoom_f)
             for pan_deg, tilt_deg in self.corners_ang.values()
         ]
 
@@ -277,10 +317,20 @@ class PerspectiveCamera(Camera):
         cv2.circle(frame_orig, self.center,
                    radius=5, color=color, thickness=5)
 
-    def draw_ball_prediction_(self, frame_orig, color=colors["violet"]):
-        x, y = self.ball_model.mu
+    def draw_ball_prediction_(self, frame_orig, color):
+        x, y = self.ball_mu_last
         cv2.circle(frame_orig, (int(x), int(y)),
-                   radius=5, color=color, thickness=5)
+                   radius=4, color=color, thickness=5)
+
+    def draw_ball_u_(self, frame_orig, color):
+        if self.u_last is None:
+            return
+
+        u_x, u_y = self.u_last
+        mu_x, mu_y = self.ball_mu_last
+        pt1 = np.array([mu_x, mu_y], dtype=np.int32)
+        pt2 = np.array([mu_x + u_x, mu_y + u_y], dtype=np.int32)
+        cv2.line(frame_orig, pt1, pt2, color=color, thickness=2)
 
     def draw_dead_zone_(self, frame):
         start, end = self.dead_zone
@@ -297,14 +347,14 @@ class PerspectiveCamera(Camera):
 
     def pan(self, dx):
         pan_deg = self.pan_deg + dx
-        self.set(pan_deg, self.tilt_deg, self.f)
+        self.set(pan_deg, self.tilt_deg, self.zoom_f)
 
     def tilt(self, dy):
         tilt_deg = self.tilt_deg + dy
-        self.set(self.pan_deg, tilt_deg, self.f)
+        self.set(self.pan_deg, tilt_deg, self.zoom_f)
 
     def zoom(self, dz):
-        f = self.f + dz
+        f = self.zoom_f + dz
         self.set(self.pan_deg, self.tilt_deg, f)
 
     def process_input(self, key, mouseX, mouseY):
@@ -321,6 +371,14 @@ class PerspectiveCamera(Camera):
             self.zoom(PerspectiveCamera.ZOOM_DZ)
         elif key == ord('m'):
             self.zoom(-PerspectiveCamera.ZOOM_DZ)
+        elif key == ord('+'):
+            self.sensor_w += 1
+        elif key == ord('-'):
+            self.sensor_w -= 1
+        elif key == ord('c'):
+            self.cyllinder_radius += 10
+        elif key == ord('v'):
+            self.cyllinder_radius -= 10
         elif key == ord('r'):
             self.reset()
         elif key == ord('f'):
@@ -334,11 +392,15 @@ class PerspectiveCamera(Camera):
     def get_stats(self):
         stats = {
             "Name": PerspectiveCamera.__name__,
+            "f": self.zoom_f,
+            "sensor_w": self.sensor_w,
+            "cyllinder_r": self.cyllinder_radius,
             "pan_deg": self.pan_deg,
             "tilt_deg": self.tilt_deg,
-            "f": self.f,
-            "fov_horiz_deg": self.fov_horiz_deg,
-            "fov_vert_deg": self.fov_vert_deg,
+            # "fov_horiz_deg": self.fov_horiz_deg,
+            # "fov_vert_deg": self.fov_vert_deg,
+            "players_vel": self.players_filter.vel,
+            "players_var": self.players_var,
         }
         return stats
 
