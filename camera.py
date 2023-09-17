@@ -139,38 +139,38 @@ class PerspectiveCamera(Camera):
 
         players_center = measure_players(bbs)
 
+        # Incorporate measurements into PF
         if balls_detected:
             ball_centers = [measure_ball(bb_ball)
                             for bb_ball in bbs_ball['boxes']]
-
-            # Incorporate measurements into PF
             self.ball_filter.update(players_center, ball_centers)
-
             self.ball_filter.resample()
 
         # Apply motion model with uncertainty to PF
         self.ball_filter.predict()
 
-        # Camera model
+        # Get estimate
         ball_mu, ball_var = self.ball_filter.estimate
-        f = measure_zoom(ball_var)
-        mu_x, mu_y = ball_mu
-        self.pid_x.update(mu_x)
-        self.pid_y.update(mu_y)
-        self.pid_f.update(f)
-
-        # is_in_dead_zone = self.is_meas_in_dead_zone(*mu)
-        # print(f"Is in dead zone: {is_in_dead_zone}")
-
-        pid_x = self.pid_x.get()
-        pid_y = self.pid_y.get()
-        pid_f = self.pid_f.get()
-        self.set_center(pid_x, pid_y, pid_f)
 
         # Set control input
         u = measure_u(balls_detected, players_center, ball_var)
         self.ball_filter.set_u(u)
 
+        # is_in_dead_zone = self.is_meas_in_dead_zone(*mu)
+        # print(f"Is in dead zone: {is_in_dead_zone}")
+
+        # Camera model
+        f = measure_zoom(ball_var)
+        mu_x, mu_y = ball_mu
+        self.pid_x.update(mu_x)
+        self.pid_y.update(mu_y)
+        self.pid_f.update(f)
+        pid_x = self.pid_x.get()
+        pid_y = self.pid_y.get()
+        pid_f = self.pid_f.get()
+        self.set_center(pid_x, pid_y, pid_f)
+
+        # Update variables
         self.ball_mu_last = ball_mu
         self.u_last = u
         self.is_initialized = True

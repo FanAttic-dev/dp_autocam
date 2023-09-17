@@ -34,7 +34,8 @@ class YoloDetector(Detector):
         'classes': [0, 1, 2, 3],  # [0] for ball only, None for all
         'conf': params["detector"]["players_confidence"],
         'max_det': 50,
-        'iou': 0.5
+        'iou': 0.5,
+        'verbose': False
     }
     cls2color = {
         0: colors["white"],  # ball

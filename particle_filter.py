@@ -78,7 +78,6 @@ class ParticleFilter():
 
     def resample(self):
         if self.neff < self.N / 2:
-            print("Resampling")
             indexes = systematic_resample(self.weights)
             # indexes = stratified_resample(self.weights)
             self.resample_from_index(indexes)
