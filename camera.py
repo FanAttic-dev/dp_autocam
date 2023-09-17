@@ -139,9 +139,6 @@ class PerspectiveCamera(Camera):
 
         players_center = measure_players(bbs)
 
-        # Apply motion model with uncertainty to PF
-        self.ball_filter.predict()
-
         if balls_detected:
             ball_centers = [measure_ball(bb_ball)
                             for bb_ball in bbs_ball['boxes']]
@@ -150,6 +147,9 @@ class PerspectiveCamera(Camera):
             self.ball_filter.update(players_center, ball_centers)
 
             self.ball_filter.resample()
+
+        # Apply motion model with uncertainty to PF
+        self.ball_filter.predict()
 
         # Camera model
         ball_mu, ball_var = self.ball_filter.estimate
