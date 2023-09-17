@@ -1,6 +1,8 @@
+import cv2
 import numpy as np
 from camera import PerspectiveCamera
 from constants import colors
+from image_preprocessor import ImagePreprocessor
 
 from utils import apply_homography, iou
 
@@ -14,18 +16,36 @@ class FrameSplitter:
 
 
 class PerspectiveFrameSplitter(FrameSplitter):
-    def __init__(self, frame, config):
+    def __init__(self, frame_orig, config):
         self.cameras = [
             PerspectiveCamera(
-                frame, config,
+                frame_orig, config,
                 pan_deg=camera_params["pan_deg"],
                 tilt_deg=camera_params["tilt_deg"],
                 zoom_f=camera_params["zoom_f"])
             for camera_params in config["frame_splitter_params"]
         ]
+        self.preprocessor = ImagePreprocessor(
+            frame_orig, config["pitch_coords"])
 
-    def split(self, frame):
-        frames = [camera.get_frame(frame) for camera in self.cameras]
+    def split(self, frame_orig):
+        # frames = [camera.get_frame(frame) for camera in self.cameras]
+        frames = []
+        dst = PerspectiveCamera.FRAME_CORNERS
+        for camera in self.cameras:
+            corner_pts_norm = [camera.get_corner_pts()]
+            corner_pts_pitch = self.preprocessor.normalized2pitch(
+                corner_pts_norm)
+
+            H, _ = cv2.findHomography(corner_pts_pitch, dst)
+            frame = cv2.warpPerspective(
+                frame_orig,
+                H,
+                (PerspectiveCamera.FRAME_W, PerspectiveCamera.FRAME_H),
+                flags=cv2.INTER_LINEAR
+            )
+            frames.append(frame)
+
         return frames
 
     def join_bbs(self, bbs):
