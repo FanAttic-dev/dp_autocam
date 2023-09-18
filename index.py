@@ -69,11 +69,11 @@ if args.record:
 
 frame_id = 0
 while is_alive:
+    dt_frame_start = datetime.now()
+
     is_alive, frame_orig = player.get_next_frame()
     if not is_alive:
         break
-
-    start = datetime.now()
 
     h, w, _ = frame_orig.shape
     frame_orig_masked = detector.preprocess(frame_orig)
@@ -85,16 +85,24 @@ while is_alive:
         "cls": [],
         "ids": []
     }
-    if not camera.pause_measurements and not args.mouse:
-        # Split
-        frames = frame_splitter.split(frame_orig_masked)
-        # Detect
-        bbs, bbs_frames = detector.detect(frames)
-        # Join
-        bbs_joined = frame_splitter.join_bbs(bbs)
+
+    # Split
+    dt_split_start = datetime.now()
+    frames = frame_splitter.split(frame_orig_masked)
+    dt_split_elapsed_sec = (
+        datetime.now() - dt_split_start).total_seconds()
+    # Detect
+    dt_detection_start = datetime.now()
+    bbs, bbs_frames = detector.detect(frames)
+    dt_detection_elapsed_sec = (
+        datetime.now() - dt_detection_start).total_seconds()
+    # Join
+    bbs_joined = frame_splitter.join_bbs(bbs)
+
+    if params["drawing"]["enabled"]:
         # Render
         detector.draw_bbs_(frame_orig, bbs_joined)
-        if params["show_split_frames"]:
+        if params["drawing"]["show_split_frames"]:
             for i, bbs_frame in enumerate(bbs_frames):
                 player.show_frame(bbs_frame, f"bbs_frame {i}")
 
@@ -106,20 +114,24 @@ while is_alive:
         pid_y = camera.pid_y.get()
         camera.set_center(pid_x, pid_y)
 
-        camera.draw_center_(frame_orig)
+        if params["drawing"]["enabled"]:
+            camera.draw_center_(frame_orig)
     else:
         camera.update_by_bbs(bbs_joined, top_down)
-        camera.draw_ball_prediction_(frame_orig, colors["red"])
-        camera.draw_ball_u_(frame_orig, colors["orange"])
-        camera.ball_filter.draw_particles_(frame_orig)
+
+        if params["drawing"]["enabled"]:
+            camera.draw_ball_prediction_(frame_orig, colors["red"])
+            camera.draw_ball_u_(frame_orig, colors["orange"])
+            camera.ball_filter.draw_particles_(frame_orig)
 
     frame = camera.get_frame(frame_orig)
     # camera.draw_dead_zone_(frame)
     # camera.print()
 
     """ Original frame """
-    frame_splitter.draw_roi_(frame_orig)
-    camera.draw_roi_(frame_orig)
+    if params["drawing"]["enabled"]:
+        frame_splitter.draw_roi_(frame_orig)
+        camera.draw_roi_(frame_orig)
     if not args.hide_windows:
         player.show_frame(frame_orig, "Original")
 
@@ -142,9 +154,10 @@ while is_alive:
     """ Timer """
     if params["verbose"]:
         frame_id += 1
-        elapsed_sec = (datetime.now() - start).total_seconds()
+        dt_frame_elapsed_sec = (
+            datetime.now() - dt_frame_start).total_seconds()
         print(
-            f"Frame {frame_id}: {elapsed_sec:.4f}s ({1/elapsed_sec:.1f}fps)")
+            f"[Frame {frame_id}] Split: {dt_split_elapsed_sec:.4f} Detection: {dt_detection_elapsed_sec:.4f} Total: {dt_frame_elapsed_sec:.2f}s ({1/dt_frame_elapsed_sec:.1f}fps)")
 
     """ Input """
     key = cv2.waitKey(delay)
