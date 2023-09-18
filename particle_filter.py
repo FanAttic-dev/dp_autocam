@@ -70,6 +70,7 @@ class ParticleFilter():
         ball_weights = np.array(list(map(lambda ball: np.linalg.norm(
             mu_pred - ball), ball_centers)))
         ball_weights /= sum(ball_weights)
+        ball_weights = 1 - ball_weights  # the closer, the larger weight
 
         dist_players = np.linalg.norm(self.particles - players_center, axis=1)
         w = np.zeros(len(self.particles))
