@@ -257,10 +257,15 @@ class PerspectiveCamera(Camera):
         self.set(pan_deg, tilt_deg, f)
 
     def init_dead_zone(self):
+        w_factor = 0.4
+        h_factor = 0.4
+
         self.dead_zone = np.array([
-            [640, 0],  # start point (top left)
-            [1280, 1079]  # end point (bottom right)
-        ])
+            [PerspectiveCamera.FRAME_W * w_factor,
+                PerspectiveCamera.FRAME_H * h_factor],  # start point (top left)
+            [PerspectiveCamera.FRAME_W * (1-w_factor),
+                PerspectiveCamera.FRAME_H * (1-h_factor)]  # end point (bottom right)
+        ], dtype=np.int16)
 
     def is_meas_in_dead_zone(self, meas_x, meas_y):
         meas = np.array([[[meas_x.item(), meas_y.item()]]], dtype=np.float32)
@@ -389,14 +394,14 @@ class PerspectiveCamera(Camera):
     def get_stats(self):
         stats = {
             "Name": PerspectiveCamera.__name__,
-            "f": self.zoom_f,
-            "sensor_w": self.sensor_w,
-            "cyllinder_r": self.cyllinder_radius,
-            "pan_deg": self.pan_deg,
-            "tilt_deg": self.tilt_deg,
+            "f": f"{self.zoom_f:.2f}",
+            # "sensor_w": self.sensor_w,
+            # "cyllinder_r": self.cyllinder_radius,
+            "pan_deg": f"{self.pan_deg:.4f}",
+            "tilt_deg": f"{self.tilt_deg:.4f}",
             # "fov_horiz_deg": self.fov_horiz_deg,
             # "fov_vert_deg": self.fov_vert_deg,
-            "players_vel": self.players_filter.vel,
+            "players_vel": self.players_filter.vel.squeeze(1),
             "players_var": self.players_var,
         }
         return stats

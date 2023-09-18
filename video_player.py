@@ -1,4 +1,5 @@
 import cv2
+from constants import params
 
 
 class VideoPlayer:

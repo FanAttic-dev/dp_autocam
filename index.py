@@ -103,12 +103,14 @@ while is_alive:
     t_join_elapsed = time.time() - t_join_start
 
     t_other_start = time.time()
+
+    # Render
     if params["drawing"]["enabled"]:
-        # Render
         detector.draw_bbs_(frame_orig, bbs_joined)
-        if params["drawing"]["show_split_frames"]:
-            for i, bbs_frame in enumerate(bbs_frames):
-                player.show_frame(bbs_frame, f"bbs_frame {i}")
+
+    if params["drawing"]["show_split_frames"]:
+        for i, bbs_frame in enumerate(bbs_frames):
+            player.show_frame(bbs_frame, f"bbs_frame {i}")
 
     """ ROI """
     if args.mouse:
@@ -129,8 +131,11 @@ while is_alive:
             camera.ball_filter.draw_particles_(frame_orig)
 
     frame = camera.get_frame(frame_orig)
-    # camera.draw_dead_zone_(frame)
-    # camera.print()
+    if params["drawing"]["enabled"]:
+        camera.draw_dead_zone_(frame)
+
+    if params["verbose"]:
+        camera.print()
 
     """ Original frame """
     if params["drawing"]["enabled"]:
@@ -141,7 +146,8 @@ while is_alive:
 
     """ Top-down """
     top_down_frame = top_down.get_frame(bbs_joined)
-    # player.show_frame(top_down_frame, "top down")
+    if not args.hide_windows and params["drawing"]["show_top_down_window"]:
+        player.show_frame(top_down_frame, "top down")
 
     """ Warp frame """
     # frame_warped = top_down.warp_frame(frame_orig)
@@ -168,7 +174,8 @@ Preprocess: {t_preprocess_elapsed*1000:3.0f}ms \
 | Detect: {t_detection_elapsed*1000:3.0f}ms \
 | Join: {t_join_elapsed*1000:3.0f}ms \
 | Other: {t_other_elapsed*1000:3.0f}ms \
-|| Total: {t_frame_elapsed:.2f}s ({1/t_frame_elapsed:.1f}fps)""")
+|| Total: {t_frame_elapsed:.2f}s ({1/t_frame_elapsed:.1f}fps)
+""")
 
     """ Input """
     key = cv2.waitKey(delay)
