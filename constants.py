@@ -6,6 +6,10 @@ params = {
     "use_trnava_zilina": True,
     "correct_rotation": True,
     "verbose": True,
+    "dead_zone": {
+        "enabled": False,
+        "size": [80, 300]
+    },
     "drawing": {
         "enabled": True,
         "show_split_frames": False,

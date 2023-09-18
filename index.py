@@ -131,7 +131,7 @@ while is_alive:
             camera.ball_filter.draw_particles_(frame_orig)
 
     frame = camera.get_frame(frame_orig)
-    if params["drawing"]["enabled"]:
+    if params["drawing"]["enabled"] and params["dead_zone"]["enabled"]:
         camera.draw_dead_zone_(frame)
 
     if params["verbose"]:

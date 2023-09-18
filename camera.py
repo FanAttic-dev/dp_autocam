@@ -155,15 +155,14 @@ class PerspectiveCamera(Camera):
         u = measure_u(balls_detected, players_center, ball_var)
         self.ball_filter.set_u(u)
 
-        # is_in_dead_zone = self.is_meas_in_dead_zone(*mu)
-        # print(f"Is in dead zone: {is_in_dead_zone}")
-
         # Camera model
         f = measure_zoom(ball_var)
-        mu_x, mu_y = ball_mu
+        mu_x, mu_y = ball_mu if not self.is_meas_in_dead_zone else (None, None)
+
         self.pid_x.update(mu_x)
         self.pid_y.update(mu_y)
         self.pid_f.update(f)
+
         pid_x = self.pid_x.get()
         pid_y = self.pid_y.get()
         pid_f = self.pid_f.get()
@@ -257,19 +256,23 @@ class PerspectiveCamera(Camera):
         self.set(pan_deg, tilt_deg, f)
 
     def init_dead_zone(self):
-        side = 150
+        size = np.array(params["dead_zone"]["size"])
 
         center = np.array([
             PerspectiveCamera.FRAME_W // 2,
             PerspectiveCamera.FRAME_H // 2
         ])
         self.dead_zone = np.array([
-            center - side,  # start point (top left)
-            center + side  # end point (bottom right)
+            center - size // 2,  # start point (top left)
+            center + size // 2  # end point (bottom right)
         ])
 
-    def is_meas_in_dead_zone(self, meas_x, meas_y):
-        meas = np.array([[[meas_x.item(), meas_y.item()]]], dtype=np.float32)
+    @property
+    def is_meas_in_dead_zone(self):
+        if not params["dead_zone"]["enabled"]:
+            return False
+
+        meas = np.array([[self.ball_mu_last]], dtype=np.float32)
         meas_frame_coord = cv2.perspectiveTransform(meas, self.H)[0][0]
         return lies_in_rectangle(meas_frame_coord, self.dead_zone)
 
@@ -340,7 +343,7 @@ class PerspectiveCamera(Camera):
     def draw_dead_zone_(self, frame):
         start, end = self.dead_zone
         cv2.rectangle(frame, start, end,
-                      color=colors["yellow"], thickness=5)
+                      color=colors["red"], thickness=5)
 
     def get_frame(self, frame_orig):
         return cv2.warpPerspective(

@@ -20,7 +20,7 @@ class PID:
         self.set_target(signal)
 
     def set_target(self, target):
-        if np.isclose(target, self.target):
+        if target is None or np.isclose(target, self.target):
             return
         self.target = target
         self.e_prev = self.target - self.signal
@@ -30,6 +30,7 @@ class PID:
 
     def update(self, target):
         self.set_target(target)
+
         e = self.target - self.signal
 
         self.P = self.kp * e
