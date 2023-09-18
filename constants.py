@@ -5,7 +5,8 @@ from utils import get_random_file
 params = {
     "use_trnava_zilina": True,
     "correct_rotation": True,
-    "show_split_frames": False,
+    "show_split_frames": True,
+    "verbose": True,
     "detector": {
         "ball_confidence": 0.35,
         "ball_max_det": 1,

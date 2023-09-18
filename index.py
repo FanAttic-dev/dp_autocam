@@ -12,6 +12,7 @@ from utils import load_json
 from video_player import VideoPlayer
 from video_recorder import VideoRecorder
 from constants import colors
+from datetime import datetime
 
 mousePos = {
     "x": 0,
@@ -66,11 +67,13 @@ recorder = VideoRecorder(player, camera, ball_detector)
 if args.record:
     recorder.init_writer()
 
-i = 0
+frame_id = 0
 while is_alive:
     is_alive, frame_orig = player.get_next_frame()
     if not is_alive:
         break
+
+    start = datetime.now()
 
     h, w, _ = frame_orig.shape
     frame_orig_masked = detector.preprocess(frame_orig)
@@ -136,11 +139,17 @@ while is_alive:
     if args.record:
         recorder.write(recorder_frame)
 
+    """ Timer """
+    if params["verbose"]:
+        frame_id += 1
+        elapsed_sec = (datetime.now() - start).total_seconds()
+        print(
+            f"Frame {frame_id}: {elapsed_sec:.4f}s ({1/elapsed_sec:.1f}fps)")
+
     """ Input """
     key = cv2.waitKey(delay)
     is_alive = camera.process_input(key, mousePos["x"], mousePos["y"])
 
-    i += 1
 
 print(f"Video: {video_path}")
 recorder.release()
