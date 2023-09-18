@@ -257,15 +257,16 @@ class PerspectiveCamera(Camera):
         self.set(pan_deg, tilt_deg, f)
 
     def init_dead_zone(self):
-        w_factor = 0.4
-        h_factor = 0.4
+        side = 150
 
+        center = np.array([
+            PerspectiveCamera.FRAME_W // 2,
+            PerspectiveCamera.FRAME_H // 2
+        ])
         self.dead_zone = np.array([
-            [PerspectiveCamera.FRAME_W * w_factor,
-                PerspectiveCamera.FRAME_H * h_factor],  # start point (top left)
-            [PerspectiveCamera.FRAME_W * (1-w_factor),
-                PerspectiveCamera.FRAME_H * (1-h_factor)]  # end point (bottom right)
-        ], dtype=np.int16)
+            center - side,  # start point (top left)
+            center + side  # end point (bottom right)
+        ])
 
     def is_meas_in_dead_zone(self, meas_x, meas_y):
         meas = np.array([[[meas_x.item(), meas_y.item()]]], dtype=np.float32)
