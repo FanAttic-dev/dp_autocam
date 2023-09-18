@@ -66,17 +66,22 @@ class ParticleFilter():
     def update(self, players_center, ball_centers):
         players_ball_alpha = params["ball_pf"]["players_ball_alpha"]
 
-        # sort balls based on their distance to the predicted center
-        if len(ball_centers) > 1:
-            mu_pred = self.mu + self.u
-            ball_centers.sort(key=lambda ball: np.linalg.norm(mu_pred - ball))
+        mu_pred = self.mu + self.u
+        ball_weights = np.array(list(map(lambda ball: np.linalg.norm(
+            mu_pred - ball), ball_centers)))
+        ball_weights /= sum(ball_weights)
 
         dist_players = np.linalg.norm(self.particles - players_center, axis=1)
-        for ball in ball_centers:
-            dist_ball = np.linalg.norm(self.particles - ball + self.u, axis=1)
+        w = np.zeros(len(self.particles))
+        for ball, ball_weight in zip(ball_centers, ball_weights):
+            dist_ball = np.linalg.norm(self.particles - ball, axis=1)
+
             x = players_ball_alpha * dist_ball + \
                 (1-players_ball_alpha) * dist_players
-            self.weights *= stats.norm(0, self.std_meas).pdf(x)
+
+            w += ball_weight * stats.norm(0, self.std_meas).pdf(x)
+
+        self.weights *= w
 
         self.weights += 1.e-300  # avoid round-off to zero
         self.weights /= sum(self.weights)
