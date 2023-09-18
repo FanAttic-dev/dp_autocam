@@ -12,7 +12,7 @@ from utils import load_json
 from video_player import VideoPlayer
 from video_recorder import VideoRecorder
 from constants import colors
-from datetime import datetime
+import time
 
 mousePos = {
     "x": 0,
@@ -69,7 +69,7 @@ if args.record:
 
 frame_id = 0
 while is_alive:
-    dt_frame_start = datetime.now()
+    t_frame_start = time.time()
 
     is_alive, frame_orig = player.get_next_frame()
     if not is_alive:
@@ -87,17 +87,17 @@ while is_alive:
     }
 
     # Split
-    dt_split_start = datetime.now()
+    t_split_start = time.time()
     frames = frame_splitter.split(frame_orig_masked)
-    dt_split_elapsed_sec = (
-        datetime.now() - dt_split_start).total_seconds()
+    t_split_elapsed = time.time() - t_split_start
     # Detect
-    dt_detection_start = datetime.now()
+    t_detection_start = time.time()
     bbs, bbs_frames = detector.detect(frames)
-    dt_detection_elapsed_sec = (
-        datetime.now() - dt_detection_start).total_seconds()
+    t_detection_elapsed = time.time() - t_detection_start
     # Join
+    t_join_start = time.time()
     bbs_joined = frame_splitter.join_bbs(bbs)
+    t_join_elapsed = time.time() - t_join_start
 
     if params["drawing"]["enabled"]:
         # Render
@@ -117,6 +117,7 @@ while is_alive:
         if params["drawing"]["enabled"]:
             camera.draw_center_(frame_orig)
     else:
+        t_update_start = time.time()
         camera.update_by_bbs(bbs_joined, top_down)
 
         if params["drawing"]["enabled"]:
@@ -127,6 +128,7 @@ while is_alive:
     frame = camera.get_frame(frame_orig)
     # camera.draw_dead_zone_(frame)
     # camera.print()
+    t_update_elapsed = time.time() - t_update_start
 
     """ Original frame """
     if params["drawing"]["enabled"]:
@@ -154,10 +156,14 @@ while is_alive:
     """ Timer """
     if params["verbose"]:
         frame_id += 1
-        dt_frame_elapsed_sec = (
-            datetime.now() - dt_frame_start).total_seconds()
-        print(
-            f"[Frame {frame_id}] Split: {dt_split_elapsed_sec:.4f} Detection: {dt_detection_elapsed_sec:.4f} Total: {dt_frame_elapsed_sec:.2f}s ({1/dt_frame_elapsed_sec:.1f}fps)")
+        t_frame_elapsed = time.time() - t_frame_start
+        print(f"""\
+[Frame {frame_id:3}] \
+Split: {t_split_elapsed*1000:3.0f}ms \
+Detection: {t_detection_elapsed*1000:3.0f}ms \
+Join: {t_join_elapsed*1000:3.0f}ms \
+Update: {t_update_elapsed*1000:3.0f}ms \
+| Total: {t_frame_elapsed:.2f}s ({1/t_frame_elapsed:.1f}fps)""")
 
     """ Input """
     key = cv2.waitKey(delay)
