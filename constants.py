@@ -1,5 +1,5 @@
 from pathlib import Path
-
+import cv2
 from utils import get_random_file
 
 params = {
@@ -7,7 +7,7 @@ params = {
     "correct_rotation": True,
     "verbose": True,
     "drawing": {
-        "enabled": False,
+        "enabled": True,
         "show_split_frames": True,
     },
     "detector": {
@@ -42,7 +42,6 @@ params = {
     }
 }
 
-
 if params["use_trnava_zilina"]:
     videos_dir = Path("../../datasets/TrnavaZilina/videos")
     config_path = videos_dir / "../config.json"
@@ -70,3 +69,5 @@ colors = {
     "teal": (187, 205, 127),
     "yellow": (0.1250*255, 0.6940*255, 0.9290*255)
 }
+
+INTERPOLATION_TYPE = cv2.INTER_NEAREST

@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 from detector import YoloDetector
 from utils import apply_homography, coords_to_pts, discard_extreme_points_, load_json
-from constants import colors
+from constants import INTERPOLATION_TYPE, colors
 
 
 class TopDown:
@@ -25,7 +25,10 @@ class TopDown:
 
     def warp_frame(self, frame):
         return cv2.warpPerspective(
-            frame, self.H, (self.pitch_model.shape[1], self.pitch_model.shape[0]))
+            frame, self.H,
+            (self.pitch_model.shape[1], self.pitch_model.shape[0]),
+            flags=INTERPOLATION_TYPE
+        )
 
     def bbs2points(self, bbs):
         points = {

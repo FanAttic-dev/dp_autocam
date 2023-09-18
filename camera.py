@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 from PID import PID
-from constants import colors, params
+from constants import INTERPOLATION_TYPE, colors, params
 from kalman_filter import KalmanFilterVel
 from particle_filter import ParticleFilter
 from utils import apply_homography, coords_to_pts, filter_bbs_ball, get_pitch_rotation_rad, points_average, discard_extreme_points_, get_bb_center, lies_in_rectangle, points_variance, rotate_pts
@@ -341,7 +341,7 @@ class PerspectiveCamera(Camera):
             frame_orig,
             self.H,
             (PerspectiveCamera.FRAME_W, PerspectiveCamera.FRAME_H),
-            flags=cv2.INTER_LINEAR
+            flags=INTERPOLATION_TYPE
         )
 
     def pan(self, dx):
