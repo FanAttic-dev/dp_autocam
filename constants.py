@@ -43,7 +43,7 @@ params = {
             "var_th": 5000
         },
         "velocity": {
-            "alpha": 2
+            "alpha": 3
         }
     }
 }
