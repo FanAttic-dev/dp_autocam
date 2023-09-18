@@ -7,8 +7,9 @@ params = {
     "correct_rotation": True,
     "verbose": True,
     "drawing": {
-        "enabled": True,
-        "show_split_frames": True,
+        "enabled": False,
+        "show_split_frames": False,
+        "show_original": False
     },
     "detector": {
         "ball_confidence": 0.35,

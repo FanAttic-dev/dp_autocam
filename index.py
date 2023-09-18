@@ -71,6 +71,7 @@ frame_id = 0
 while is_alive:
     t_frame_start = time.time()
 
+    t_preprocess_start = time.time()
     is_alive, frame_orig = player.get_next_frame()
     if not is_alive:
         break
@@ -78,6 +79,8 @@ while is_alive:
     h, w, _ = frame_orig.shape
     frame_orig_masked = detector.preprocess(frame_orig)
     # frame_orig = frame_orig_masked
+
+    t_preprocess_elapsed = time.time() - t_preprocess_start
 
     """ Detection """
     bbs_joined = {
@@ -99,6 +102,7 @@ while is_alive:
     bbs_joined = frame_splitter.join_bbs(bbs)
     t_join_elapsed = time.time() - t_join_start
 
+    t_other_start = time.time()
     if params["drawing"]["enabled"]:
         # Render
         detector.draw_bbs_(frame_orig, bbs_joined)
@@ -117,7 +121,6 @@ while is_alive:
         if params["drawing"]["enabled"]:
             camera.draw_center_(frame_orig)
     else:
-        t_update_start = time.time()
         camera.update_by_bbs(bbs_joined, top_down)
 
         if params["drawing"]["enabled"]:
@@ -128,13 +131,12 @@ while is_alive:
     frame = camera.get_frame(frame_orig)
     # camera.draw_dead_zone_(frame)
     # camera.print()
-    t_update_elapsed = time.time() - t_update_start
 
     """ Original frame """
     if params["drawing"]["enabled"]:
         frame_splitter.draw_roi_(frame_orig)
         camera.draw_roi_(frame_orig)
-    if not args.hide_windows:
+    if not args.hide_windows and params["drawing"]["show_original"]:
         player.show_frame(frame_orig, "Original")
 
     """ Top-down """
@@ -146,6 +148,7 @@ while is_alive:
     # player.show_frame(frame_warped, "warped")
 
     """ Recorder """
+
     recorder_frame = recorder.get_frame(frame, top_down_frame)
     if not args.hide_windows:
         player.show_frame(recorder_frame, "ROI")
@@ -153,17 +156,19 @@ while is_alive:
     if args.record:
         recorder.write(recorder_frame)
 
+    t_other_elapsed = time.time() - t_other_start
     """ Timer """
     if params["verbose"]:
         frame_id += 1
         t_frame_elapsed = time.time() - t_frame_start
         print(f"""\
 [Frame {frame_id:3}] \
-Split: {t_split_elapsed*1000:3.0f}ms \
-Detection: {t_detection_elapsed*1000:3.0f}ms \
-Join: {t_join_elapsed*1000:3.0f}ms \
-Update: {t_update_elapsed*1000:3.0f}ms \
-| Total: {t_frame_elapsed:.2f}s ({1/t_frame_elapsed:.1f}fps)""")
+Preprocess: {t_preprocess_elapsed*1000:3.0f}ms \
+| Split: {t_split_elapsed*1000:3.0f}ms \
+| Detect: {t_detection_elapsed*1000:3.0f}ms \
+| Join: {t_join_elapsed*1000:3.0f}ms \
+| Other: {t_other_elapsed*1000:3.0f}ms \
+|| Total: {t_frame_elapsed:.2f}s ({1/t_frame_elapsed:.1f}fps)""")
 
     """ Input """
     key = cv2.waitKey(delay)
