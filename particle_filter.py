@@ -73,10 +73,10 @@ class ParticleFilter():
 
         dist_players = np.linalg.norm(self.particles - players_center, axis=1)
         for ball in ball_centers:
-            dist_ball = np.linalg.norm(self.particles - ball, axis=1)
-            self.weights *= stats.norm(0, self.std_meas).pdf(
-                players_ball_alpha * dist_ball + (1-players_ball_alpha) * dist_players)
-            # self.weights *= stats.norm(0, self.std_meas).pdf(dist_ball)
+            dist_ball = np.linalg.norm(self.particles - ball + self.u, axis=1)
+            x = players_ball_alpha * dist_ball + \
+                (1-players_ball_alpha) * dist_players
+            self.weights *= stats.norm(0, self.std_meas).pdf(x)
 
         self.weights += 1.e-300  # avoid round-off to zero
         self.weights /= sum(self.weights)
