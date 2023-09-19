@@ -55,7 +55,8 @@ class PerspectiveFrameSplitter(FrameSplitter):
 
     def draw_roi_(self, frame):
         for i, camera in enumerate(self.cameras):
-            camera.draw_roi_(frame, list(colors.values())[2+i])
+            camera.draw_roi_(frame, colors["green"])
+            # camera.draw_roi_(frame, list(colors.values())[2+i])
 
 
 class LinearFrameSplitter(FrameSplitter):

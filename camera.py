@@ -4,7 +4,7 @@ from PID import PID
 from constants import INTERPOLATION_TYPE, colors, params
 from kalman_filter import KalmanFilterVel
 from particle_filter import ParticleFilter
-from utils import apply_homography, coords2pts, filter_bbs_ball, get_bounding_box, get_pitch_rotation_rad, points_average, discard_extreme_points_, get_bb_center, lies_in_rectangle, points_variance, rotate_pts
+from utils import apply_homography, coords2pts, discard_extreme_boxes_, filter_bbs_ball, get_bounding_box, get_pitch_rotation_rad, points_average, discard_extreme_points_, get_bb_center, lies_in_rectangle, points_variance, rotate_pts
 
 
 class Camera:
@@ -107,8 +107,8 @@ class PerspectiveCamera(Camera):
             f = self.zoom_f_min + zoom_level * zoom_range
             return f
 
-        def measure_zoom(bbs):
-            discard_extreme_points_(bbs)
+        def measure_zoom_bbs(bbs):
+            discard_extreme_boxes_(bbs)
             bb_x_min, bb_y_min, bb_x_max, bb_y_max = get_bounding_box(bbs)
 
             corner_pts = self.get_corner_pts()
@@ -116,7 +116,7 @@ class PerspectiveCamera(Camera):
             roi_x_max, roi_y_max = corner_pts[2]
 
             dz = (bb_x_min - roi_x_min) + (roi_x_max - bb_x_max)
-            f = self.pid_f.target + dz
+            f = self.pid_f.target + 0.01 * dz
             return f
 
         def measure_u(balls_detected, players_center, ball_var):
@@ -166,12 +166,12 @@ class PerspectiveCamera(Camera):
         self.ball_filter.set_u(u)
 
         # Camera model
-        # f = measure_zoom_var(ball_var)
         mu_x, mu_y = ball_mu if not self.is_meas_in_dead_zone else (None, None)
         self.pid_x.update(mu_x)
         self.pid_y.update(mu_y)
 
-        f = measure_zoom(bbs)
+        f = measure_zoom_var(ball_var)
+        # f = measure_zoom_bbs(bbs)
         self.pid_f.update(f)
 
         pid_x = self.pid_x.get()
@@ -352,7 +352,7 @@ class PerspectiveCamera(Camera):
         cv2.rectangle(frame, start, end,
                       color=colors["red"], thickness=1)
 
-    def draw_players_bb(self, frame_orig, bbs, color=colors["blue"]):
+    def draw_players_bb(self, frame_orig, bbs, color=colors["teal"]):
         x1, y1, x2, y2 = get_bounding_box(bbs)
         cv2.rectangle(frame_orig, (x1, y1), (x2, y2),
                       color, thickness=5)
