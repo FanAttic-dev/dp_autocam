@@ -274,10 +274,6 @@ class PerspectiveCamera(Camera):
         meas_frame_coord = cv2.perspectiveTransform(meas, self.H)[0][0]
         return lies_in_rectangle(meas_frame_coord, self.dead_zone)
 
-    def reset(self):
-        self.set(PerspectiveCamera.DEFAULT_PAN_DEG,
-                 PerspectiveCamera.DEFAULT_TILT_DEG)
-
     def shift_coords(self, x, y):
         x = x + self.frame_orig_center_x
         y = y + self.frame_orig_center_y
@@ -385,8 +381,6 @@ class PerspectiveCamera(Camera):
             self.cyllinder_radius += 10
         elif key == ord('v'):
             self.cyllinder_radius -= 10
-        elif key == ord('r'):
-            self.reset()
         elif key == ord('f'):
             self.set_center(mouseX, mouseY)
         elif key == ord('q'):
