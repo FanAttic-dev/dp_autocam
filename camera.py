@@ -97,16 +97,14 @@ class PerspectiveCamera(Camera):
         def measure_zoom(ball_var):
             """ Map the PF variance to the camera zoom bounds. """
             ball_var = np.mean(ball_var)
-            # self.ball_filter.std_pos ** 2 * 2
             var_min = params["zoom"]["var_min"]
-            # self.ball_filter.std_pos ** 2 * 100
             var_max = params["zoom"]["var_max"]
             ball_var = np.clip(ball_var, var_min, var_max)
 
             # zoom is inversely proportional to the variance
             zoom_level = 1 - (ball_var - var_min) / (var_max - var_min)
-            f = self.zoom_f_min + zoom_level * \
-                (self.zoom_f_max - self.zoom_f_min)
+            zoom_range = self.zoom_f_max - self.zoom_f_min
+            f = self.zoom_f_min + zoom_level * zoom_range
             return f
 
         def measure_u(balls_detected, players_center, ball_var):
