@@ -5,7 +5,7 @@ from utils import get_random_file
 params = {
     "use_trnava_zilina": True,
     "correct_rotation": True,
-    "verbose": True,
+    "verbose": False,
     "dead_zone": {
         "enabled": False,
         "size": [80, 300]
