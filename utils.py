@@ -82,13 +82,25 @@ def points_variance(points, mu=None, weights=None):
 
 def discard_extreme_points_(points):
     maxi = np.argmax(points["points"], axis=0)[0]
-    points["points"] = np.delete(points["points"], maxi, axis=0)
+    remove_item_in_dict_lists_(points, maxi)
 
     mini = np.argmin(points["points"], axis=0)[0]
-    points["points"] = np.delete(points["points"], mini, axis=0)
+    remove_item_in_dict_lists_(points, mini)
 
-    points["cls"] = np.delete(points["cls"], maxi, axis=0)
-    points["cls"] = np.delete(points["cls"], mini, axis=0)
+
+def discard_extreme_boxes_(bbs):
+    maxi = np.argmax(bbs["boxes"], axis=0)[2]
+    remove_item_in_dict_lists_(bbs, maxi)
+
+    mini = np.argmin(bbs["boxes"], axis=0)[0]
+    remove_item_in_dict_lists_(bbs, mini)
+
+
+def remove_item_in_dict_lists_(dict, idx):
+    for k in dict.keys():
+        if len(dict[k]) <= idx:
+            continue
+        dict[k] = np.delete(dict[k], idx, axis=0)
 
 
 def lies_in_rectangle(pt, rect):
