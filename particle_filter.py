@@ -64,26 +64,32 @@ class ParticleFilter():
         self.particles += self.u * self.dt + randn(self.N, 2) * self.std_pos
 
     def update(self, players_center, ball_centers):
+        def get_ball_weights():
+            mu_pred = self.mu + self.u
+            ball_weights = np.array(list(map(
+                lambda ball: np.linalg.norm(mu_pred - ball),
+                ball_centers
+            )))
+            ball_weights /= sum(ball_weights)
+            ball_weights = 1 / ball_weights  # the closer, the larger weight
+            return ball_weights
+
         players_ball_alpha = params["ball_pf"]["players_ball_alpha"]
-
-        mu_pred = self.mu + self.u
-        ball_weights = np.array(list(map(lambda ball: np.linalg.norm(
-            mu_pred - ball), ball_centers)))
-        ball_weights /= sum(ball_weights)
-        ball_weights = 1 / ball_weights  # the closer, the larger weight
-
+        ball_weights = get_ball_weights()
         dist_players = np.linalg.norm(self.particles - players_center, axis=1)
+        distribution = stats.norm(0, self.std_meas)
+
         w = np.zeros(len(self.particles))
         for ball, ball_weight in zip(ball_centers, ball_weights):
             dist_ball = np.linalg.norm(self.particles - ball, axis=1)
 
-            x = players_ball_alpha * dist_ball + \
+            # target is between players and ball (alpha factor)
+            dist_target = players_ball_alpha * dist_ball + \
                 (1-players_ball_alpha) * dist_players
 
-            w += ball_weight * stats.norm(0, self.std_meas).pdf(x)
+            w += ball_weight * distribution.pdf(dist_target)
 
         self.weights *= w
-
         self.weights += 1.e-300  # avoid round-off to zero
         self.weights /= sum(self.weights)
 
