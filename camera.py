@@ -4,7 +4,7 @@ from PID import PID
 from constants import INTERPOLATION_TYPE, colors, params
 from kalman_filter import KalmanFilterVel
 from particle_filter import ParticleFilter
-from utils import apply_homography, coords_to_pts, filter_bbs_ball, get_pitch_rotation_rad, points_average, discard_extreme_points_, get_bb_center, lies_in_rectangle, points_variance, rotate_pts
+from utils import apply_homography, coords2pts, filter_bbs_ball, get_bounding_box, get_pitch_rotation_rad, points_average, discard_extreme_points_, get_bb_center, lies_in_rectangle, points_variance, rotate_pts
 
 
 class Camera:
@@ -94,7 +94,7 @@ class PerspectiveCamera(Camera):
             x, y = apply_homography(top_down.H_inv, *points_mu)
             return np.array([x, y])
 
-        def measure_zoom(ball_var):
+        def measure_zoom_var(ball_var):
             """ Map the PF variance to the camera zoom bounds. """
             ball_var = np.mean(ball_var)
             var_min = params["zoom"]["var_min"]
@@ -105,6 +105,18 @@ class PerspectiveCamera(Camera):
             zoom_level = 1 - (ball_var - var_min) / (var_max - var_min)
             zoom_range = self.zoom_f_max - self.zoom_f_min
             f = self.zoom_f_min + zoom_level * zoom_range
+            return f
+
+        def measure_zoom(bbs):
+            discard_extreme_points_(bbs)
+            bb_x_min, bb_y_min, bb_x_max, bb_y_max = get_bounding_box(bbs)
+
+            corner_pts = self.get_corner_pts()
+            roi_x_min, roi_y_min = corner_pts[0]
+            roi_x_max, roi_y_max = corner_pts[2]
+
+            dz = (bb_x_min - roi_x_min) + (roi_x_max - bb_x_max)
+            f = self.pid_f.target + dz
             return f
 
         def measure_u(balls_detected, players_center, ball_var):
@@ -154,11 +166,12 @@ class PerspectiveCamera(Camera):
         self.ball_filter.set_u(u)
 
         # Camera model
-        f = measure_zoom(ball_var)
+        # f = measure_zoom_var(ball_var)
         mu_x, mu_y = ball_mu if not self.is_meas_in_dead_zone else (None, None)
-
         self.pid_x.update(mu_x)
         self.pid_y.update(mu_y)
+
+        f = measure_zoom(bbs)
         self.pid_f.update(f)
 
         pid_x = self.pid_x.get()
@@ -201,7 +214,7 @@ class PerspectiveCamera(Camera):
 
         if params["correct_rotation"]:
             # TODO: use lookup table
-            pitch_coords_orig = coords_to_pts(self.config["pitch_coords"])
+            pitch_coords_orig = coords2pts(self.config["pitch_coords"])
             pitch_coords_frame = cv2.perspectiveTransform(
                 pitch_coords_orig.astype(np.float64), H)
             roll_rad = get_pitch_rotation_rad(pitch_coords_frame)
@@ -337,7 +350,12 @@ class PerspectiveCamera(Camera):
     def draw_dead_zone_(self, frame):
         start, end = self.dead_zone
         cv2.rectangle(frame, start, end,
-                      color=colors["red"], thickness=5)
+                      color=colors["red"], thickness=1)
+
+    def draw_players_bb(self, frame_orig, bbs, color=colors["blue"]):
+        x1, y1, x2, y2 = get_bounding_box(bbs)
+        cv2.rectangle(frame_orig, (x1, y1), (x2, y2),
+                      color, thickness=5)
 
     def get_frame(self, frame_orig):
         return cv2.warpPerspective(
@@ -398,7 +416,7 @@ class PerspectiveCamera(Camera):
             # "fov_horiz_deg": self.fov_horiz_deg,
             # "fov_vert_deg": self.fov_vert_deg,
             "players_vel": self.players_filter.vel.squeeze(1),
-            "players_var": self.players_var,
+            "players_std": np.sqrt(self.players_var),
         }
         return stats
 

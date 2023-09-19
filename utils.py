@@ -4,7 +4,7 @@ import numpy as np
 import json
 
 
-def coords_to_pts(coords):
+def coords2pts(coords):
     pts = np.array([[v["x"], v["y"]] for v in coords.values()], dtype=np.int32)
     return pts.reshape((-1, 1, 2))
 
@@ -137,7 +137,7 @@ def rotate_pts(pts, angle_rad):
 
 def get_pitch_rotation_rad(pts):
     if pts is dict:
-        pts = coords_to_pts(pts)
+        pts = coords2pts(pts)
     left_top = pts[1]
     right_top = pts[2]
     u = np.array(right_top - left_top, dtype=np.float64)

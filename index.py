@@ -6,7 +6,7 @@ from camera import PerspectiveCamera
 from constants import videos_dir, config_path, video_path, params
 from detector import YoloBallDetector, YoloPlayerDetector
 from frame_splitter import PerspectiveFrameSplitter
-from utils import get_bbs_ball, get_random_file
+from utils import get_bbs_ball, get_bounding_box, get_random_file
 from top_down import TopDown
 from utils import load_json
 from video_player import VideoPlayer
@@ -140,6 +140,7 @@ while is_alive:
     """ Original frame """
     if params["drawing"]["enabled"]:
         frame_splitter.draw_roi_(frame_orig)
+        camera.draw_players_bb(frame_orig, bbs_joined)
         camera.draw_roi_(frame_orig)
     if not args.hide_windows and params["drawing"]["show_original"]:
         player.show_frame(frame_orig, "Original")

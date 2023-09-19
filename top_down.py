@@ -2,7 +2,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 from detector import YoloDetector
-from utils import apply_homography, coords_to_pts, discard_extreme_points_, load_json
+from utils import apply_homography, coords2pts, discard_extreme_points_, load_json
 from constants import INTERPOLATION_TYPE, colors
 
 
@@ -15,8 +15,8 @@ class TopDown:
         self.pitch_model = cv2.imread(str(TopDown.pitch_model_path))
         self.pitch_coords = load_json(TopDown.pitch_coords_path)
         self.video_pitch_coords = video_pitch_coords
-        self.H, _ = cv2.findHomography(coords_to_pts(video_pitch_coords),
-                                       coords_to_pts(self.pitch_coords))
+        self.H, _ = cv2.findHomography(coords2pts(video_pitch_coords),
+                                       coords2pts(self.pitch_coords))
         self.camera = camera
 
     @property
@@ -93,7 +93,7 @@ class TopDown:
     def draw_roi_(self, frame):
         margin = 10
 
-        pitch_pts = coords_to_pts(self.video_pitch_coords)
+        pitch_pts = coords2pts(self.video_pitch_coords)
         x_min, y_min = np.min(pitch_pts, axis=0)[0] + margin
         x_max, y_max = np.max(pitch_pts, axis=0)[0] + margin
 

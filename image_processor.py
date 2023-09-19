@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-from utils import coords_to_pts
+from utils import coords2pts
 from constants import colors
 
 
@@ -37,7 +37,7 @@ class ImageProcessor:
 
     @staticmethod
     def draw_mask(img, pitch_coords, margin):
-        pts = coords_to_pts(pitch_coords)
+        pts = coords2pts(pitch_coords)
         mask = np.zeros(img.shape[:2], dtype=np.uint8)
         cv2.fillPoly(mask, pts=[pts], color=colors["white"])
 
