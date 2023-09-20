@@ -5,7 +5,7 @@ from utils import get_random_file
 params = {
     "use_trnava_zilina": True,
     "correct_rotation": True,
-    "verbose": False,
+    "verbose": True,
     "dead_zone": {
         "enabled": False,
         "size": [80, 300]
@@ -13,7 +13,7 @@ params = {
     "drawing": {
         "enabled": True,
         "show_split_frames": False,
-        "show_original": False,
+        "show_original": True,
         "show_top_down_window": False,
     },
     "detector": {
@@ -51,8 +51,8 @@ params = {
 if params["use_trnava_zilina"]:
     videos_dir = Path("../../datasets/TrnavaZilina/videos")
     config_path = videos_dir / "../config.json"
-    # video_path = videos_dir / "TZ_00_22_40__00_24_15.mp4"
-    video_path = videos_dir / "second_half_clips" / "clip_second_half_09.mp4"
+    video_path = videos_dir / "TZ_00_22_40__00_24_15.mp4"
+    # video_path = videos_dir / "second_half_clips" / "clip_second_half_09.mp4"
 
 else:
     videos_dir = Path(

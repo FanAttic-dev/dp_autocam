@@ -30,6 +30,12 @@ class TopDown:
             flags=INTERPOLATION_TYPE
         )
 
+    def pts2top_down_points(self, pts):
+        return np.array([apply_homography(self.H, *pt) for pt in pts])
+
+    def top_down_points2pts(self, pts):
+        return np.array([apply_homography(self.H_inv, *pt) for pt in pts])
+
     def bbs2points(self, bbs):
         points = {
             "points": [],

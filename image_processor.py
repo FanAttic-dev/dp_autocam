@@ -36,12 +36,28 @@ class ImageProcessor:
         return cv2.GaussianBlur(img, (3, 3), sigma)
 
     @staticmethod
-    def draw_mask(img, pitch_coords, margin):
-        pts = coords2pts(pitch_coords)
+    def draw_mask(img, pitch_coords, top_down, margin):
+        pts = coords2pts(pitch_coords).squeeze()
+
+        mt, mr, mb, ml = margin
+
+        pts_top_down = top_down.pts2top_down_points(pts)
+        lb, lt, rt, rb = pts_top_down
+        lb += np.array([ml, mb])
+        lt += np.array([ml, mt])
+        rt += np.array([mr, mt])
+        rb += np.array([mr, mb])
+        pts_top_down = np.array([lb, lt, rt, rb])
+        pts = top_down.top_down_points2pts(pts_top_down)
+        pts = np.array(pts, dtype=np.int32)
+
         mask = np.zeros(img.shape[:2], dtype=np.uint8)
         cv2.fillPoly(mask, pts=[pts], color=colors["white"])
 
-        se = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-        mask = cv2.dilate(mask, se, iterations=margin)
+        # se = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+        # if margin < 0:
+        #     mask = cv2.erode(mask, se, iterations=abs(margin))
+        # else:
+        #     mask = cv2.dilate(mask, se, iterations=margin)
 
         return cv2.bitwise_and(img, img, mask=mask)

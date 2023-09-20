@@ -48,8 +48,13 @@ class YoloDetector(Detector):
         super().__init__(pitch_coords)
         self.model = YOLO(self.__class__.model_path)
 
-    def preprocess(self, img):
-        img = ImageProcessor.draw_mask(img, self.pitch_coords, margin=0)
+    def preprocess(self, img, top_down):
+        img = ImageProcessor.draw_mask(
+            img,
+            self.pitch_coords,
+            top_down,
+            margin=[0, 40, -30, -40]
+        )
         return img
 
     def res2bbs(self, res):

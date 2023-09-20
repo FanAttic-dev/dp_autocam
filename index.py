@@ -77,8 +77,8 @@ while is_alive:
         break
 
     h, w, _ = frame_orig.shape
-    frame_orig_masked = detector.preprocess(frame_orig)
-    # frame_orig = frame_orig_masked
+    frame_orig_masked = detector.preprocess(frame_orig, top_down)
+    frame_orig = frame_orig_masked
 
     t_preprocess_elapsed = time.time() - t_preprocess_start
 
