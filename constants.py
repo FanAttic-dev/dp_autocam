@@ -51,10 +51,8 @@ params = {
 if params["use_trnava_zilina"]:
     videos_dir = Path("../../datasets/TrnavaZilina/videos")
     config_path = videos_dir / "../config.json"
-    # video_path = videos_dir / "clip01.mp4"
-    video_path = videos_dir / "TZ_00_22_40__00_24_15.mp4"
-    # video_path = videos_dir / "first_half.mp4"
-    # video_path = videos_dir / "clips" / "clip_first_half_00.mp4"
+    # video_path = videos_dir / "TZ_00_22_40__00_24_15.mp4"
+    video_path = videos_dir / "second_half_clips" / "clip_second_half_07.mp4"
 
 else:
     videos_dir = Path(

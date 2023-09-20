@@ -81,6 +81,9 @@ def points_variance(points, mu=None, weights=None):
 
 
 def discard_extreme_points_(points):
+    if len(points["points"]) < 3:
+        return
+
     maxi = np.argmax(points["points"], axis=0)[0]
     remove_item_in_dict_lists_(points, maxi)
 

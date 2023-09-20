@@ -86,7 +86,7 @@ class PerspectiveCamera(Camera):
             return get_bb_center(bb_ball)
 
         def measure_players(bbs):
-            """ Get the players' center point. """
+            """ Get the players' center point in frame_orig space. """
             points = top_down.bbs2points(bbs)
             discard_extreme_points_(points)
             points_mu = points_average(points)
