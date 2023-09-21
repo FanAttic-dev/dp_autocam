@@ -5,14 +5,15 @@ import tqdm
 import torch
 from ultralytics import YOLO
 
-from image_processor import ImageProcessor
+from image_processor import ImagePreprocessor
 from constants import colors, params
 from utils import get_bb_center
 
 
 class Detector:
-    def __init__(self, pitch_coords):
-        self.pitch_coords = pitch_coords
+    def __init__(self, frame_orig, top_down, config):
+        self.image_preprocessor = ImagePreprocessor(
+            frame_orig, top_down, config)
 
     def preprocess(self, img):
         ...
@@ -44,17 +45,12 @@ class YoloDetector(Detector):
         3: colors["orange"],  # goalkeeper
     }
 
-    def __init__(self, pitch_coords):
-        super().__init__(pitch_coords)
+    def __init__(self, frame_orig, top_down, config):
+        super().__init__(frame_orig, top_down, config)
         self.model = YOLO(self.__class__.model_path)
 
-    def preprocess(self, img, top_down):
-        img = ImageProcessor.draw_mask(
-            img,
-            self.pitch_coords,
-            top_down,
-            margin=[0, 40, -30, -40]
-        )
+    def preprocess(self, img):
+        img = self.image_preprocessor.draw_mask(img)
         return img
 
     def res2bbs(self, res):
@@ -125,8 +121,8 @@ class YoloBallDetector(YoloDetector):
     model_path = Path(
         f"./weights/yolov8_{YoloDetector.args['imgsz']}_ball.pt")
 
-    def __init__(self, pitch_coords, ball_filter):
-        super().__init__(pitch_coords)
+    def __init__(self, frame_orig, top_down, config, ball_filter):
+        super().__init__(frame_orig, top_down, config)
         self.ball_filter = ball_filter
         self.__ball_threshold = 5
 
@@ -214,13 +210,13 @@ class BgDetector(Detector):
         def apply(self, img):
             return self.model.apply(img)
 
-    def __init__(self, pitch_coords):
-        super().__init__(pitch_coords)
+    def __init__(self, frame_orig, top_down, config):
+        super().__init__(frame_orig, top_down, config)
         self.bgSubtractor = BgDetector.BackgroundSubtractor()
 
     def preprocess(self, img):
-        img = ImageProcessor.draw_mask(img, self.pitch_coords, margin=0)
-        img = ImageProcessor.gaussian_blur(img, 1)
+        img = self.image_preprocessor.draw_mask(img)
+        img = cv2.GaussianBlur(img, (3, 3), 1)
         return img
 
     def draw_bounding_boxes(self, img, bbs):

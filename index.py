@@ -53,8 +53,7 @@ is_alive, frame_orig = player.get_next_frame()
 camera = PerspectiveCamera(frame_orig, config)
 frame_splitter = PerspectiveFrameSplitter(frame_orig, config)
 top_down = TopDown(pitch_coords, camera)
-detector = YoloPlayerDetector(pitch_coords)
-ball_detector = YoloBallDetector(pitch_coords, camera.ball_filter)
+detector = YoloPlayerDetector(frame_orig, top_down, config)
 
 # args.record = True
 # args.mouse = True
@@ -63,7 +62,7 @@ if args.mouse:
     player.create_window("Original")
     cv2.setMouseCallback("Original", mouse_callback)
 
-recorder = VideoRecorder(player, camera, ball_detector)
+recorder = VideoRecorder(player, camera, detector)
 if args.record:
     recorder.init_writer()
 
@@ -76,8 +75,7 @@ while is_alive:
     if not is_alive:
         break
 
-    h, w, _ = frame_orig.shape
-    frame_orig_masked = detector.preprocess(frame_orig, top_down)
+    frame_orig_masked = detector.preprocess(frame_orig)
     frame_orig = frame_orig_masked
 
     t_preprocess_elapsed = time.time() - t_preprocess_start
