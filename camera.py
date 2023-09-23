@@ -352,6 +352,12 @@ class PerspectiveCamera(Camera):
         cv2.rectangle(frame, start, end,
                       color=colors["red"], thickness=1)
 
+    def draw_frame_mask(self, frame_orig):
+        mask = np.zeros(frame_orig.shape[:2], dtype=np.uint8)
+        pts = self.get_corner_pts()
+        cv2.fillPoly(mask, [pts], 255)
+        return cv2.bitwise_and(frame_orig, frame_orig, mask=mask)
+
     def draw_players_bb(self, frame_orig, bbs, color=colors["teal"]):
         x1, y1, x2, y2 = get_bounding_box(bbs)
         cv2.rectangle(frame_orig, (x1, y1), (x2, y2),

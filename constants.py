@@ -6,15 +6,15 @@ params = {
     "use_trnava_zilina": True,
     "correct_rotation": True,
     "verbose": True,
-    "dead_zone": {
-        "enabled": False,
-        "size": [80, 300]
-    },
     "drawing": {
-        "enabled": True,
+        "enabled": False,
         "show_split_frames": False,
         "show_original": True,
         "show_top_down_window": False,
+    },
+    "dead_zone": {
+        "enabled": False,
+        "size": [80, 300]
     },
     "detector": {
         "ball_confidence": 0.35,

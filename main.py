@@ -76,7 +76,7 @@ while is_alive:
         break
 
     frame_orig_masked = detector.preprocess(frame_orig)
-    frame_orig = frame_orig_masked
+    # frame_orig = frame_orig_masked
 
     t_preprocess_elapsed = time.time() - t_preprocess_start
 
@@ -148,18 +148,19 @@ while is_alive:
     if not args.hide_windows and params["drawing"]["show_top_down_window"]:
         player.show_frame(top_down_frame, "top down")
 
-    """ Warp frame """
-    # frame_warped = top_down.warp_frame(frame_orig)
-    # player.show_frame(frame_warped, "warped")
-
     """ Recorder """
-
     recorder_frame = recorder.get_frame(frame, top_down_frame)
     if not args.hide_windows:
         player.show_frame(recorder_frame, "ROI")
 
     if args.record:
         recorder.write(recorder_frame)
+
+    """ Warp frame """
+    if not args.hide_windows:
+        # frame_orig = camera.draw_frame_mask(frame_orig)
+        frame_warped = top_down.warp_frame(frame_orig)
+        player.show_frame(frame_warped, "warped")
 
     t_other_elapsed = time.time() - t_other_start
     """ Timer """
