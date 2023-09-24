@@ -36,7 +36,7 @@ class VideoRecorder:
             VideoRecorder.IS_COLOR
         )
 
-        print(f"Video recorder initialized: {self.file_path_str}")
+        print(f"Video recorder initialized: {path2str(self.file_path)}")
 
     @staticmethod
     def get_file_path(video_player):

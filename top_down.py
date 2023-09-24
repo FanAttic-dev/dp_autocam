@@ -25,7 +25,7 @@ class TopDown:
         return np.linalg.inv(self.H)
 
     def get_pitch_model_red(self):
-        pitch = self.pitch_model
+        pitch = self.pitch_model.copy()
         pitch[:, :, 0] = 0
         pitch[:, :, 1] = 0
         return pitch

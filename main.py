@@ -30,6 +30,7 @@ def parse_args():
     parser.add_argument('-r', "--record", action='store_true')
     parser.add_argument('-m', "--mouse", action='store_true')
     parser.add_argument('-v', "--video-path", action='store', required=False)
+    parser.add_argument('-e', "--export", action='store_true')
     parser.add_argument("--config-path", action='store', required=False)
     parser.add_argument("--hide-windows", action='store_true', default=False)
     return parser.parse_args()
