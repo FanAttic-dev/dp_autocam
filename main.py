@@ -6,6 +6,7 @@ from camera import PerspectiveCamera
 from constants import videos_dir, config_path, video_path, params
 from detector import YoloBallDetector, YoloPlayerDetector
 from frame_splitter import PerspectiveFrameSplitter
+from profiler import Profiler
 from utils import get_bbs_ball, get_bounding_box, get_random_file
 from top_down import TopDown
 from utils import load_json
@@ -68,9 +69,10 @@ if args.record:
 
 frame_id = 0
 while is_alive:
-    t_frame_start = time.time()
+    profiler = Profiler(frame_id)
+    profiler.start("Frame")
 
-    t_preprocess_start = time.time()
+    profiler.start("Preprocess")
     is_alive, frame_orig = player.get_next_frame()
     if not is_alive:
         break
@@ -78,7 +80,7 @@ while is_alive:
     frame_orig_masked = detector.preprocess(frame_orig)
     # frame_orig = frame_orig_masked
 
-    t_preprocess_elapsed = time.time() - t_preprocess_start
+    profiler.stop("Preprocess")
 
     """ Detection """
     bbs_joined = {
@@ -88,19 +90,19 @@ while is_alive:
     }
 
     # Split
-    t_split_start = time.time()
+    profiler.start("Split")
     frames = frame_splitter.split(frame_orig_masked)
-    t_split_elapsed = time.time() - t_split_start
+    profiler.stop("Split")
     # Detect
-    t_detection_start = time.time()
+    profiler.start("Detect")
     bbs, bbs_frames = detector.detect(frames)
-    t_detection_elapsed = time.time() - t_detection_start
+    profiler.stop("Detect")
     # Join
-    t_join_start = time.time()
+    profiler.start("Join")
     bbs_joined = frame_splitter.join_bbs(bbs)
-    t_join_elapsed = time.time() - t_join_start
+    profiler.stop("Detect")
 
-    t_other_start = time.time()
+    profiler.start("Other")
 
     # Render
     if params["drawing"]["enabled"]:
@@ -158,28 +160,23 @@ while is_alive:
 
     """ Warp frame """
     if not args.hide_windows:
-        # frame_orig = camera.draw_frame_mask(frame_orig)
+        frame_orig = camera.draw_frame_mask(frame_orig)
         frame_warped = top_down.warp_frame(frame_orig)
         player.show_frame(frame_warped, "warped")
 
-    t_other_elapsed = time.time() - t_other_start
-    """ Timer """
+    """ Profiler """
+    profiler.stop("Other")
+    profiler.stop("Frame")
     if params["verbose"]:
-        frame_id += 1
-        t_frame_elapsed = time.time() - t_frame_start
-        print(f"""\
-[Frame {frame_id:3}] \
-Preprocess: {t_preprocess_elapsed*1000:3.0f}ms \
-| Split: {t_split_elapsed*1000:3.0f}ms \
-| Detect: {t_detection_elapsed*1000:3.0f}ms \
-| Join: {t_join_elapsed*1000:3.0f}ms \
-| Other: {t_other_elapsed*1000:3.0f}ms \
-|| Total: {t_frame_elapsed:.2f}s ({1/t_frame_elapsed:.1f}fps)
-""")
+        profiler.print_summary()
 
     """ Input """
     key = cv2.waitKey(delay)
     is_alive = camera.process_input(key, mousePos["x"], mousePos["y"])
+    if key == ord('t'):
+        recorder.save_img(frame_warped, frame_id)
+
+    frame_id += 1
 
 
 print(f"Video: {video_path}")
