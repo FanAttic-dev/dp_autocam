@@ -197,3 +197,7 @@ def filter_bbs_ball(bbs):
 
         bbs_ball["ids"].append(bbs_ball["ids"][i])
     return bbs_ball
+
+
+def path2str(path):
+    return str(path.absolute())

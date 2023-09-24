@@ -2,12 +2,14 @@ from functools import cached_property
 from pathlib import Path
 import cv2
 from constants import colors
+from utils import path2str
 
 
 class VideoRecorder:
     RECORDINGS_FOLDER = Path("./recordings")
     FOURCC = cv2.VideoWriter_fourcc(*'mp4v')
-    SUFFIX = ".mp4"
+    VIDEO_SUFFIX = ".mp4"
+    IMG_SUFFIX = ".jpg"
     IS_COLOR = True
     STATS_WIDTH = 500
     TOP_DOWN_WIDTH = 250
@@ -27,7 +29,7 @@ class VideoRecorder:
 
     def init_writer(self):
         self.writer = cv2.VideoWriter(
-            self.file_path_str,
+            path2str(self.file_path),
             VideoRecorder.FOURCC,
             self.video_player.fps,
             self.frame_size,
@@ -42,7 +44,7 @@ class VideoRecorder:
 
         video_path = video_player.video_path.stem
         file_path = VideoRecorder.RECORDINGS_FOLDER / video_path
-        file_path = file_path.with_suffix(VideoRecorder.SUFFIX)
+        file_path = file_path.with_suffix(VideoRecorder.VIDEO_SUFFIX)
 
         idx = 1
         while file_path.exists():
@@ -55,10 +57,6 @@ class VideoRecorder:
     def get_text_height():
         (_, h), _ = cv2.getTextSize(text="Lorem ipsum", **VideoRecorder.TEXT_FORMAT)
         return h
-
-    @cached_property
-    def file_path_str(self):
-        return str(self.file_path.absolute())
 
     @cached_property
     def frame_size(self):
@@ -141,6 +139,13 @@ class VideoRecorder:
     def write(self, frame):
         assert self.writer is not None
         self.writer.write(frame)
+
+    def save_img(self, frame, frame_id):
+        stem = f"{self.file_path.stem}_{frame_id:04d}"
+        filename = self.file_path.with_stem(stem)
+        filename = filename.with_suffix(VideoRecorder.IMG_SUFFIX)
+        filename = path2str(filename)
+        cv2.imwrite(filename, frame)
 
     def release(self):
         if self.writer is not None:
