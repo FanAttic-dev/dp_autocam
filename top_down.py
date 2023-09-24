@@ -13,6 +13,7 @@ class TopDown:
 
     def __init__(self, video_pitch_coords, camera):
         self.pitch_model = cv2.imread(str(TopDown.pitch_model_path))
+        self.pitch_model_red = self.get_pitch_model_red()
         self.pitch_coords = load_json(TopDown.pitch_coords_path)
         self.video_pitch_coords = video_pitch_coords
         self.H, _ = cv2.findHomography(coords2pts(video_pitch_coords),
@@ -23,12 +24,24 @@ class TopDown:
     def H_inv(self):
         return np.linalg.inv(self.H)
 
-    def warp_frame(self, frame):
-        return cv2.warpPerspective(
+    def get_pitch_model_red(self):
+        pitch = self.pitch_model
+        pitch[:, :, 0] = 0
+        pitch[:, :, 1] = 0
+        return pitch
+
+    def warp_frame(self, frame, overlay=False):
+        frame_warped = cv2.warpPerspective(
             frame, self.H,
             (self.pitch_model.shape[1], self.pitch_model.shape[0]),
             flags=INTERPOLATION_TYPE
         )
+
+        if overlay:
+            frame_warped = cv2.add(
+                frame_warped, (self.pitch_model_red * 0.5).astype(np.uint8))
+
+        return frame_warped
 
     def pts2top_down_points(self, pts):
         return np.array([apply_homography(self.H, *pt) for pt in pts])

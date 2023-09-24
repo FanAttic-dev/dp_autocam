@@ -161,7 +161,7 @@ while is_alive:
     """ Warp frame """
     if not args.hide_windows:
         frame_orig = camera.draw_frame_mask(frame_orig)
-        frame_warped = top_down.warp_frame(frame_orig)
+        frame_warped = top_down.warp_frame(frame_orig, overlay=True)
         player.show_frame(frame_warped, "warped")
 
     """ Profiler """
