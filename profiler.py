@@ -36,10 +36,11 @@ class Profiler:
 
     def print_summary(self):
         txt = f"""[Frame {self.frame_id:04d}] """
+
         stopwatches = [f"{k}: {v.elapsed_sec*1000:3.0f}ms" for k,
-                       v in self.stopwatches.items() if v.is_stopped and k != "Frame"]
+                       v in self.stopwatches.items() if v.is_stopped and k != "Total"]
         txt += " | ".join(stopwatches)
 
-        total_elapsed_sec = self.stopwatches["Frame"].elapsed_sec
+        total_elapsed_sec = self.stopwatches["Total"].elapsed_sec
         txt += f" || Total: {total_elapsed_sec:.2f}s ({1/total_elapsed_sec:.1f}fps)\n"
         print(txt)
