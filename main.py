@@ -70,7 +70,7 @@ if args.record:
 frame_id = 0
 while is_alive:
     profiler = Profiler(frame_id)
-    profiler.start("Frame")
+    profiler.start("Total")
 
     profiler.start("Preprocess")
     is_alive, frame_orig = player.get_next_frame()
@@ -166,7 +166,7 @@ while is_alive:
 
     """ Profiler """
     profiler.stop("Other")
-    profiler.stop("Frame")
+    profiler.stop("Total")
     if params["verbose"]:
         profiler.print_summary()
 
