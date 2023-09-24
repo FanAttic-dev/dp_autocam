@@ -1,4 +1,3 @@
-import json
 import cv2
 import argparse
 from pathlib import Path
@@ -13,7 +12,6 @@ from utils import load_json
 from video_player import VideoPlayer
 from video_recorder import VideoRecorder
 from constants import colors
-import time
 
 mousePos = {
     "x": 0,
