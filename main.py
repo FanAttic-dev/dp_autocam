@@ -149,8 +149,7 @@ while is_alive:
         player.show_frame(top_down_frame, "top down")
 
     """ Recorder """
-    recorder_frame = recorder.decorate_frame(frame, top_down_frame) \
-        if params["debug"] else frame
+    recorder_frame = recorder.get_frame(frame, top_down_frame)
 
     if not args.hide_windows:
         player.show_frame(recorder_frame, "ROI")

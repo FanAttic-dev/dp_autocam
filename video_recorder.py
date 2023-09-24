@@ -3,6 +3,7 @@ from pathlib import Path
 import cv2
 from constants import colors
 from utils import path2str
+from constants import params
 
 
 class VideoRecorder:
@@ -60,7 +61,10 @@ class VideoRecorder:
 
     @cached_property
     def frame_size(self):
-        return self.camera.FRAME_W + VideoRecorder.STATS_WIDTH, self.camera.FRAME_H
+        if params["debug"]:
+            return self.camera.FRAME_W + VideoRecorder.STATS_WIDTH, self.camera.FRAME_H
+
+        return self.camera.FRAME_W, self.camera.FRAME_H
 
     @cached_property
     def text_x(self):
@@ -132,9 +136,10 @@ class VideoRecorder:
         frame[0:top_down_h, -top_down_w-1:-1] = top_down_frame_res
         return frame
 
-    def decorate_frame(self, frame, top_down_frame):
-        frame = self.add_top_down(frame, top_down_frame)
-        frame = self.add_stats_bar(frame)
+    def get_frame(self, frame, top_down_frame):
+        if params["debug"]:
+            frame = self.add_top_down(frame, top_down_frame)
+            frame = self.add_stats_bar(frame)
         return frame
 
     def write(self, frame):
