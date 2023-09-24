@@ -119,7 +119,7 @@ class VideoRecorder:
 
         return frame
 
-    def add_top_down_(self, frame, top_down_frame):
+    def add_top_down(self, frame, top_down_frame):
         top_down_h, top_down_w, _ = top_down_frame.shape
 
         top_down_h = int(
@@ -128,11 +128,12 @@ class VideoRecorder:
 
         top_down_frame_res = cv2.resize(
             top_down_frame, (top_down_w, top_down_h))
+        frame = frame.copy()
         frame[0:top_down_h, -top_down_w-1:-1] = top_down_frame_res
         return frame
 
-    def get_frame(self, frame, top_down_frame):
-        frame = self.add_top_down_(frame, top_down_frame)
+    def decorate_frame(self, frame, top_down_frame):
+        frame = self.add_top_down(frame, top_down_frame)
         frame = self.add_stats_bar(frame)
         return frame
 
@@ -140,12 +141,17 @@ class VideoRecorder:
         assert self.writer is not None
         self.writer.write(frame)
 
-    def save_img(self, frame, frame_id):
-        stem = f"{self.file_path.stem}_{frame_id:04d}"
-        filename = self.file_path.with_stem(stem)
-        filename = filename.with_suffix(VideoRecorder.IMG_SUFFIX)
-        filename = path2str(filename)
-        cv2.imwrite(filename, frame)
+    def save_frame(self, frame, frame_id, suffix=""):
+        dir_path = self.file_path.parent / f"{self.file_path.stem}_frames"
+        Path.mkdir(dir_path, exist_ok=True)
+
+        filename = f"{self.file_path.stem}_{frame_id:04d}"
+        if suffix:
+            filename += f"_{suffix}"
+        filename += VideoRecorder.IMG_SUFFIX
+
+        filepath = dir_path / filename
+        cv2.imwrite(path2str(filepath), frame)
 
     def release(self):
         if self.writer is not None:

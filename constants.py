@@ -5,7 +5,13 @@ from utils import get_random_file
 params = {
     "use_trnava_zilina": True,
     "correct_rotation": True,
+    "debug": False,
     "verbose": True,
+    "eval": {
+        "export_enabled": True,
+        "export_every_x_frames": 30,
+        "pitch_overlay": True
+    },
     "drawing": {
         "enabled": False,
         "show_split_frames": False,

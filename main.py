@@ -30,7 +30,6 @@ def parse_args():
     parser.add_argument('-r', "--record", action='store_true')
     parser.add_argument('-m', "--mouse", action='store_true')
     parser.add_argument('-v', "--video-path", action='store', required=False)
-    parser.add_argument('-e', "--export", action='store_true')
     parser.add_argument("--config-path", action='store', required=False)
     parser.add_argument("--hide-windows", action='store_true', default=False)
     return parser.parse_args()
@@ -133,8 +132,8 @@ while is_alive:
     if params["drawing"]["enabled"] and params["dead_zone"]["enabled"]:
         camera.draw_dead_zone_(frame)
 
-    if params["verbose"]:
-        camera.print()
+    # if params["debug"]:
+    #     camera.print()
 
     """ Original frame """
     if params["drawing"]["enabled"]:
@@ -150,7 +149,9 @@ while is_alive:
         player.show_frame(top_down_frame, "top down")
 
     """ Recorder """
-    recorder_frame = recorder.get_frame(frame, top_down_frame)
+    recorder_frame = recorder.decorate_frame(frame, top_down_frame) \
+        if params["debug"] else frame
+
     if not args.hide_windows:
         player.show_frame(recorder_frame, "ROI")
 
@@ -158,9 +159,17 @@ while is_alive:
         recorder.write(recorder_frame)
 
     """ Warp frame """
+    frame_orig = camera.draw_frame_mask(frame_orig)
+    frame_warped = top_down.warp_frame(
+        frame_orig, overlay=params["eval"]["pitch_overlay"])
+
+    if args.record and \
+            params["eval"]["export_enabled"] and \
+            frame_id % params["eval"]["export_every_x_frames"] == 0:
+        recorder.save_frame(frame, frame_id)
+        recorder.save_frame(frame_warped, frame_id, "warped")
+
     if not args.hide_windows:
-        frame_orig = camera.draw_frame_mask(frame_orig)
-        frame_warped = top_down.warp_frame(frame_orig, overlay=True)
         player.show_frame(frame_warped, "warped")
 
     """ Profiler """
@@ -172,8 +181,6 @@ while is_alive:
     """ Input """
     key = cv2.waitKey(delay)
     is_alive = camera.process_input(key, mousePos["x"], mousePos["y"])
-    if key == ord('t'):
-        recorder.save_img(frame_warped, frame_id)
 
     frame_id += 1
 

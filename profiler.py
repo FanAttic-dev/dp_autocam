@@ -42,5 +42,5 @@ class Profiler:
         txt += " | ".join(stopwatches)
 
         total_elapsed_sec = self.stopwatches["Total"].elapsed_sec
-        txt += f" || Total: {total_elapsed_sec:.2f}s ({1/total_elapsed_sec:.1f}fps)\n"
+        txt += f" || Total: {total_elapsed_sec:.2f}s ({1/total_elapsed_sec:.1f}fps)"
         print(txt)
