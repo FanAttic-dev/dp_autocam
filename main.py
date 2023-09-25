@@ -66,6 +66,7 @@ if args.record:
     recorder.init_writer()
 
 frame_id = 0
+export_interval_sec = params["eval"]["export_every_x_seconds"]
 while is_alive:
     profiler = Profiler(frame_id)
     profiler.start("Total")
@@ -162,11 +163,12 @@ while is_alive:
     frame_warped = top_down.warp_frame(
         frame_orig, overlay=params["eval"]["pitch_overlay"])
 
-    if args.record and \
-            params["eval"]["export_enabled"] and \
-            frame_id % params["eval"]["export_every_x_frames"] == 0:
-        recorder.save_frame(frame, frame_id)
-        recorder.save_frame(frame_warped, frame_id, "warped")
+    frame_sec = frame_id / int(player.fps)
+    if args.record and params["eval"]["export_enabled"] and \
+            frame_sec % export_interval_sec == 0:
+        frame_img_id = int(frame_sec // export_interval_sec)
+        recorder.save_frame(frame, frame_img_id)
+        recorder.save_frame(frame_warped, frame_img_id, "warped")
 
     if not args.hide_windows:
         player.show_frame(frame_warped, "warped")

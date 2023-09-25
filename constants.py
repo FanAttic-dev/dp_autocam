@@ -9,7 +9,7 @@ params = {
     "verbose": True,
     "eval": {
         "export_enabled": True,
-        "export_every_x_frames": 30,
+        "export_every_x_seconds": 20,
         "pitch_overlay": True
     },
     "drawing": {

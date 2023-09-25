@@ -1,3 +1,4 @@
+from functools import cached_property
 import cv2
 from constants import params
 
@@ -11,7 +12,7 @@ class VideoPlayer:
         self.cap = cv2.VideoCapture(str(video_path.absolute()))
         print(f"Video player initialized: {self.video_path.absolute()}")
 
-    @property
+    @cached_property
     def fps(self):
         return self.cap.get(cv2.CAP_PROP_FPS)
 
