@@ -28,8 +28,6 @@ class VideoPlayer:
 
     def get_next_frame(self):
         ret, frame = self.cap.read()
-        if not ret:
-            print('Could not receive frame.')
         return ret, frame
 
     def play_video(self):
