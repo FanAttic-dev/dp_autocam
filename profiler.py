@@ -35,7 +35,7 @@ class Profiler:
         self.stopwatches[name].stop()
 
     def print_summary(self):
-        txt = f"""[Frame {self.frame_id:04d}] """
+        txt = f"""[Frame {self.frame_id:06d}] """
 
         stopwatches = [f"{k}: {v.elapsed_sec*1000:3.0f}ms" for k,
                        v in self.stopwatches.items() if v.is_stopped and k != "Total"]
