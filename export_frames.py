@@ -17,7 +17,7 @@ def get_frame_path(frame_id):
     return frames_dir / f"{video_path.stem}_frame_{frame_id:04d}.jpg"
 
 
-for period in ["var_p0_30.mp4", "var_p1_30.mp4"]:
+for period in ["var_p0.mp4", "var_p1.mp4"]:
     video_path = videos_dir / period
     frames_dir = get_frames_dir(videos_dir, video_path)
     Path.mkdir(frames_dir, exist_ok=True)
