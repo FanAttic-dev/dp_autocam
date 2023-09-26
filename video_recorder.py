@@ -1,9 +1,9 @@
 from functools import cached_property
 from pathlib import Path
 import cv2
+from config import Config
 from constants import colors
 from utils import path2str
-from constants import params
 
 
 class VideoRecorder:
@@ -61,7 +61,7 @@ class VideoRecorder:
 
     @cached_property
     def frame_size(self):
-        if params["debug"]:
+        if Config.params["debug"]:
             return self.camera.FRAME_W + VideoRecorder.STATS_WIDTH, self.camera.FRAME_H
 
         return self.camera.FRAME_W, self.camera.FRAME_H
@@ -137,7 +137,7 @@ class VideoRecorder:
         return frame
 
     def get_frame(self, frame, top_down_frame):
-        if params["debug"]:
+        if Config.params["debug"]:
             frame = self.add_top_down(frame, top_down_frame)
             frame = self.add_stats_bar(frame)
         return frame

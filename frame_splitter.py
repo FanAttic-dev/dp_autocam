@@ -21,7 +21,7 @@ class PerspectiveFrameSplitter(FrameSplitter):
                 pan_deg=camera_params["pan_deg"],
                 tilt_deg=camera_params["tilt_deg"],
                 zoom_f=camera_params["zoom_f"])
-            for camera_params in config["frame_splitter_params"]
+            for camera_params in config.json["frame_splitter_params"]
         ]
 
     def split(self, frame):

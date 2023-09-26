@@ -4,9 +4,10 @@ import numpy as np
 import tqdm
 import torch
 from ultralytics import YOLO
+from config import Config
 
 from image_processor import ImagePreprocessor
-from constants import colors, params
+from constants import colors
 from utils import get_bb_center
 
 
@@ -33,7 +34,7 @@ class YoloDetector(Detector):
         'device': torch.cuda.current_device(),  # 0 if gpu else 'cpu'
         'imgsz': 960,
         'classes': [0, 1, 2, 3],  # [0] for ball only, None for all
-        'conf': params["detector"]["players_confidence"],
+        'conf': Config.params["detector"]["players_confidence"],
         'max_det': 50,
         'iou': 0.5,
         'verbose': False
@@ -113,8 +114,8 @@ class YoloBallDetector(YoloDetector):
         'device': torch.cuda.current_device(),  # 0 if gpu else 'cpu'
         'imgsz': 960,
         'classes': None,  # [0] for ball only, None for all
-        'conf': params["detector"]["ball_confidence"],
-        'max_det': params["detector"]["ball_max_det"],
+        'conf': Config.params["detector"]["ball_confidence"],
+        'max_det': Config.params["detector"]["ball_max_det"],
         'iou': 0.5
     }
 

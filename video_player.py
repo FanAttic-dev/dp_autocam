@@ -1,6 +1,5 @@
 from functools import cached_property
 import cv2
-from constants import params
 
 
 class VideoPlayer:

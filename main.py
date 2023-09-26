@@ -2,13 +2,11 @@ import cv2
 import argparse
 from pathlib import Path
 from camera import PerspectiveCamera
-from constants import videos_dir, config_path, video_path, params
+from config import Config
 from detector import YoloBallDetector, YoloPlayerDetector
 from frame_splitter import PerspectiveFrameSplitter
 from profiler import Profiler
-from utils import get_bbs_ball, get_bounding_box, get_random_file
 from top_down import TopDown
-from utils import load_json
 from video_player import VideoPlayer
 from video_recorder import VideoRecorder
 from constants import colors
@@ -37,21 +35,15 @@ def parse_args():
 
 """ Init """
 args = parse_args()
-if args.video_path:
-    video_path = Path(args.video_path)
-if args.config_path:
-    config_path = Path(args.config_path)
+config = Config(args)
 
-config = load_json(config_path)
-pitch_coords = config["pitch_coords"]
-
-player = VideoPlayer(video_path)
+player = VideoPlayer(config.video_path)
 delay = player.get_delay(args.record)
 
 is_alive, frame_orig = player.get_next_frame()
 camera = PerspectiveCamera(frame_orig, config)
 frame_splitter = PerspectiveFrameSplitter(frame_orig, config)
-top_down = TopDown(pitch_coords, camera)
+top_down = TopDown(config.pitch_coords, camera)
 detector = YoloPlayerDetector(frame_orig, top_down, config)
 
 # args.record = True
@@ -66,7 +58,7 @@ if args.record:
     recorder.init_writer()
 
 frame_id = 0
-export_interval_sec = params["eval"]["export_every_x_seconds"]
+export_interval_sec = Config.params["eval"]["export_every_x_seconds"]
 while is_alive:
     profiler = Profiler(frame_id)
     profiler.start("Total")
@@ -99,10 +91,10 @@ while is_alive:
     profiler.start("Other")
 
     # Render
-    if params["drawing"]["enabled"]:
+    if Config.params["drawing"]["enabled"]:
         detector.draw_bbs_(frame_orig, bbs_joined)
 
-    if params["drawing"]["show_split_frames"]:
+    if Config.params["drawing"]["show_split_frames"]:
         for i, bbs_frame in enumerate(bbs_frames):
             player.show_frame(bbs_frame, f"bbs_frame {i}")
 
@@ -114,34 +106,34 @@ while is_alive:
         pid_y = camera.pid_y.get()
         camera.set_center(pid_x, pid_y)
 
-        if params["drawing"]["enabled"]:
+        if Config.params["drawing"]["enabled"]:
             camera.draw_center_(frame_orig)
     else:
         camera.update_by_bbs(bbs_joined, top_down)
 
-        if params["drawing"]["enabled"]:
+        if Config.params["drawing"]["enabled"]:
             camera.draw_ball_prediction_(frame_orig, colors["red"])
             camera.draw_ball_u_(frame_orig, colors["orange"])
             camera.ball_filter.draw_particles_(frame_orig)
 
     frame = camera.get_frame(frame_orig)
-    if params["drawing"]["enabled"] and params["dead_zone"]["enabled"]:
+    if Config.params["drawing"]["enabled"] and Config.params["dead_zone"]["enabled"]:
         camera.draw_dead_zone_(frame)
 
-    # if params["debug"]:
+    # if Config.params["debug"]:
     #     camera.print()
 
     """ Original frame """
-    if params["drawing"]["enabled"]:
+    if Config.params["drawing"]["enabled"]:
         frame_splitter.draw_roi_(frame_orig)
         camera.draw_players_bb(frame_orig, bbs_joined)
         camera.draw_roi_(frame_orig)
-    if not args.hide_windows and params["drawing"]["show_original"]:
+    if not args.hide_windows and Config.params["drawing"]["show_original"]:
         player.show_frame(frame_orig, "Original")
 
     """ Top-down """
     top_down_frame = top_down.get_frame(bbs_joined)
-    if not args.hide_windows and params["drawing"]["show_top_down_window"]:
+    if not args.hide_windows and Config.params["drawing"]["show_top_down_window"]:
         player.show_frame(top_down_frame, "top down")
 
     """ Recorder """
@@ -154,12 +146,12 @@ while is_alive:
         recorder.write(recorder_frame)
 
     """ Warp frame """
-    frame_orig = camera.draw_frame_mask(frame_orig)
+    # frame_orig = camera.draw_frame_mask(frame_orig)
     frame_warped = top_down.warp_frame(
-        frame_orig, overlay=params["eval"]["pitch_overlay"])
+        frame_orig, overlay=Config.params["eval"]["pitch_overlay"])
 
     frame_sec = frame_id / int(player.fps)
-    if args.record and params["eval"]["export_enabled"] and \
+    if args.record and Config.params["eval"]["export_enabled"] and \
             frame_sec % export_interval_sec == 0:
         frame_img_id = int(frame_sec // export_interval_sec)
         recorder.save_frame(frame, frame_img_id)
@@ -171,18 +163,18 @@ while is_alive:
     """ Profiler """
     profiler.stop("Other")
     profiler.stop("Total")
-    if params["verbose"]:
+    if Config.params["verbose"]:
         profiler.print_summary()
-
-    """ Input """
-    key = cv2.waitKey(delay)
-    is_alive = camera.process_input(key, mousePos["x"], mousePos["y"])
 
     """ Next frame """
     is_alive, frame_orig = player.get_next_frame()
     frame_id += 1
 
+    """ Input """
+    key = cv2.waitKey(delay)
+    is_alive = camera.process_input(key, mousePos["x"], mousePos["y"])
 
-print(f"Video: {video_path}")
+
+print(f"Video: {config.video_path}")
 recorder.release()
 player.release()

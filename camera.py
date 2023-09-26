@@ -1,7 +1,8 @@
 import cv2
 import numpy as np
 from PID import PID
-from constants import INTERPOLATION_TYPE, colors, params
+from config import Config
+from constants import INTERPOLATION_TYPE, colors
 from kalman_filter import KalmanFilterVel
 from particle_filter import ParticleFilter
 from utils import apply_homography, coords2pts, discard_extreme_boxes_, filter_bbs_ball, get_bounding_box, get_pitch_rotation_rad, points_average, discard_extreme_points_, get_bb_center, lies_in_rectangle, points_variance, rotate_pts
@@ -43,7 +44,7 @@ class PerspectiveCamera(Camera):
     def __init__(self, frame_orig, config, pan_deg=None, tilt_deg=None, zoom_f=None):
         self.sensor_w = PerspectiveCamera.SENSOR_W
         self.config = config
-        self.load_config(config)
+        self.load_config(config.json)
 
         pan_deg = pan_deg if pan_deg is not None else self.pan_deg_default
         tilt_deg = tilt_deg if tilt_deg is not None else self.tilt_deg_default
@@ -63,14 +64,14 @@ class PerspectiveCamera(Camera):
         self.pid_y.init(center_y)
         self.pid_f.init(self.zoom_f)
 
-        self.ball_filter = ParticleFilter(params["ball_pf"])
+        self.ball_filter = ParticleFilter(Config.params["ball_pf"])
         self.ball_filter.init(self.center)
         self.ball_mu_last = self.center
 
         self.players_filter = KalmanFilterVel(
-            params["players_kf"]["dt"],
-            params["players_kf"]["std_acc"],
-            params["players_kf"]["std_meas"],
+            Config.params["players_kf"]["dt"],
+            Config.params["players_kf"]["std_acc"],
+            Config.params["players_kf"]["std_meas"],
             0
         )
         self.players_filter.set_pos(*self.center)
@@ -97,8 +98,8 @@ class PerspectiveCamera(Camera):
         def measure_zoom_var(ball_var):
             """ Map the PF variance to the camera zoom bounds. """
             ball_var = np.mean(ball_var)
-            var_min = params["zoom"]["var_min"]
-            var_max = params["zoom"]["var_max"]
+            var_min = Config.params["zoom"]["var_min"]
+            var_max = Config.params["zoom"]["var_max"]
             ball_var = np.clip(ball_var, var_min, var_max)
 
             # zoom is inversely proportional to the variance
@@ -121,8 +122,8 @@ class PerspectiveCamera(Camera):
 
         def measure_u(balls_detected, players_center, ball_var):
             def measure_players_center():
-                if not balls_detected and np.mean(ball_var) > params["u_control"]["center"]["var_th"]:
-                    return params["u_control"]["center"]["alpha"] * (players_center - self.ball_mu_last)
+                if not balls_detected and np.mean(ball_var) > Config.params["u_control"]["center"]["var_th"]:
+                    return Config.params["u_control"]["center"]["alpha"] * (players_center - self.ball_mu_last)
                 return np.array([0., 0.])
 
             def measure_players_movement():
@@ -130,7 +131,7 @@ class PerspectiveCamera(Camera):
                     self.players_filter.set_pos(*players_center)
                 self.players_filter.predict()
                 self.players_filter.update(*players_center)
-                return params["u_control"]["velocity"]["alpha"] * self.players_filter.vel.T[0]
+                return Config.params["u_control"]["velocity"]["alpha"] * self.players_filter.vel.T[0]
 
             u = np.array([0., 0.])
 
@@ -212,9 +213,9 @@ class PerspectiveCamera(Camera):
 
         H, _ = cv2.findHomography(src, dst)
 
-        if params["correct_rotation"]:
+        if Config.params["correct_rotation"]:
             # TODO: use lookup table
-            pitch_coords_orig = coords2pts(self.config["pitch_coords"])
+            pitch_coords_orig = self.config.pitch_coords_pts
             pitch_coords_frame = cv2.perspectiveTransform(
                 pitch_coords_orig.astype(np.float64), H)
             roll_rad = get_pitch_rotation_rad(pitch_coords_frame)
@@ -267,7 +268,7 @@ class PerspectiveCamera(Camera):
         self.set(pan_deg, tilt_deg, f)
 
     def init_dead_zone(self):
-        size = np.array(params["dead_zone"]["size"])
+        size = np.array(Config.params["dead_zone"]["size"])
 
         center = np.array([
             PerspectiveCamera.FRAME_W // 2,
@@ -280,7 +281,7 @@ class PerspectiveCamera(Camera):
 
     @property
     def is_meas_in_dead_zone(self):
-        if not params["dead_zone"]["enabled"]:
+        if not Config.params["dead_zone"]["enabled"]:
             return False
 
         meas = np.array([[self.ball_mu_last]], dtype=np.float32)

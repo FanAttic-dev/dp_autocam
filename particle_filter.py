@@ -1,9 +1,9 @@
 import cv2
 import numpy as np
 from numpy.random import randn
-import scipy
 from scipy import stats
-from constants import colors, params
+from config import Config
+from constants import colors
 from filterpy.monte_carlo import systematic_resample
 
 
@@ -74,7 +74,7 @@ class ParticleFilter():
             ball_weights = 1 / ball_weights  # the closer, the larger weight
             return ball_weights
 
-        players_ball_alpha = params["ball_pf"]["players_ball_alpha"]
+        players_ball_alpha = Config.params["ball_pf"]["players_ball_alpha"]
         ball_weights = get_ball_weights()
         dist_players = np.linalg.norm(self.particles - players_center, axis=1)
         distribution = stats.norm(0, self.std_meas)

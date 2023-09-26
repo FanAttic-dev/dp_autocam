@@ -7,8 +7,8 @@ from constants import colors
 
 class ImagePreprocessor:
     def __init__(self, frame_orig, top_down, config):
-        pitch_coords = config["pitch_coords"]
-        margins = config["mask_margins"]
+        pitch_coords = config.pitch_coords
+        margins = config.json["mask_margins"]
         self.init_mask(frame_orig, top_down, pitch_coords, margins)
 
     def init_mask(self, frame_orig, top_down, pitch_coords, margins):
