@@ -146,7 +146,7 @@ while is_alive:
         recorder.write(recorder_frame)
 
     """ Warp frame """
-    # frame_orig = camera.draw_frame_mask(frame_orig)
+    frame_orig = camera.draw_frame_mask(frame_orig)
     frame_warped = top_down.warp_frame(
         frame_orig, overlay=Config.params["eval"]["pitch_overlay"])
 
