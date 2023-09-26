@@ -13,7 +13,7 @@ class Config:
         "eval": {
             "export_enabled": True,
             "export_every_x_seconds": 20,
-            "pitch_overlay": True
+            "pitch_overlay": False
         },
         "drawing": {
             "enabled": False,
@@ -65,7 +65,7 @@ class Config:
         if Config.params["use_trnava_zilina"]:
             self.videos_dir = Path("../../datasets/TrnavaZilina/main")
             self.config_path = self.videos_dir / "config.json"
-            self.video_path = self.videos_dir / "main_p0_clips/main_p0_clip_04.mp4"
+            self.video_path = self.videos_dir / "main_p0.mp4"
             # self.video_path = self.videos_dir / "TZ_00_22_40__00_24_15.mp4"
         else:
             self.videos_dir = Path(
