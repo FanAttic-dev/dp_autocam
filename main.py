@@ -72,13 +72,8 @@ while is_alive:
     profiler.start("Total")
 
     profiler.start("Preprocess")
-    is_alive, frame_orig = player.get_next_frame()
-    if not is_alive:
-        break
-
     frame_orig_masked = detector.preprocess(frame_orig)
     # frame_orig = frame_orig_masked
-
     profiler.stop("Preprocess")
 
     """ Detection """
@@ -183,6 +178,8 @@ while is_alive:
     key = cv2.waitKey(delay)
     is_alive = camera.process_input(key, mousePos["x"], mousePos["y"])
 
+    """ Next frame """
+    is_alive, frame_orig = player.get_next_frame()
     frame_id += 1
 
 
