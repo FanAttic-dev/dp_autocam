@@ -110,10 +110,10 @@ class TopDown:
             )
 
     def draw_roi_(self, frame):
-        margin = 10
+        margin = 50
 
         pitch_pts = coords2pts(self.video_pitch_coords)
-        x_min, y_min = np.min(pitch_pts, axis=0)[0] + margin
+        x_min, y_min = np.min(pitch_pts, axis=0)[0] - margin
         x_max, y_max = np.max(pitch_pts, axis=0)[0] + margin
 
         pts_warped = []
