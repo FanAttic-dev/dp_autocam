@@ -1,7 +1,9 @@
 import numpy as np
 
+from utils.protocols import HasStats
 
-class PID:
+
+class PID(HasStats):
     def __init__(self, kp=0.03, ki=0, kd=0):
         self.dt = 0.01
         self.kp = kp

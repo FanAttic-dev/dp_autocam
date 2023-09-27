@@ -1,14 +1,15 @@
 import cv2
 import numpy as np
+from utils.config import Config
 
-from utils import coords2pts
-from constants import colors
+from utils.helpers import coords2pts
+from utils.constants import colors
 
 
 class ImagePreprocessor:
-    def __init__(self, frame_orig, top_down, config):
+    def __init__(self, frame_orig, top_down, config: Config):
         pitch_coords = config.pitch_coords
-        margins = config.json["mask_margins"]
+        margins = config.dataset["mask_margins"]
         self.init_mask(frame_orig, top_down, pitch_coords, margins)
 
     def init_mask(self, frame_orig, top_down, pitch_coords, margins):

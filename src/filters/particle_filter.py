@@ -2,12 +2,14 @@ import cv2
 import numpy as np
 from numpy.random import randn
 from scipy import stats
-from config import Config
-from constants import colors
+from utils.config import Config
+from utils.constants import colors
 from filterpy.monte_carlo import systematic_resample
 
+from utils.protocols import HasStats
 
-class ParticleFilter():
+
+class ParticleFilter(HasStats):
     INIT_STD = 100
 
     def __init__(self, pf_params):
@@ -74,7 +76,7 @@ class ParticleFilter():
             ball_weights = 1 / ball_weights  # the closer, the larger weight
             return ball_weights
 
-        players_ball_alpha = Config.params["ball_pf"]["players_ball_alpha"]
+        players_ball_alpha = Config.autocam["ball_pf"]["players_ball_alpha"]
         ball_weights = get_ball_weights()
         dist_players = np.linalg.norm(self.particles - players_center, axis=1)
         distribution = stats.norm(0, self.std_meas)

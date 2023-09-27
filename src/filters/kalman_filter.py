@@ -1,11 +1,10 @@
 import numpy as np
 
-from model import Model
+from utils.protocols import HasStats
 
 
-class KalmanFilterBase(Model):
-    def __init__(self, dt, std_acc, std_meas, decel_rate):
-        super().__init__(decel_rate)
+class KalmanFilterBase(HasStats):
+    def __init__(self, dt, std_acc, std_meas):
         self.dt = dt
         self.std_acc = std_acc
         self.std_meas = std_meas
@@ -54,7 +53,6 @@ class KalmanFilterBase(Model):
             "dt": self.dt,
             "std_acc": self.std_acc,
             "std_meas": self.std_meas,
-            "is_decelerating": self.is_decelerating,
             "decel_rate": self.decel_rate
         }
 
@@ -70,8 +68,6 @@ class KalmanFilterBase(Model):
         return self.pos
 
     def update(self, meas_x, meas_y):
-        self.set_last_measurement(meas_x, meas_y)
-
         z = np.array([
             [np.array(meas_x).item()],
             [np.array(meas_y).item()]
@@ -87,9 +83,9 @@ class KalmanFilterBase(Model):
 
 
 class KalmanFilterVel(KalmanFilterBase):
-    def __init__(self, dt, std_acc, std_meas, decel_rate):
-        super().__init__(dt, std_acc, std_meas, decel_rate)
-        self.__u = np.array([
+    def __init__(self, dt, std_acc, std_meas):
+        super().__init__(dt, std_acc, std_meas)
+        self.u = np.array([
             [0],
             [0]
         ])
@@ -102,15 +98,9 @@ class KalmanFilterVel(KalmanFilterBase):
     def vel(self):
         return np.array([self.x[1], self.x[3]])
 
-    @property
-    def u(self):
-        if self.is_decelerating:
-            return -self.vel * self.decel_rate
-        return self.__u
-
     def set_u(self, x, y):
-        self.__u[0] = x
-        self.__u[1] = y
+        self.u[0] = x
+        self.u[1] = y
 
     def init_x(self):
         self.x = np.array([
@@ -181,8 +171,8 @@ class KalmanFilterVel(KalmanFilterBase):
 
 
 class KalmanFilterAcc(KalmanFilterBase):
-    def __init__(self, dt, std_acc, std_meas, decel_rate):
-        super().__init__(dt, std_acc, std_meas, decel_rate)
+    def __init__(self, dt, std_acc, std_meas):
+        super().__init__(dt, std_acc, std_meas)
 
     @property
     def pos(self):
@@ -251,9 +241,6 @@ class KalmanFilterAcc(KalmanFilterBase):
 
     def predict(self):
         self.x = self.F @ self.x
-
-        if self.is_decelerating:
-            self.set_acc(*(-self.vel * self.decel_rate))
 
         # P = F * P * F' + Q
         self.P = self.F @ self.P @ self.F.T + self.Q

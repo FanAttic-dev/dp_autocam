@@ -1,9 +1,9 @@
 from pathlib import Path
 import cv2
 import numpy as np
-from detector import YoloDetector
-from utils import apply_homography, coords2pts, discard_extreme_points_, load_json
-from constants import INTERPOLATION_TYPE, colors
+from detection.detector import YoloDetector
+from utils.helpers import apply_homography, coords2pts, discard_extreme_points_, load_json
+from utils.constants import INTERPOLATION_TYPE, colors
 
 
 class TopDown:

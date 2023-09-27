@@ -1,15 +1,14 @@
 import cv2
 import argparse
-from pathlib import Path
-from camera import PerspectiveCamera
-from config import Config
-from detector import YoloBallDetector, YoloPlayerDetector
-from frame_splitter import PerspectiveFrameSplitter
-from profiler import Profiler
-from top_down import TopDown
-from video_player import VideoPlayer
-from video_recorder import VideoRecorder
-from constants import colors
+from camera.camera import PerspectiveCamera
+from utils.config import Config
+from detection.detector import YoloPlayerDetector
+from detection.frame_splitter import FrameSplitter
+from utils.profiler import Profiler
+from camera.top_down import TopDown
+from video_tools.video_player import VideoPlayer
+from video_tools.video_recorder import VideoRecorder
+from utils.constants import colors
 
 mousePos = {
     "x": 0,
@@ -42,7 +41,7 @@ delay = player.get_delay(args.record)
 
 is_alive, frame_orig = player.get_next_frame()
 camera = PerspectiveCamera(frame_orig, config)
-frame_splitter = PerspectiveFrameSplitter(frame_orig, config)
+frame_splitter = FrameSplitter(frame_orig, config)
 top_down = TopDown(config.pitch_coords, camera)
 detector = YoloPlayerDetector(frame_orig, top_down, config)
 
@@ -58,7 +57,7 @@ if args.record:
     recorder.init_writer()
 
 frame_id = 0
-export_interval_sec = Config.params["eval"]["export_every_x_seconds"]
+export_interval_sec = Config.autocam["eval"]["export_every_x_seconds"]
 while is_alive:
     profiler = Profiler(frame_id)
     profiler.start("Total")
@@ -91,10 +90,10 @@ while is_alive:
     profiler.start("Other")
 
     # Render
-    if Config.params["drawing"]["enabled"]:
+    if Config.autocam["drawing"]["enabled"]:
         detector.draw_bbs_(frame_orig, bbs_joined)
 
-    if Config.params["drawing"]["show_split_frames"]:
+    if Config.autocam["drawing"]["show_split_frames"]:
         for i, bbs_frame in enumerate(bbs_frames):
             player.show_frame(bbs_frame, f"bbs_frame {i}")
 
@@ -106,34 +105,34 @@ while is_alive:
         pid_y = camera.pid_y.get()
         camera.set_center(pid_x, pid_y)
 
-        if Config.params["drawing"]["enabled"]:
+        if Config.autocam["drawing"]["enabled"]:
             camera.draw_center_(frame_orig)
     else:
         camera.update_by_bbs(bbs_joined, top_down)
 
-        if Config.params["drawing"]["enabled"]:
+        if Config.autocam["drawing"]["enabled"]:
             camera.draw_ball_prediction_(frame_orig, colors["red"])
             camera.draw_ball_u_(frame_orig, colors["orange"])
             camera.ball_filter.draw_particles_(frame_orig)
 
     frame = camera.get_frame(frame_orig)
-    if Config.params["drawing"]["enabled"] and Config.params["dead_zone"]["enabled"]:
+    if Config.autocam["drawing"]["enabled"] and Config.autocam["dead_zone"]["enabled"]:
         camera.draw_dead_zone_(frame)
 
     # if Config.params["debug"]:
     #     camera.print()
 
     """ Original frame """
-    if Config.params["drawing"]["enabled"]:
+    if Config.autocam["drawing"]["enabled"]:
         frame_splitter.draw_roi_(frame_orig)
         camera.draw_players_bb(frame_orig, bbs_joined)
         camera.draw_roi_(frame_orig)
-    if not args.hide_windows and Config.params["drawing"]["show_original"]:
+    if not args.hide_windows and Config.autocam["drawing"]["show_original"]:
         player.show_frame(frame_orig, "Original")
 
     """ Top-down """
     top_down_frame = top_down.get_frame(bbs_joined)
-    if not args.hide_windows and Config.params["drawing"]["show_top_down_window"]:
+    if not args.hide_windows and Config.autocam["drawing"]["show_top_down_window"]:
         player.show_frame(top_down_frame, "top down")
 
     """ Recorder """
@@ -148,10 +147,10 @@ while is_alive:
     """ Warp frame """
     frame_orig = camera.draw_frame_mask(frame_orig)
     frame_warped = top_down.warp_frame(
-        frame_orig, overlay=Config.params["eval"]["pitch_overlay"])
+        frame_orig, overlay=Config.autocam["eval"]["pitch_overlay"])
 
     frame_sec = frame_id / int(player.fps)
-    if args.record and Config.params["eval"]["export_enabled"] and \
+    if args.record and Config.autocam["eval"]["export_enabled"] and \
             frame_sec % export_interval_sec == 0:
         frame_img_id = int(frame_sec // export_interval_sec)
         recorder.save_frame(frame, frame_img_id)
@@ -163,7 +162,7 @@ while is_alive:
     """ Profiler """
     profiler.stop("Other")
     profiler.stop("Total")
-    if Config.params["verbose"]:
+    if Config.autocam["verbose"]:
         profiler.print_summary()
 
     """ Next frame """

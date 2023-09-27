@@ -1,9 +1,10 @@
 from functools import cached_property
 from pathlib import Path
 import cv2
-from config import Config
-from constants import colors
-from utils import path2str
+from utils.config import Config
+from utils.constants import colors
+from utils.protocols import HasStats
+from utils.helpers import path2str
 
 
 class VideoRecorder:
@@ -61,7 +62,7 @@ class VideoRecorder:
 
     @cached_property
     def frame_size(self):
-        if Config.params["debug"]:
+        if Config.autocam["debug"]:
             return self.camera.FRAME_W + VideoRecorder.STATS_WIDTH, self.camera.FRAME_H
 
         return self.camera.FRAME_W, self.camera.FRAME_H
@@ -98,8 +99,8 @@ class VideoRecorder:
                 text_y += self.spacing
             text_y += self.spacing
 
-        def get_stats(model, name):
-            stats = model.get_stats()
+        def get_stats(obj: HasStats, name):
+            stats = obj.get_stats()
             stats["Name"] = f"{name}: {stats['Name']}"
             return stats
 
@@ -137,7 +138,7 @@ class VideoRecorder:
         return frame
 
     def get_frame(self, frame, top_down_frame):
-        if Config.params["debug"]:
+        if Config.autocam["debug"]:
             frame = self.add_top_down(frame, top_down_frame)
             frame = self.add_stats_bar(frame)
         return frame

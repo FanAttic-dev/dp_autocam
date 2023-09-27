@@ -1,0 +1,58 @@
+{
+	"dataset": {
+		"config": "./configs/config_trnava_zilina.json",
+		"video": "main_p0.mp4"
+	},
+	"use_trnava_zilina": true,
+	"correct_rotation": true,
+	"debug": false,
+	"verbose": true,
+	"eval": {
+		"export_enabled": true,
+		"export_every_x_seconds": 20,
+		"pitch_overlay": false
+	},
+	"drawing": {
+		"enabled": false,
+		"show_split_frames": false,
+		"show_original": true,
+		"show_top_down_window": false
+	},
+	"dead_zone": {
+		"enabled": false,
+		"size": [
+			80,
+			300
+		]
+	},
+	"detector": {
+		"ball_confidence": 0.35,
+		"ball_max_det": 1,
+		"players_confidence": 0.25
+	},
+	"ball_pf": {
+		"dt": 0.1,
+		"N": 500,
+		"std_pos": 10,
+		"std_meas": 150,
+		"players_ball_alpha": 0.6
+	},
+	"players_kf": {
+		"dt": 0.1,
+		"std_acc": 1,
+		"std_meas": 5
+	},
+	"zoom": {
+		"var_min": 100,
+		"var_max": 5000
+	},
+	"u_control": {
+		"center": {
+			"alpha": 0.1,
+			"var_th": 5000
+		},
+		"velocity": {
+			"alpha": 3
+		}
+	}
+}

@@ -1,12 +1,12 @@
 from pathlib import Path
 import cv2
-from config import Config
+from utils.config import Config
 
-from video_player import VideoPlayer
+from video_tools.video_player import VideoPlayer
 
 videos_dir = Path("../../datasets/TrnavaZilina/VAR")
 im_size = (1280, 720)
-export_interval_sec = Config.params["eval"]["export_every_x_seconds"]
+export_interval_sec = Config.autocam["eval"]["export_every_x_seconds"]
 
 
 def get_frames_dir(videos_dir, video_path):
@@ -20,7 +20,7 @@ def get_frame_path(frame_id):
 for period in ["var_p0.mp4", "var_p1.mp4"]:
     video_path = videos_dir / period
     frames_dir = get_frames_dir(videos_dir, video_path)
-    Path.mkdir(frames_dir, exist_ok=True)
+    Path.mkdir(frames_dir, exist_ok=False)
 
     player = VideoPlayer(video_path)
 
