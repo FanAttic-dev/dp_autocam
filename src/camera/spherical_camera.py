@@ -1,4 +1,3 @@
-from functools import cached_property
 import cv2
 import numpy as np
 from camera.projective_camera import ProjectiveCamera
@@ -8,14 +7,6 @@ from utils.config import Config
 class SphericalCamera(ProjectiveCamera):
     def __init__(self, frame_orig, config: Config):
         super().__init__(frame_orig, config)
-
-    @cached_property
-    def H(self):
-        ...
-
-    @cached_property
-    def H_inv(self):
-        ...
 
     @property
     def fov_horiz_deg(self):
@@ -30,6 +21,9 @@ class SphericalCamera(ProjectiveCamera):
 
     def ptz2coords(self, theta_deg, phi_deg, f):
         ...
+
+    def process_input(self, key, mouseX, mouseY):
+        return super().process_input(key, mouseX, mouseY)
 
     def get_stats(self):
         stats = {

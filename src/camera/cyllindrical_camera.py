@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+from camera.camera import Camera
 from camera.projective_camera import ProjectiveCamera
 from utils.config import Config
 from utils.helpers import get_pitch_rotation_rad, rotate_pts
@@ -15,7 +16,7 @@ class CyllindricalCamera(ProjectiveCamera):
     @property
     def H(self):
         src = self.get_corner_pts()
-        dst = CyllindricalCamera.FRAME_CORNERS
+        dst = Camera.FRAME_CORNERS
 
         H, _ = cv2.findHomography(src, dst)
 

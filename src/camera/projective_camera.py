@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from functools import cached_property
 import cv2
 import numpy as np
 from camera.PID import PID
@@ -228,15 +229,16 @@ class ProjectiveCamera(Camera):
     def ptz2coords(self, theta_deg, phi_deg, f):
         ...
 
-    @property
-    @abstractmethod
+    @cached_property
     def H(self):
-        ...
+        src = self.get_corner_pts()
+        dst = Camera.FRAME_CORNERS
+        H, _ = cv2.findHomography(src, dst)
+        return H
 
-    @property
-    @abstractmethod
+    @cached_property
     def H_inv(self):
-        ...
+        return np.linalg.inv(self.H)
 
     @property
     def is_meas_in_dead_zone(self):

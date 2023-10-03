@@ -1,6 +1,7 @@
 import cv2
 import argparse
 from camera.cyllindrical_camera import CyllindricalCamera
+from camera.spherical_camera import SphericalCamera
 from utils.config import Config
 from detection.detector import YoloPlayerDetector
 from detection.frame_splitter import FrameSplitter
@@ -41,6 +42,7 @@ delay = player.get_delay(args.record)
 
 is_alive, frame_orig = player.get_next_frame()
 camera = CyllindricalCamera(frame_orig, config)
+# camera = SphericalCamera(frame_orig, config)
 frame_splitter = FrameSplitter(frame_orig, config)
 top_down = TopDown(config.pitch_coords, camera)
 detector = YoloPlayerDetector(frame_orig, top_down, config)
@@ -125,7 +127,7 @@ while is_alive:
     """ Original frame """
     if Config.autocam["drawing"]["enabled"]:
         frame_splitter.draw_roi_(frame_orig)
-        camera.draw_players_bb(frame_orig, bbs_joined)
+        # camera.draw_players_bb(frame_orig, bbs_joined)
         camera.draw_roi_(frame_orig)
     if not args.hide_windows and Config.autocam["drawing"]["show_original"]:
         player.show_frame(frame_orig, "Original")
@@ -156,8 +158,8 @@ while is_alive:
         recorder.save_frame(frame, frame_img_id)
         recorder.save_frame(frame_warped, frame_img_id, "warped")
 
-    if not args.hide_windows:
-        player.show_frame(frame_warped, "warped")
+    # if not args.hide_windows:
+    #     player.show_frame(frame_warped, "warped")
 
     """ Profiler """
     profiler.stop("Other")
