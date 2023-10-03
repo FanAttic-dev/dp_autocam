@@ -85,6 +85,6 @@ class CyllindricalCamera(ProjectiveCamera):
             # "fov_horiz_deg": self.fov_horiz_deg,
             # "fov_vert_deg": self.fov_vert_deg,
             "players_vel": self.players_filter.vel.squeeze(1),
-            "players_std": np.sqrt(self.players_var),
+            "players_std": np.sqrt(self.players_var) if self.players_var is not None else "",
         }
         return stats

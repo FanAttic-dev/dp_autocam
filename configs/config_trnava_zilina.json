@@ -5,18 +5,18 @@
 		"cyllinder_radius": 2000,
 		"pan_deg": {
 			"default": -3.3,
-			"min": -22,
-			"max": 27
+			"min": -50,
+			"max": 50
 		},
 		"tilt_deg": {
 			"default": -1.1,
-			"min": -3,
-			"max": 3
+			"min": -50,
+			"max": 50
 		},
 		"zoom_f": {
 			"default": 180,
-			"min": 150,
-			"max": 250
+			"min": 10,
+			"max": 1000
 		}
 	},
 	"frame_splitter_params": [
