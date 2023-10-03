@@ -173,7 +173,7 @@ while is_alive:
 
     """ Input """
     key = cv2.waitKey(delay)
-    is_alive = camera.process_input(key, mousePos["x"], mousePos["y"])
+    is_alive = is_alive and camera.process_input(
 
 
 print(f"Video: {config.video_path}")
