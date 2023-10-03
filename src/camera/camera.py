@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from functools import cached_property
 import cv2
 import numpy as np
 from camera.PID import PID
@@ -11,10 +12,29 @@ from utils.protocols import HasStats
 
 
 class Camera(ABC, HasStats):
+    FRAME_ASPECT_RATIO = 16/9
+    FRAME_W = 1920
+    FRAME_H = int(FRAME_W / FRAME_ASPECT_RATIO)
+    FRAME_CORNERS = np.array([
+        [0, 0],
+        [0, FRAME_H-1],
+        [FRAME_W-1, FRAME_H-1],
+        [FRAME_W-1, 0]
+    ], dtype=np.int16)
+
     @property
     @abstractmethod
     def center(self):
         ...
+
+    @property
+    def corners_ang(self):
+        return {
+            "left top": [-self.fov_horiz_deg / 2, -self.fov_vert_deg / 2],
+            "left bottom": [-self.fov_horiz_deg / 2, self.fov_vert_deg / 2],
+            "right bottom": [self.fov_horiz_deg / 2, self.fov_vert_deg / 2],
+            "right top": [self.fov_horiz_deg / 2, -self.fov_vert_deg / 2],
+        }
 
     @abstractmethod
     def get_frame(self, frame_orig):
@@ -36,32 +56,18 @@ class Camera(ABC, HasStats):
     def get_stats(self) -> dict:
         ...
 
+    def print(self):
+        print(self.get_stats())
 
-class PerspectiveCamera(Camera):
-    SENSOR_W = 100
+
+class ProjectiveCamera(Camera):
     PAN_DX = 1
     TILT_DY = 1
     ZOOM_DZ = 1
 
-    FRAME_ASPECT_RATIO = 16/9
-    FRAME_W = 1920
-    FRAME_H = int(FRAME_W / FRAME_ASPECT_RATIO)
-    FRAME_CORNERS = np.array([
-        [0, 0],
-        [0, FRAME_H-1],
-        [FRAME_W-1, FRAME_H-1],
-        [FRAME_W-1, 0]
-    ], dtype=np.int16)
-
-    def __init__(self, frame_orig, config: Config, pan_deg=None, tilt_deg=None, zoom_f=None):
-        self.sensor_w = PerspectiveCamera.SENSOR_W
+    def __init__(self, frame_orig, config: Config):
         self.config = config
         self.init_ptz(config.dataset)
-
-        pan_deg = pan_deg if pan_deg is not None else self.pan_deg_default
-        tilt_deg = tilt_deg if tilt_deg is not None else self.tilt_deg_default
-        zoom_f = zoom_f if zoom_f is not None else self.zoom_f_default
-        self.set(pan_deg, tilt_deg, zoom_f)
 
         h, w, _ = frame_orig.shape
         self.frame_orig_shape = frame_orig.shape
@@ -196,51 +202,7 @@ class PerspectiveCamera(Camera):
         self.u_last = u
         self.is_initialized = True
 
-    @property
-    def fov_horiz_deg(self):
-        return np.rad2deg(2 * np.arctan(self.sensor_w / (2 * self.zoom_f)))
-
-    @property
-    def fov_vert_deg(self):
-        return self.fov_horiz_deg / 16 * 9
-
-    @property
-    def center(self):
-        return self.ptz2coords(self.pan_deg, self.tilt_deg, self.zoom_f)
-
-    @property
-    def corners_ang(self):
-        return {
-            "left top": [-self.fov_horiz_deg / 2, -self.fov_vert_deg / 2],
-            "left bottom": [-self.fov_horiz_deg / 2, self.fov_vert_deg / 2],
-            "right bottom": [self.fov_horiz_deg / 2, self.fov_vert_deg / 2],
-            "right top": [self.fov_horiz_deg / 2, -self.fov_vert_deg / 2],
-        }
-
-    @property
-    def H(self):
-        src = self.get_corner_pts()
-        dst = PerspectiveCamera.FRAME_CORNERS
-
-        H, _ = cv2.findHomography(src, dst)
-
-        if Config.autocam["correct_rotation"]:
-            # TODO: use lookup table
-            pitch_coords_orig = self.config.pitch_coords_pts
-            pitch_coords_frame = cv2.perspectiveTransform(
-                pitch_coords_orig.astype(np.float64), H)
-            roll_rad = get_pitch_rotation_rad(pitch_coords_frame)
-
-            src = np.array(rotate_pts(src, roll_rad), dtype=np.int32)
-            H, _ = cv2.findHomography(src, dst)
-
-        return H
-
-    @property
-    def H_inv(self):
-        return np.linalg.inv(self.H)
-
-    def set(self, pan_deg, tilt_deg, zoom_f):
+    def set_ptz(self, pan_deg, tilt_deg, zoom_f):
         self.pan_deg = np.clip(
             pan_deg,
             self.pan_deg_min,
@@ -256,6 +218,7 @@ class PerspectiveCamera(Camera):
             self.zoom_f_min,
             self.zoom_f_max
         )
+        return self
 
     def init_ptz(self, config):
         camera_config = config["camera_params"]
@@ -273,22 +236,57 @@ class PerspectiveCamera(Camera):
         self.zoom_f_max = camera_config["zoom_f"]["max"]
         self.zoom_f_default = camera_config["zoom_f"]["default"]
 
-    def set_center(self, x, y, f=None):
-        pan_deg, tilt_deg = self.coords2ptz(x, y)
-        f = f if f is not None else self.zoom_f
-        self.set(pan_deg, tilt_deg, f)
+        self.set_ptz(self.pan_deg_default,
+                     self.tilt_deg_default, self.zoom_f_default)
 
     def init_dead_zone(self):
         size = np.array(Config.autocam["dead_zone"]["size"])
 
         center = np.array([
-            PerspectiveCamera.FRAME_W // 2,
-            PerspectiveCamera.FRAME_H // 2
+            ProjectiveCamera.FRAME_W // 2,
+            ProjectiveCamera.FRAME_H // 2
         ])
         self.dead_zone = np.array([
             center - size // 2,  # start point (top left)
             center + size // 2  # end point (bottom right)
         ])
+
+    @property
+    @abstractmethod
+    def fov_horiz_deg(self):
+        ...
+
+    @property
+    @abstractmethod
+    def fov_vert_deg(self):
+        ...
+
+    @property
+    def center(self):
+        return self.ptz2coords(self.pan_deg, self.tilt_deg, self.zoom_f)
+
+    def set_center(self, x, y, f=None):
+        pan_deg, tilt_deg = self.coords2ptz(x, y)
+        f = f if f is not None else self.zoom_f
+        self.set_ptz(pan_deg, tilt_deg, f)
+
+    @abstractmethod
+    def coords2ptz(self, x, y):
+        ...
+
+    @abstractmethod
+    def ptz2coords(self, theta_deg, phi_deg, f):
+        ...
+
+    @property
+    @abstractmethod
+    def H(self):
+        ...
+
+    @property
+    @abstractmethod
+    def H_inv(self):
+        ...
 
     @property
     def is_meas_in_dead_zone(self):
@@ -309,22 +307,6 @@ class PerspectiveCamera(Camera):
         y = y - self.frame_orig_center_y
         return x, y
 
-    def ptz2coords(self, theta_deg, phi_deg, f):
-        theta_rad = np.deg2rad(theta_deg)
-        x = np.tan(theta_rad) * self.cyllinder_radius
-
-        phi_rad = np.deg2rad(phi_deg)
-        y = np.tan(phi_rad) * \
-            np.sqrt(self.cyllinder_radius**2 + x**2)
-        return self.shift_coords(int(x), int(y))
-
-    def coords2ptz(self, x, y):
-        x, y = self.unshift_coords(x, y)
-        pan_deg = np.rad2deg(np.arctan(x / self.cyllinder_radius))
-        tilt_deg = np.rad2deg(
-            np.arctan(y / (np.sqrt(self.cyllinder_radius**2 + x**2))))
-        return pan_deg, tilt_deg
-
     def get_corner_pts(self):
         pts = [
             self.ptz2coords(
@@ -333,7 +315,6 @@ class PerspectiveCamera(Camera):
                 self.zoom_f)
             for pan_deg, tilt_deg in self.corners_ang.values()
         ]
-
         return np.array(pts, dtype=np.int32)
 
     def draw_roi_(self, frame_orig, color=colors["yellow"]):
@@ -379,53 +360,154 @@ class PerspectiveCamera(Camera):
         return cv2.warpPerspective(
             frame_orig,
             self.H,
-            (PerspectiveCamera.FRAME_W, PerspectiveCamera.FRAME_H),
+            (ProjectiveCamera.FRAME_W, ProjectiveCamera.FRAME_H),
             flags=INTERPOLATION_TYPE
         )
 
     def pan(self, dx):
         pan_deg = self.pan_deg + dx
-        self.set(pan_deg, self.tilt_deg, self.zoom_f)
+        self.set_ptz(pan_deg, self.tilt_deg, self.zoom_f)
 
     def tilt(self, dy):
         tilt_deg = self.tilt_deg + dy
-        self.set(self.pan_deg, tilt_deg, self.zoom_f)
+        self.set_ptz(self.pan_deg, tilt_deg, self.zoom_f)
 
     def zoom(self, dz):
         f = self.zoom_f + dz
-        self.set(self.pan_deg, self.tilt_deg, f)
+        self.set_ptz(self.pan_deg, self.tilt_deg, f)
 
     def process_input(self, key, mouseX, mouseY):
         is_alive = True
         if key == ord('d'):
-            self.pan(PerspectiveCamera.PAN_DX)
+            self.pan(ProjectiveCamera.PAN_DX)
         elif key == ord('a'):
-            self.pan(-PerspectiveCamera.PAN_DX)
+            self.pan(-ProjectiveCamera.PAN_DX)
         elif key == ord('w'):
-            self.tilt(-PerspectiveCamera.TILT_DY)
+            self.tilt(-ProjectiveCamera.TILT_DY)
         elif key == ord('s'):
-            self.tilt(PerspectiveCamera.TILT_DY)
+            self.tilt(ProjectiveCamera.TILT_DY)
         elif key == ord('p'):
-            self.zoom(PerspectiveCamera.ZOOM_DZ)
+            self.zoom(ProjectiveCamera.ZOOM_DZ)
         elif key == ord('m'):
-            self.zoom(-PerspectiveCamera.ZOOM_DZ)
-        elif key == ord('+'):
-            self.sensor_w += 1
-        elif key == ord('-'):
-            self.sensor_w -= 1
-        elif key == ord('c'):
-            self.cyllinder_radius += 10
-        elif key == ord('v'):
-            self.cyllinder_radius -= 10
+            self.zoom(-ProjectiveCamera.ZOOM_DZ)
         elif key == ord('f'):
             self.set_center(mouseX, mouseY)
         elif key == ord('q'):
             is_alive = False
         return is_alive
 
+
+class SphericalCamera(ProjectiveCamera):
+    def __init__(self, frame_orig, config: Config):
+        super().__init__(frame_orig, config)
+
+    @cached_property
+    def H(self):
+        ...
+
+    @cached_property
+    def H_inv(self):
+        ...
+
+    @property
+    def fov_horiz_deg(self):
+        ...
+
+    @property
+    def fov_vert_deg(self):
+        ...
+
+    def coords2ptz(self, x, y):
+        ...
+
+    def ptz2coords(self, theta_deg, phi_deg, f):
+        ...
+
     def get_stats(self):
         stats = {
-            "Name": PerspectiveCamera.__name__,
+            "Name": SphericalCamera.__name__,
+            "f": f"{self.zoom_f:.2f}",
+            "pan_deg": f"{self.pan_deg:.4f}",
+            "tilt_deg": f"{self.tilt_deg:.4f}",
+            "fov_horiz_deg": self.fov_horiz_deg,
+            "fov_vert_deg": self.fov_vert_deg,
+            "players_vel": self.players_filter.vel.squeeze(1),
+            "players_std": np.sqrt(self.players_var),
+        }
+        return stats
+
+
+class ProjectiveCamera(ProjectiveCamera):
+    SENSOR_W = 100
+
+    def __init__(self, frame_orig, config: Config):
+        super().__init__(frame_orig, config)
+        self.sensor_w = ProjectiveCamera.SENSOR_W
+
+    @property
+    def H(self):
+        src = self.get_corner_pts()
+        dst = ProjectiveCamera.FRAME_CORNERS
+
+        H, _ = cv2.findHomography(src, dst)
+
+        if Config.autocam["correct_rotation"]:
+            # TODO: use lookup table
+            pitch_coords_orig = self.config.pitch_coords_pts
+            pitch_coords_frame = cv2.perspectiveTransform(
+                pitch_coords_orig.astype(np.float64), H)
+            roll_rad = get_pitch_rotation_rad(pitch_coords_frame)
+
+            src = np.array(rotate_pts(src, roll_rad), dtype=np.int32)
+            H, _ = cv2.findHomography(src, dst)
+
+        return H
+
+    @property
+    def H_inv(self):
+        return np.linalg.inv(self.H)
+
+    @property
+    def fov_horiz_deg(self):
+        return np.rad2deg(2 * np.arctan(self.sensor_w / (2 * self.zoom_f)))
+
+    @property
+    def fov_vert_deg(self):
+        return self.fov_horiz_deg / 16 * 9
+
+    def ptz2coords(self, theta_deg, phi_deg, f):
+        theta_rad = np.deg2rad(theta_deg)
+        x = np.tan(theta_rad) * self.cyllinder_radius
+
+        phi_rad = np.deg2rad(phi_deg)
+        y = np.tan(phi_rad) * \
+            np.sqrt(self.cyllinder_radius**2 + x**2)
+        return self.shift_coords(int(x), int(y))
+
+    def coords2ptz(self, x, y):
+        x, y = self.unshift_coords(x, y)
+        pan_deg = np.rad2deg(np.arctan(x / self.cyllinder_radius))
+        tilt_deg = np.rad2deg(
+            np.arctan(y / (np.sqrt(self.cyllinder_radius**2 + x**2))))
+        return pan_deg, tilt_deg
+
+    def process_input(self, key, mouseX, mouseY):
+        is_alive = True
+        if key == ord('c'):
+            self.cyllinder_radius += 10
+        elif key == ord('v'):
+            self.cyllinder_radius -= 10
+        elif key == ord('+'):
+            self.sensor_w += 1
+        elif key == ord('-'):
+            self.sensor_w -= 1
+        else:
+            is_alive = super().process_input(key, mouseX, mouseY)
+        return is_alive
+
+    def get_stats(self):
+        stats = {
+            "Name": ProjectiveCamera.__name__,
             "f": f"{self.zoom_f:.2f}",
             # "sensor_w": self.sensor_w,
             # "cyllinder_r": self.cyllinder_radius,
@@ -437,6 +519,3 @@ class PerspectiveCamera(Camera):
             "players_std": np.sqrt(self.players_var),
         }
         return stats
-
-    def print(self):
-        print(self.get_stats())

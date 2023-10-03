@@ -1,5 +1,5 @@
 import numpy as np
-from camera.camera import PerspectiveCamera
+from camera.camera import ProjectiveCamera
 from utils.constants import colors
 from utils.config import Config
 
@@ -9,11 +9,11 @@ from utils.helpers import apply_homography, iou
 class FrameSplitter:
     def __init__(self, frame, config: Config):
         self.cameras = [
-            PerspectiveCamera(
-                frame, config,
+            ProjectiveCamera(frame, config).set_ptz(
                 pan_deg=camera_params["pan_deg"],
                 tilt_deg=camera_params["tilt_deg"],
-                zoom_f=camera_params["zoom_f"])
+                zoom_f=camera_params["zoom_f"]
+            )
             for camera_params in config.dataset["frame_splitter_params"]
         ]
 
