@@ -216,6 +216,15 @@ class ProjectiveCamera(Camera):
     def center(self):
         return self.ptz2coords(self.pan_deg, self.tilt_deg, self.zoom_f)
 
+    @property
+    def corners_ang(self):
+        return {
+            "left top": [-self.fov_horiz_deg / 2, -self.fov_vert_deg / 2],
+            "left bottom": [-self.fov_horiz_deg / 2, self.fov_vert_deg / 2],
+            "right bottom": [self.fov_horiz_deg / 2, self.fov_vert_deg / 2],
+            "right top": [self.fov_horiz_deg / 2, -self.fov_vert_deg / 2],
+        }
+
     def set_center(self, x, y, f=None):
         pan_deg, tilt_deg = self.coords2ptz(x, y)
         f = f if f is not None else self.zoom_f
@@ -226,17 +235,18 @@ class ProjectiveCamera(Camera):
         ...
 
     @abstractmethod
-    def ptz2coords(self, theta_deg, phi_deg, f):
+    def ptz2coords(self, pan_deg, tilt_deg, zoom_f):
         ...
 
-    @cached_property
+    @property
     def H(self):
         src = self.get_corner_pts()
+        print(src)
         dst = Camera.FRAME_CORNERS
         H, _ = cv2.findHomography(src, dst)
         return H
 
-    @cached_property
+    @property
     def H_inv(self):
         return np.linalg.inv(self.H)
 

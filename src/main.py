@@ -41,14 +41,14 @@ player = VideoPlayer(config.video_path)
 delay = player.get_delay(args.record)
 
 is_alive, frame_orig = player.get_next_frame()
-camera = CyllindricalCamera(frame_orig, config)
-# camera = SphericalCamera(frame_orig, config)
+# camera = CyllindricalCamera(frame_orig, config)
+camera = SphericalCamera(frame_orig, config)
 frame_splitter = FrameSplitter(frame_orig, config)
 top_down = TopDown(config.pitch_coords, camera)
 detector = YoloPlayerDetector(frame_orig, top_down, config)
 
 # args.record = True
-# args.mouse = True
+args.mouse = True
 
 if args.mouse:
     player.create_window("Original")
@@ -105,7 +105,7 @@ while is_alive:
         camera.pid_y.update(mousePos["y"])
         pid_x = camera.pid_x.get()
         pid_y = camera.pid_y.get()
-        camera.set_center(pid_x, pid_y)
+        # camera.set_center(pid_x, pid_y)
 
         if Config.autocam["drawing"]["enabled"]:
             camera.draw_center_(frame_orig)
@@ -118,6 +118,8 @@ while is_alive:
             camera.ball_filter.draw_particles_(frame_orig)
 
     frame = camera.get_frame(frame_orig)
+    camera.draw_grid_(frame_orig)
+    camera.draw_center_(frame_orig)
     if Config.autocam["drawing"]["enabled"] and Config.autocam["dead_zone"]["enabled"]:
         camera.draw_dead_zone_(frame)
 
@@ -174,6 +176,7 @@ while is_alive:
     """ Input """
     key = cv2.waitKey(delay)
     is_alive = is_alive and camera.process_input(
+        key, mousePos["x"], mousePos["y"])
 
 
 print(f"Video: {config.video_path}")

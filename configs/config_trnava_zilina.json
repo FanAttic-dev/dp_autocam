@@ -4,12 +4,12 @@
 	"camera_params": {
 		"cyllinder_radius": 2000,
 		"pan_deg": {
-			"default": -3.3,
+			"default": 0,
 			"min": -50,
 			"max": 50
 		},
 		"tilt_deg": {
-			"default": -1.1,
+			"default": 0,
 			"min": -50,
 			"max": 50
 		},
