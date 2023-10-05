@@ -32,6 +32,19 @@ class CyllindricalCamera(ProjectiveCamera):
 
         return H
 
+    @property
+    def center(self):
+        return self.ptz2coords(self.pan_deg, self.tilt_deg)
+
+    def get_corner_pts(self):
+        pts = [
+            self.ptz2coords(
+                self.pan_deg + pan_deg,
+                self.tilt_deg + tilt_deg)
+            for pan_deg, tilt_deg in self.corners_ang.values()
+        ]
+        return np.array(pts, dtype=np.int32)
+
     def set_center(self, x, y, f=None):
         pan_deg, tilt_deg = self.coords2ptz(x, y)
         f = f if f is not None else self.zoom_f

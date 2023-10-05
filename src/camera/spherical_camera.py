@@ -15,17 +15,15 @@ class SphericalCamera(ProjectiveCamera):
         self.r = 1
         super().__init__(frame_orig, config)
         self.sensor_w = SphericalCamera.SENSOR_W
-        self._center = np.array([0, 0])
 
     def set_center(self, x, y, f=None):
-        self._center = np.array([x, y], np.int16)
-
+        pan_deg, tilt_deg = self.coords2ptz(x, y, 0, 0)
         f = f if f is not None else self.zoom_f
         self.set_ptz(pan_deg, tilt_deg, f)
 
     @property
     def center(self):
-        return self._center
+        return self.ptz2coords(self.pan_deg, self.tilt_deg, 0, 0)
 
     @property
     def fov_horiz_deg(self):
@@ -33,7 +31,7 @@ class SphericalCamera(ProjectiveCamera):
 
     @property
     def fov_vert_deg(self):
-        return self.fov_horiz_deg / 16 * 9
+        return self.fov_horiz_deg  # / 16 * 9
 
     def draw_grid_(self, frame_orig):
         lens_fov = 120
@@ -44,46 +42,63 @@ class SphericalCamera(ProjectiveCamera):
         tilts = np.arange(-limit, limit, step)
         for pan_deg in pans:
             for tilt_deg in tilts:
-                x, y = self.ptz2coords(pan_deg, tilt_deg)
+                x, y = self.ptz2coords(
+                    pan_deg, tilt_deg, self.pan_deg, self.tilt_deg)
                 cv2.circle(frame_orig, (x, y), radius=5,
                            color=colors["violet"], thickness=-1)
 
-    def ptz2coords(self, pan_deg, tilt_deg):
+    def get_corner_pts(self):
+        pts = [
+            self.ptz2coords(
+                pan_deg,
+                tilt_deg,
+                self.pan_deg,
+                self.tilt_deg)
+            for pan_deg, tilt_deg in self.corners_ang.values()
+        ]
+        return np.array(pts, dtype=np.int32)
+
+    def ptz2coords(self, pan_deg, tilt_deg, center_pan_deg, center_tilt_deg):
         """ https://mathworld.wolfram.com/GnomonicProjection.html """
+
         lambda_deg = pan_deg
         lambda_rad = np.deg2rad(lambda_deg)
         phi_deg = tilt_deg
         phi_rad = np.deg2rad(phi_deg)
+        center_pan_deg = -center_pan_deg  # convention
+        center_tilt_deg = -center_tilt_deg
+        center_pan_rad = np.deg2rad(center_pan_deg)
+        center_tilt_rad = np.deg2rad(center_tilt_deg)
 
-        lambda_0 = 0.5
-        phi_1 = 0
-
-        cos_c = np.sin(phi_1) * np.sin(phi_rad) + np.cos(phi_1) * \
-            np.cos(phi_rad) * np.cos(lambda_rad - lambda_0)
+        cos_c = np.sin(center_tilt_rad) * np.sin(phi_rad) + np.cos(center_tilt_rad) * \
+            np.cos(phi_rad) * np.cos(lambda_rad - center_pan_rad)
         x = self.r * (np.cos(phi_rad) *
-                      np.sin(lambda_rad - lambda_0)) / cos_c
-        y = self.r * (np.cos(phi_1) * np.sin(phi_rad) - np.sin(phi_1)
-                      * np.cos(phi_rad) * np.cos(lambda_rad - lambda_0)) / cos_c
+                      np.sin(lambda_rad - center_pan_rad)) / cos_c
+        y = self.r * (np.cos(center_tilt_rad) * np.sin(phi_rad) - np.sin(center_tilt_rad)
+                      * np.cos(phi_rad) * np.cos(lambda_rad - center_pan_rad)) / cos_c
 
         h, w, _ = self.frame_orig_shape
         x = x * w
         y = y * h
         return self.shift_coords(int(x), int(y))
 
-    def coords2ptz(self, x, y, center_pan, center_tilt):
-        x, y = self.unshift_coords(x, y)
+    def coords2ptz(self, x, y, center_pan_deg, center_tilt_deg):
         h, w, _ = self.frame_orig_shape
+        x, y = self.unshift_coords(x, y)
         x = x / w
         y = y / h
+
+        center_pan_rad = np.deg2rad(center_pan_deg)
+        center_tilt_rad = np.deg2rad(center_tilt_deg)
 
         rho = np.sqrt(x**2 + y**2)
         c = np.arctan(rho / self.r)
 
-        phi_rad = np.arcsin(np.cos(c) * np.sin(center_tilt) +
-                            y * np.sin(c) * np.cos(center_tilt) / rho)
-        lambda_rad = center_pan + \
-            np.arctan2(x * np.sin(c), (rho * np.cos(center_tilt) *
-                                       np.cos(c) - y * np.sin(center_tilt) * np.sin(c)))
+        phi_rad = np.arcsin(np.cos(c) * np.sin(center_tilt_rad) +
+                            y * np.sin(c) * np.cos(center_tilt_rad) / rho)
+        lambda_rad = center_pan_rad + \
+            np.arctan2(x * np.sin(c), (rho * np.cos(center_tilt_rad) *
+                                       np.cos(c) - y * np.sin(center_tilt_rad) * np.sin(c)))
 
         return np.rad2deg(lambda_rad), np.rad2deg(phi_rad)
 

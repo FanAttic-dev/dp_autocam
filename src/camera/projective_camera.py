@@ -213,8 +213,9 @@ class ProjectiveCamera(Camera):
         ...
 
     @property
+    @abstractmethod
     def center(self):
-        return self.ptz2coords(self.pan_deg, self.tilt_deg)
+        ...
 
     @property
     def corners_ang(self):
@@ -241,7 +242,6 @@ class ProjectiveCamera(Camera):
     @property
     def H(self):
         src = self.get_corner_pts()
-        print(src)
         dst = Camera.FRAME_CORNERS
         H, _ = cv2.findHomography(src, dst)
         return H
@@ -268,15 +268,6 @@ class ProjectiveCamera(Camera):
         x = x - self.frame_orig_center_x
         y = y - self.frame_orig_center_y
         return x, y
-
-    def get_corner_pts(self):
-        pts = [
-            self.ptz2coords(
-                self.pan_deg + pan_deg,
-                self.tilt_deg + tilt_deg)
-            for pan_deg, tilt_deg in self.corners_ang.values()
-        ]
-        return np.array(pts, dtype=np.int32)
 
     def draw_roi_(self, frame_orig, color=colors["yellow"]):
         pts = self.get_corner_pts()
