@@ -214,7 +214,7 @@ class ProjectiveCamera(Camera):
 
     @property
     def center(self):
-        return self.ptz2coords(self.pan_deg, self.tilt_deg, self.zoom_f)
+        return self.ptz2coords(self.pan_deg, self.tilt_deg)
 
     @property
     def corners_ang(self):
@@ -225,17 +225,17 @@ class ProjectiveCamera(Camera):
             "right top": [self.fov_horiz_deg / 2, -self.fov_vert_deg / 2],
         }
 
+    @property
+    @abstractmethod
     def set_center(self, x, y, f=None):
-        pan_deg, tilt_deg = self.coords2ptz(x, y)
-        f = f if f is not None else self.zoom_f
-        self.set_ptz(pan_deg, tilt_deg, f)
+        ...
 
     @abstractmethod
     def coords2ptz(self, x, y):
         ...
 
     @abstractmethod
-    def ptz2coords(self, pan_deg, tilt_deg, zoom_f):
+    def ptz2coords(self, pan_deg, tilt_deg):
         ...
 
     @property
@@ -273,8 +273,7 @@ class ProjectiveCamera(Camera):
         pts = [
             self.ptz2coords(
                 self.pan_deg + pan_deg,
-                self.tilt_deg + tilt_deg,
-                self.zoom_f)
+                self.tilt_deg + tilt_deg)
             for pan_deg, tilt_deg in self.corners_ang.values()
         ]
         return np.array(pts, dtype=np.int32)

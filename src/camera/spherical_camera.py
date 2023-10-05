@@ -15,6 +15,17 @@ class SphericalCamera(ProjectiveCamera):
         self.r = 1
         super().__init__(frame_orig, config)
         self.sensor_w = SphericalCamera.SENSOR_W
+        self._center = np.array([0, 0])
+
+    def set_center(self, x, y, f=None):
+        self._center = np.array([x, y], np.int16)
+
+        f = f if f is not None else self.zoom_f
+        self.set_ptz(pan_deg, tilt_deg, f)
+
+    @property
+    def center(self):
+        return self._center
 
     @property
     def fov_horiz_deg(self):
@@ -33,18 +44,18 @@ class SphericalCamera(ProjectiveCamera):
         tilts = np.arange(-limit, limit, step)
         for pan_deg in pans:
             for tilt_deg in tilts:
-                x, y = self.ptz2coords(pan_deg, tilt_deg, self.zoom_f)
+                x, y = self.ptz2coords(pan_deg, tilt_deg)
                 cv2.circle(frame_orig, (x, y), radius=5,
                            color=colors["violet"], thickness=-1)
 
-    def ptz2coords(self, pan_deg, tilt_deg, zoom_f):
+    def ptz2coords(self, pan_deg, tilt_deg):
         """ https://mathworld.wolfram.com/GnomonicProjection.html """
         lambda_deg = pan_deg
         lambda_rad = np.deg2rad(lambda_deg)
         phi_deg = tilt_deg
         phi_rad = np.deg2rad(phi_deg)
 
-        lambda_0 = 0
+        lambda_0 = 0.5
         phi_1 = 0
 
         cos_c = np.sin(phi_1) * np.sin(phi_rad) + np.cos(phi_1) * \
@@ -59,23 +70,20 @@ class SphericalCamera(ProjectiveCamera):
         y = y * h
         return self.shift_coords(int(x), int(y))
 
-    def coords2ptz(self, x, y):
+    def coords2ptz(self, x, y, center_pan, center_tilt):
         x, y = self.unshift_coords(x, y)
         h, w, _ = self.frame_orig_shape
         x = x / w
         y = y / h
 
-        lambda_0 = 0
-        phi_1 = 0
-
         rho = np.sqrt(x**2 + y**2)
         c = np.arctan(rho / self.r)
 
-        phi_rad = np.arcsin(np.cos(c) * np.sin(phi_1) +
-                            y * np.sin(c) * np.cos(phi_1) / rho)
-        lambda_rad = lambda_0 + \
-            np.arctan2(x * np.sin(c), (rho * np.cos(phi_1) *
-                                       np.cos(c) - y * np.sin(phi_1) * np.sin(c)))
+        phi_rad = np.arcsin(np.cos(c) * np.sin(center_tilt) +
+                            y * np.sin(c) * np.cos(center_tilt) / rho)
+        lambda_rad = center_pan + \
+            np.arctan2(x * np.sin(c), (rho * np.cos(center_tilt) *
+                                       np.cos(c) - y * np.sin(center_tilt) * np.sin(c)))
 
         return np.rad2deg(lambda_rad), np.rad2deg(phi_rad)
 

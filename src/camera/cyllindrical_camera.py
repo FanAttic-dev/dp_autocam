@@ -32,6 +32,11 @@ class CyllindricalCamera(ProjectiveCamera):
 
         return H
 
+    def set_center(self, x, y, f=None):
+        pan_deg, tilt_deg = self.coords2ptz(x, y)
+        f = f if f is not None else self.zoom_f
+        self.set_ptz(pan_deg, tilt_deg, f)
+
     @property
     def H_inv(self):
         return np.linalg.inv(self.H)
@@ -44,7 +49,7 @@ class CyllindricalCamera(ProjectiveCamera):
     def fov_vert_deg(self):
         return self.fov_horiz_deg / 16 * 9
 
-    def ptz2coords(self, theta_deg, phi_deg, f):
+    def ptz2coords(self, theta_deg, phi_deg):
         theta_rad = np.deg2rad(theta_deg)
         x = np.tan(theta_rad) * self.cyllinder_radius
 
