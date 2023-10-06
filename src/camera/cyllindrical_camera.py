@@ -4,6 +4,7 @@ from camera.camera import Camera
 from camera.projective_camera import ProjectiveCamera
 from utils.config import Config
 from utils.helpers import get_pitch_rotation_rad, rotate_pts
+from utils.constants import INTERPOLATION_TYPE, colors
 
 
 class CyllindricalCamera(ProjectiveCamera):
@@ -31,6 +32,10 @@ class CyllindricalCamera(ProjectiveCamera):
             H, _ = cv2.findHomography(src, dst)
 
         return H
+
+    @property
+    def H_inv(self):
+        return np.linalg.inv(self.H)
 
     @property
     def center(self):
@@ -77,6 +82,24 @@ class CyllindricalCamera(ProjectiveCamera):
         tilt_deg = np.rad2deg(
             np.arctan(y / (np.sqrt(self.cyllinder_radius**2 + x**2))))
         return pan_deg, tilt_deg
+
+    def get_frame(self, frame_orig):
+        return cv2.warpPerspective(
+            frame_orig,
+            self.H,
+            (ProjectiveCamera.FRAME_W, ProjectiveCamera.FRAME_H),
+            flags=INTERPOLATION_TYPE
+        )
+
+    def draw_roi_(self, frame_orig, color=colors["yellow"]):
+        pts = self.get_corner_pts()
+        cv2.polylines(frame_orig, [pts], True, color, thickness=10)
+
+    def draw_frame_mask(self, frame_orig):
+        mask = np.zeros(frame_orig.shape[:2], dtype=np.uint8)
+        pts = self.get_corner_pts()
+        cv2.fillPoly(mask, [pts], 255)
+        return cv2.bitwise_and(frame_orig, frame_orig, mask=mask)
 
     def process_input(self, key, mouseX, mouseY):
         is_alive = True

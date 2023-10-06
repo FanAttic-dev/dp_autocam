@@ -203,6 +203,15 @@ class ProjectiveCamera(Camera):
         ])
 
     @property
+    def corners_ang(self):
+        return {
+            "left top": [-self.fov_horiz_deg / 2, -self.fov_vert_deg / 2],
+            "left bottom": [-self.fov_horiz_deg / 2, self.fov_vert_deg / 2],
+            "right bottom": [self.fov_horiz_deg / 2, self.fov_vert_deg / 2],
+            "right top": [self.fov_horiz_deg / 2, -self.fov_vert_deg / 2],
+        }
+
+    @property
     @abstractmethod
     def fov_horiz_deg(self):
         ...
@@ -218,15 +227,6 @@ class ProjectiveCamera(Camera):
         ...
 
     @property
-    def corners_ang(self):
-        return {
-            "left top": [-self.fov_horiz_deg / 2, -self.fov_vert_deg / 2],
-            "left bottom": [-self.fov_horiz_deg / 2, self.fov_vert_deg / 2],
-            "right bottom": [self.fov_horiz_deg / 2, self.fov_vert_deg / 2],
-            "right top": [self.fov_horiz_deg / 2, -self.fov_vert_deg / 2],
-        }
-
-    @property
     @abstractmethod
     def set_center(self, x, y, f=None):
         ...
@@ -238,17 +238,6 @@ class ProjectiveCamera(Camera):
     @abstractmethod
     def ptz2coords(self, pan_deg, tilt_deg):
         ...
-
-    @property
-    def H(self):
-        src = self.get_corner_pts()
-        dst = Camera.FRAME_CORNERS
-        H, _ = cv2.findHomography(src, dst)
-        return H
-
-    @property
-    def H_inv(self):
-        return np.linalg.inv(self.H)
 
     @property
     def is_meas_in_dead_zone(self):
@@ -269,9 +258,9 @@ class ProjectiveCamera(Camera):
         y = y - self.frame_orig_center_y
         return x, y
 
+    @abstractmethod
     def draw_roi_(self, frame_orig, color=colors["yellow"]):
-        pts = self.get_corner_pts()
-        cv2.polylines(frame_orig, [pts], True, color, thickness=10)
+        ...
 
     def draw_center_(self, frame_orig, color=colors["red"]):
         cv2.circle(frame_orig, self.center,
@@ -297,24 +286,18 @@ class ProjectiveCamera(Camera):
         cv2.rectangle(frame, start, end,
                       color=colors["red"], thickness=1)
 
+    @abstractmethod
     def draw_frame_mask(self, frame_orig):
-        mask = np.zeros(frame_orig.shape[:2], dtype=np.uint8)
-        pts = self.get_corner_pts()
-        cv2.fillPoly(mask, [pts], 255)
-        return cv2.bitwise_and(frame_orig, frame_orig, mask=mask)
+        ...
 
     def draw_players_bb(self, frame_orig, bbs, color=colors["teal"]):
         x1, y1, x2, y2 = get_bounding_box(bbs)
         cv2.rectangle(frame_orig, (x1, y1), (x2, y2),
                       color, thickness=5)
 
+    @abstractmethod
     def get_frame(self, frame_orig):
-        return cv2.warpPerspective(
-            frame_orig,
-            self.H,
-            (ProjectiveCamera.FRAME_W, ProjectiveCamera.FRAME_H),
-            flags=INTERPOLATION_TYPE
-        )
+        ...
 
     def pan(self, dx):
         pan_deg = self.pan_deg + dx

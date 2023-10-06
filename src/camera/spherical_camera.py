@@ -12,7 +12,6 @@ class SphericalCamera(ProjectiveCamera):
     R_DX = .05
 
     def __init__(self, frame_orig, config: Config):
-        self.r = 1
         super().__init__(frame_orig, config)
         self.sensor_w = SphericalCamera.SENSOR_W
 
@@ -59,7 +58,9 @@ class SphericalCamera(ProjectiveCamera):
         return np.array(pts, dtype=np.int32)
 
     def ptz2coords(self, pan_deg, tilt_deg, center_pan_deg, center_tilt_deg):
-        """ https://mathworld.wolfram.com/GnomonicProjection.html """
+        """ Forward Gnomonic Projection
+            https://mathworld.wolfram.com/GnomonicProjection.html 
+        """
 
         lambda_deg = pan_deg
         lambda_rad = np.deg2rad(lambda_deg)
@@ -72,10 +73,10 @@ class SphericalCamera(ProjectiveCamera):
 
         cos_c = np.sin(center_tilt_rad) * np.sin(phi_rad) + np.cos(center_tilt_rad) * \
             np.cos(phi_rad) * np.cos(lambda_rad - center_pan_rad)
-        x = self.r * (np.cos(phi_rad) *
-                      np.sin(lambda_rad - center_pan_rad)) / cos_c
-        y = self.r * (np.cos(center_tilt_rad) * np.sin(phi_rad) - np.sin(center_tilt_rad)
-                      * np.cos(phi_rad) * np.cos(lambda_rad - center_pan_rad)) / cos_c
+        x = (np.cos(phi_rad) *
+             np.sin(lambda_rad - center_pan_rad)) / cos_c
+        y = (np.cos(center_tilt_rad) * np.sin(phi_rad) - np.sin(center_tilt_rad)
+             * np.cos(phi_rad) * np.cos(lambda_rad - center_pan_rad)) / cos_c
 
         h, w, _ = self.frame_orig_shape
         x = x * w
@@ -83,6 +84,9 @@ class SphericalCamera(ProjectiveCamera):
         return self.shift_coords(int(x), int(y))
 
     def coords2ptz(self, x, y, center_pan_deg, center_tilt_deg):
+        """ Inverse Gnomonic Projection
+            https://mathworld.wolfram.com/GnomonicProjection.html 
+        """
         h, w, _ = self.frame_orig_shape
         x, y = self.unshift_coords(x, y)
         x = x / w
@@ -92,7 +96,7 @@ class SphericalCamera(ProjectiveCamera):
         center_tilt_rad = np.deg2rad(center_tilt_deg)
 
         rho = np.sqrt(x**2 + y**2)
-        c = np.arctan(rho / self.r)
+        c = np.arctan(rho)
 
         phi_rad = np.arcsin(np.cos(c) * np.sin(center_tilt_rad) +
                             y * np.sin(c) * np.cos(center_tilt_rad) / rho)
@@ -101,6 +105,15 @@ class SphericalCamera(ProjectiveCamera):
                                        np.cos(c) - y * np.sin(center_tilt_rad) * np.sin(c)))
 
         return np.rad2deg(lambda_rad), np.rad2deg(phi_rad)
+
+    def get_frame(self, frame_orig):
+        ...  # TODO
+
+    def draw_roi_(self, frame_orig, color=colors["yellow"]):
+        ...  # TODO
+
+    def draw_frame_mask(self, frame_orig):
+        ...  # TODO
 
     def process_input(self, key, mouseX, mouseY):
         is_alive = True
@@ -112,10 +125,6 @@ class SphericalCamera(ProjectiveCamera):
             self.zoom(SphericalCamera.ZOOM_DZ)
         elif key == ord('4'):
             self.zoom(-SphericalCamera.ZOOM_DZ)
-        elif key == ord('+'):
-            self.r += SphericalCamera.R_DX
-        elif key == ord('-'):
-            self.r -= SphericalCamera.R_DX
         else:
             is_alive = super().process_input(key, mouseX, mouseY)
         return is_alive
@@ -125,7 +134,6 @@ class SphericalCamera(ProjectiveCamera):
             "Name": SphericalCamera.__name__,
             "f": f"{self.zoom_f:.2f}",
             "sensor_w": self.sensor_w,
-            "r": self.r,
             "pan_deg": f"{self.pan_deg:.4f}",
             "tilt_deg": f"{self.tilt_deg:.4f}",
             "fov_horiz_deg": self.fov_horiz_deg,
