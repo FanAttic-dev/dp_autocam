@@ -1,11 +1,10 @@
-from abc import ABC, abstractmethod
-from functools import cached_property
+from abc import abstractmethod
 import cv2
 import numpy as np
 from camera.PID import PID
 from camera.camera import Camera
 from utils.config import Config
-from utils.constants import INTERPOLATION_TYPE, colors
+from utils.constants import colors
 from filters.kalman_filter import KalmanFilterVel
 from filters.particle_filter import ParticleFilter
 from utils.helpers import apply_homography, discard_extreme_boxes_, filter_bbs_ball, get_bounding_box, get_pitch_rotation_rad, points_average, discard_extreme_points_, get_bb_center, lies_in_rectangle, points_variance
@@ -21,7 +20,7 @@ class ProjectiveCamera(Camera):
         self.init_ptz(config.dataset)
 
         h, w, _ = frame_orig.shape
-        self.frame_orig_shape = frame_orig.shape
+        self.frame_orig_size = np.array([w, h])
         self.frame_orig_center_x = w // 2
         self.frame_orig_center_y = h // 2
 
@@ -203,15 +202,6 @@ class ProjectiveCamera(Camera):
         ])
 
     @property
-    def corners_ang(self):
-        return {
-            "left top": [-self.fov_horiz_deg / 2, -self.fov_vert_deg / 2],
-            "left bottom": [-self.fov_horiz_deg / 2, self.fov_vert_deg / 2],
-            "right bottom": [self.fov_horiz_deg / 2, self.fov_vert_deg / 2],
-            "right top": [self.fov_horiz_deg / 2, -self.fov_vert_deg / 2],
-        }
-
-    @property
     @abstractmethod
     def fov_horiz_deg(self):
         ...
@@ -229,14 +219,6 @@ class ProjectiveCamera(Camera):
     @property
     @abstractmethod
     def set_center(self, x, y, f=None):
-        ...
-
-    @abstractmethod
-    def coords2ptz(self, x, y):
-        ...
-
-    @abstractmethod
-    def ptz2coords(self, pan_deg, tilt_deg):
         ...
 
     @property

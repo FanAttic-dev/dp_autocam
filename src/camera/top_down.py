@@ -129,7 +129,7 @@ class TopDown:
 
     def get_frame(self, bbs):
         top_down_frame = self.pitch_model.copy()
-        self.draw_roi_(top_down_frame)
+        # self.draw_roi_(top_down_frame)
 
         self.draw_bbs_(top_down_frame, bbs, discard_extremes=True)
         self.draw_screen_point_(

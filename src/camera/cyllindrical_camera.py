@@ -41,6 +41,15 @@ class CyllindricalCamera(ProjectiveCamera):
     def center(self):
         return self.ptz2coords(self.pan_deg, self.tilt_deg)
 
+    @property
+    def corners_ang(self):
+        return {
+            "left top": [-self.fov_horiz_deg / 2, -self.fov_vert_deg / 2],
+            "left bottom": [-self.fov_horiz_deg / 2, self.fov_vert_deg / 2],
+            "right bottom": [self.fov_horiz_deg / 2, self.fov_vert_deg / 2],
+            "right top": [self.fov_horiz_deg / 2, -self.fov_vert_deg / 2],
+        }
+
     def get_corner_pts(self):
         pts = [
             self.ptz2coords(
@@ -65,7 +74,7 @@ class CyllindricalCamera(ProjectiveCamera):
 
     @property
     def fov_vert_deg(self):
-        return self.fov_horiz_deg / 16 * 9
+        return self.fov_horiz_deg / Camera.FRAME_ASPECT_RATIO
 
     def ptz2coords(self, theta_deg, phi_deg):
         theta_rad = np.deg2rad(theta_deg)

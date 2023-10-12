@@ -1,75 +1,98 @@
 import cv2
 import numpy as np
+from camera.camera import Camera
 from camera.projective_camera import ProjectiveCamera
 from utils.config import Config
-from utils.constants import colors
+from utils.constants import INTERPOLATION_TYPE, colors
 
 
 class SphericalCamera(ProjectiveCamera):
+    ZOOM_DZ = 1
     SENSOR_W = 100
-    ZOOM_DZ = 10
-    SENSOR_W_DX = 10
-    R_DX = .05
 
     def __init__(self, frame_orig, config: Config):
-        super().__init__(frame_orig, config)
+        self.lens_fov_horiz_deg = 115
+        self.lens_fov_vert_deg = 99
         self.sensor_w = SphericalCamera.SENSOR_W
 
+        self.lens_fov_horiz_rad = np.deg2rad(self.lens_fov_horiz_deg)
+        self.lens_fov_vert_rad = np.deg2rad(self.lens_fov_vert_deg)
+
+        coords_screen_frame = self._get_coords_screen_frame()
+        self.coords_spherical_frame = self._screen2spherical(
+            coords_screen_frame)
+
+        super().__init__(frame_orig, config)
+
+    @property
+    def limits(self):
+        return np.array([self.lens_fov_horiz_rad, self.lens_fov_vert_rad], dtype=np.float32) / 2
+
+    @property
+    def coords_spherical_fov(self):
+        coords = self.coords_spherical_frame * \
+            (self.fov_rad / 2 / self.limits)
+
+        return self._gnomonic_forward(coords)
+
+    @property
+    def coords_screen_fov(self):
+        return self._spherical2screen(self.coords_spherical_fov)
+
+    def _get_coords_screen_frame(self):
+        xx, yy = np.meshgrid(np.linspace(0, 1, Camera.FRAME_W),
+                             np.linspace(0, 1, Camera.FRAME_H))
+        return np.array([xx.ravel(), yy.ravel()], dtype=np.float32).T
+
+    def _screen2spherical(self, coord_screen):
+        """ In range: [0, 1], out range: [-FoV_lens/2, FoV_lens/2] """
+        return (coord_screen * 2 - 1) * self.limits
+
+    def _spherical2screen(self, coord_spherical):
+        """ In range: [-FoV_lens/2, FoV_lens/2], out range: [0, 1] """
+        x, y = coord_spherical.T
+        horiz_limit, vert_limit = self.limits
+        x = (x / horiz_limit + 1.) * 0.5
+        y = (y / vert_limit + 1.) * 0.5
+        return np.array([x, y], dtype=np.float32).T
+
     def set_center(self, x, y, f=None):
-        pan_deg, tilt_deg = self.coords2ptz(x, y, 0, 0)
+        coords_screen = np.array(
+            [x, y], dtype=np.float32) / self.frame_orig_size
+        pan_deg, tilt_deg = np.rad2deg(self._screen2spherical(coords_screen))
         f = f if f is not None else self.zoom_f
         self.set_ptz(pan_deg, tilt_deg, f)
 
     @property
     def center(self):
-        return self.ptz2coords(self.pan_deg, self.tilt_deg, 0, 0)
+        coords_screen = self._spherical2screen(
+            np.array([self.pan_deg, self.tilt_deg], dtype=np.float32))
+        return (coords_screen * self.frame_orig_size).astype(np.uint16)
+
+    @property
+    def fov_rad(self):
+        return np.deg2rad(np.array([self.fov_horiz_deg, self.fov_vert_deg]), dtype=np.float32)
 
     @property
     def fov_horiz_deg(self):
         return np.rad2deg(2 * np.arctan(self.sensor_w / (2 * self.zoom_f)))
 
+    def get_corner_pts(self):
+        # TODO
+        ...
+
     @property
     def fov_vert_deg(self):
-        return self.fov_horiz_deg  # / 16 * 9
+        return self.fov_horiz_deg / Camera.FRAME_ASPECT_RATIO
 
-    def draw_grid_(self, frame_orig):
-        lens_fov = 120
+    def _gnomonic_forward(self, coord_spherical):
+        """ In/out range: [-FoV_lens/2, FoV_lens/2] """
 
-        step = 1
-        limit = lens_fov / 2
-        pans = np.arange(-limit, limit, step)
-        tilts = np.arange(-limit, limit, step)
-        for pan_deg in pans:
-            for tilt_deg in tilts:
-                x, y = self.ptz2coords(
-                    pan_deg, tilt_deg, self.pan_deg, self.tilt_deg)
-                cv2.circle(frame_orig, (x, y), radius=5,
-                           color=colors["violet"], thickness=-1)
+        lambda_rad = coord_spherical.T[0]
+        phi_rad = coord_spherical.T[1]
 
-    def get_corner_pts(self):
-        pts = [
-            self.ptz2coords(
-                pan_deg,
-                tilt_deg,
-                self.pan_deg,
-                self.tilt_deg)
-            for pan_deg, tilt_deg in self.corners_ang.values()
-        ]
-        return np.array(pts, dtype=np.int32)
-
-    def ptz2coords(self, pan_deg, tilt_deg, center_pan_deg, center_tilt_deg):
-        """ Forward Gnomonic Projection
-            https://mathworld.wolfram.com/GnomonicProjection.html 
-        """
-
-        lambda_deg = pan_deg
-        lambda_rad = np.deg2rad(lambda_deg)
-        phi_deg = tilt_deg
-        phi_rad = np.deg2rad(phi_deg)
-        center_pan_deg = -center_pan_deg  # convention
-        center_tilt_deg = -center_tilt_deg
-        center_pan_rad = np.deg2rad(center_pan_deg)
-        center_tilt_rad = np.deg2rad(center_tilt_deg)
+        center_pan_rad = np.deg2rad(self.pan_deg)
+        center_tilt_rad = np.deg2rad(self.tilt_deg)
 
         cos_c = np.sin(center_tilt_rad) * np.sin(phi_rad) + np.cos(center_tilt_rad) * \
             np.cos(phi_rad) * np.cos(lambda_rad - center_pan_rad)
@@ -78,42 +101,73 @@ class SphericalCamera(ProjectiveCamera):
         y = (np.cos(center_tilt_rad) * np.sin(phi_rad) - np.sin(center_tilt_rad)
              * np.cos(phi_rad) * np.cos(lambda_rad - center_pan_rad)) / cos_c
 
-        h, w, _ = self.frame_orig_shape
-        x = x * w
-        y = y * h
-        return self.shift_coords(int(x), int(y))
+        return np.array([x, y]).T
 
-    def coords2ptz(self, x, y, center_pan_deg, center_tilt_deg):
-        """ Inverse Gnomonic Projection
-            https://mathworld.wolfram.com/GnomonicProjection.html 
-        """
-        h, w, _ = self.frame_orig_shape
-        x, y = self.unshift_coords(x, y)
-        x = x / w
-        y = y / h
+    def _gnomonic_inverse(self, coord_spherical):
+        """ In/out range: [-FoV_lens/2, FoV_lens/2] """
 
-        center_pan_rad = np.deg2rad(center_pan_deg)
-        center_tilt_rad = np.deg2rad(center_tilt_deg)
+        x = coord_spherical.T[0]
+        y = coord_spherical.T[1]
 
-        rho = np.sqrt(x**2 + y**2)
-        c = np.arctan(rho)
+        rou = np.sqrt(x ** 2 + y ** 2)
+        c = np.arctan(rou)
+        sin_c = np.sin(c)
+        cos_c = np.cos(c)
 
-        phi_rad = np.arcsin(np.cos(c) * np.sin(center_tilt_rad) +
-                            y * np.sin(c) * np.cos(center_tilt_rad) / rho)
-        lambda_rad = center_pan_rad + \
-            np.arctan2(x * np.sin(c), (rho * np.cos(center_tilt_rad) *
-                                       np.cos(c) - y * np.sin(center_tilt_rad) * np.sin(c)))
+        lat = np.arcsin(
+            cos_c * np.sin(self.cp[1]) + (y * sin_c * np.cos(self.cp[1])) / rou)
+        lon = self.cp[0] + np.arctan2(x * sin_c, rou * np.cos(self.cp[1])
+                                      * cos_c - y * np.sin(self.cp[1]) * sin_c)
 
-        return np.rad2deg(lambda_rad), np.rad2deg(phi_rad)
+        return np.array([lon, lat]).T
+
+    def _remap(self, frame_orig, coords):
+        """ In range: [0, 1], Out img range: [0, frame_size] """
+
+        frame_orig_h, frame_orig_w, _ = frame_orig.shape
+        frame_size = [Camera.FRAME_H, Camera.FRAME_W]
+
+        map_x = coords[:, 0] * frame_orig_w
+        map_y = coords[:, 1] * frame_orig_h
+        map_x = np.reshape(map_x, frame_size)
+        map_y = np.reshape(map_y, frame_size)
+
+        return cv2.remap(frame_orig, map_x, map_y, interpolation=INTERPOLATION_TYPE)
 
     def get_frame(self, frame_orig):
-        ...  # TODO
+        return self._remap(frame_orig, self.coords_screen_fov)
 
-    def draw_roi_(self, frame_orig, color=colors["yellow"]):
-        ...  # TODO
+    def draw_roi_(self, frame_orig, color=colors["violet"]):
+        frame_orig_h, frame_orig_w, _ = frame_orig.shape
+        frame_size = np.array([frame_orig_w, frame_orig_h], dtype=np.int32)
+        coords = np.reshape(self.coords_screen_fov,
+                            (Camera.FRAME_H, Camera.FRAME_W, 2))
+        coords = (coords * frame_size).astype(np.int32)
+
+        skip = 50
+        top = coords[0, ::skip, :]
+        right = coords[::skip, -1, :]
+        bottom = coords[-1, ::skip, :]
+        left = coords[::skip, 0, :]
+
+        for x, y in np.concatenate([top, right, bottom, left]):
+            cv2.circle(frame_orig, [x, y], radius=5,
+                       color=color, thickness=-1)
 
     def draw_frame_mask(self, frame_orig):
         ...  # TODO
+
+    def draw_grid_(self, frame_orig):
+        step = 1
+        limit_horiz, limit_vert = self.limits
+        pans = np.arange(-limit_horiz, limit_horiz, step)
+        tilts = np.arange(-limit_vert, limit_vert, step)
+        for pan_deg in pans:
+            for tilt_deg in tilts:
+                x, y = self.ptz2coords(
+                    pan_deg, tilt_deg, self.pan_deg, self.tilt_deg)
+                cv2.circle(frame_orig, (x, y), radius=5,
+                           color=colors["violet"], thickness=-1)
 
     def process_input(self, key, mouseX, mouseY):
         is_alive = True

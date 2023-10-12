@@ -43,6 +43,7 @@ delay = player.get_delay(args.record)
 is_alive, frame_orig = player.get_next_frame()
 # camera = CyllindricalCamera(frame_orig, config)
 camera = SphericalCamera(frame_orig, config)
+camera.center
 frame_splitter = FrameSplitter(frame_orig, config)
 top_down = TopDown(config.pitch_coords, camera)
 detector = YoloPlayerDetector(frame_orig, top_down, config)
@@ -118,7 +119,7 @@ while is_alive:
             camera.ball_filter.draw_particles_(frame_orig)
 
     frame = camera.get_frame(frame_orig)
-    camera.draw_grid_(frame_orig)
+    # camera.draw_grid_(frame_orig) # TODO
     camera.draw_center_(frame_orig)
     if Config.autocam["drawing"]["enabled"] and Config.autocam["dead_zone"]["enabled"]:
         camera.draw_dead_zone_(frame)
@@ -150,8 +151,8 @@ while is_alive:
 
     """ Warp frame """
     frame_orig = camera.draw_frame_mask(frame_orig)
-    frame_warped = top_down.warp_frame(
-        frame_orig, overlay=Config.autocam["eval"]["pitch_overlay"])
+    # frame_warped = top_down.warp_frame(
+    #     frame_orig, overlay=Config.autocam["eval"]["pitch_overlay"])
 
     frame_sec = frame_id / int(player.fps)
     if args.record and Config.autocam["eval"]["export_enabled"] and \
