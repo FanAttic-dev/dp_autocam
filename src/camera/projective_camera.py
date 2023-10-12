@@ -20,7 +20,7 @@ class ProjectiveCamera(Camera):
         self.init_ptz(config.dataset)
 
         h, w, _ = frame_orig.shape
-        self.frame_orig_size = np.array([w, h])
+        self.frame_orig_size = np.array([w, h], dtype=np.uint16)
         self.frame_orig_center_x = w // 2
         self.frame_orig_center_y = h // 2
 

@@ -152,8 +152,8 @@ while is_alive:
 
     """ Warp frame """
     frame_orig = camera.draw_frame_mask(frame_orig)
-    # frame_warped = top_down.warp_frame(
-    #     frame_orig, overlay=Config.autocam["eval"]["pitch_overlay"])
+    frame_warped = top_down.warp_frame(
+        frame_orig, overlay=Config.autocam["eval"]["pitch_overlay"])
 
     frame_sec = frame_id / int(player.fps)
     if args.record and Config.autocam["eval"]["export_enabled"] and \
@@ -162,8 +162,8 @@ while is_alive:
         recorder.save_frame(frame, frame_img_id)
         recorder.save_frame(frame_warped, frame_img_id, "warped")
 
-    # if not args.hide_windows:
-    #     player.show_frame(frame_warped, "warped")
+    if not args.hide_windows:
+        player.show_frame(frame_warped, "warped")
 
     """ Profiler """
     profiler.stop("Other")

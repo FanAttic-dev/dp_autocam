@@ -20,7 +20,8 @@ class SphericalCamera(ProjectiveCamera):
 
         coords_screen_frame = self._get_coords_screen_frame()
         self.coords_spherical_frame = self._screen2spherical(
-            coords_screen_frame)
+            coords_screen_frame
+        )
 
         super().__init__(frame_orig, config)
 
@@ -46,10 +47,12 @@ class SphericalCamera(ProjectiveCamera):
 
     def _screen2spherical(self, coord_screen):
         """ In range: [0, 1], out range: [-FoV_lens/2, FoV_lens/2] """
+
         return (coord_screen * 2 - 1) * self.limits
 
     def _spherical2screen(self, coord_spherical):
         """ In range: [-FoV_lens/2, FoV_lens/2], out range: [0, 1] """
+
         x, y = coord_spherical.T
         horiz_limit, vert_limit = self.limits
         x = (x / horiz_limit + 1.) * 0.5
@@ -137,40 +140,48 @@ class SphericalCamera(ProjectiveCamera):
     def get_frame(self, frame_orig):
         return self._remap(frame_orig, self.coords_screen_fov)
 
-    def draw_roi_(self, frame_orig, color=colors["violet"]):
-        frame_orig_h, frame_orig_w, _ = frame_orig.shape
-        frame_size = np.array([frame_orig_w, frame_orig_h], dtype=np.int32)
-        coords = np.reshape(self.coords_screen_fov,
-                            (Camera.FRAME_H, Camera.FRAME_W, 2))
-        coords = (coords * frame_size).astype(np.int32)
+    def get_roi_border_pts(self, skip=50):
+        coords = self.coords_screen_fov
+        coords = np.reshape(coords, (Camera.FRAME_H, Camera.FRAME_W, 2))
+        coords = (coords * self.frame_orig_size).astype(np.int32)
 
-        skip = 50
         top = coords[0, ::skip, :]
         right = coords[::skip, -1, :]
         bottom = coords[-1, ::skip, :]
         left = coords[::skip, 0, :]
 
-        for x, y in np.concatenate([top, right, bottom, left]):
+        return np.concatenate([top, right, np.flip(bottom, axis=0), left])
+
+    def draw_roi_(self, frame_orig, color=colors["violet"]):
+        skip = 50
+
+        coords = self.get_roi_border_pts(skip)
+
+        for x, y in coords:
             cv2.circle(frame_orig, [x, y], radius=5,
                        color=color, thickness=-1)
 
     def draw_frame_mask(self, frame_orig):
-        ...  # TODO
+        mask = np.zeros(frame_orig.shape[:2], dtype=np.uint8)
+
+        pts = self.get_roi_border_pts(skip=50)
+
+        cv2.fillPoly(mask, [pts], 255)
+        return cv2.bitwise_and(frame_orig, frame_orig, mask=mask)
 
     def draw_grid_(self, frame_orig, color=colors["yellow"]):
-        sparsity = 50
+        skip = 50
 
-        frame_orig_h, frame_orig_w, _ = frame_orig.shape
-        frame_size = np.array([frame_orig_w, frame_orig_h], dtype=np.int32)
-        xx, yy = np.meshgrid(np.linspace(0, 1, frame_orig_w // sparsity),
-                             np.linspace(0, 1, frame_orig_h // sparsity))
+        frame_orig_w, frame_orig_h = self.frame_orig_size
+        xx, yy = np.meshgrid(np.linspace(0, 1, frame_orig_w // skip),
+                             np.linspace(0, 1, frame_orig_h // skip))
         coords = np.array([xx.ravel(), yy.ravel()], dtype=np.float32).T
 
         coords = self._screen2spherical(coords)
         coords = self._gnomonic_forward(coords)
         coords = self._spherical2screen(coords)
 
-        coords = (coords * frame_size).astype(np.int32)
+        coords = (coords * self.frame_orig_size).astype(np.int32)
 
         for x, y in coords:
             cv2.circle(frame_orig, [x, y], radius=5,
