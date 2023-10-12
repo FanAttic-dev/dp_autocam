@@ -157,17 +157,24 @@ class SphericalCamera(ProjectiveCamera):
     def draw_frame_mask(self, frame_orig):
         ...  # TODO
 
-    def draw_grid_(self, frame_orig):
-        step = 1
-        limit_horiz, limit_vert = self.limits
-        pans = np.arange(-limit_horiz, limit_horiz, step)
-        tilts = np.arange(-limit_vert, limit_vert, step)
-        for pan_deg in pans:
-            for tilt_deg in tilts:
-                x, y = self.ptz2coords(
-                    pan_deg, tilt_deg, self.pan_deg, self.tilt_deg)
-                cv2.circle(frame_orig, (x, y), radius=5,
-                           color=colors["violet"], thickness=-1)
+    def draw_grid_(self, frame_orig, color=colors["yellow"]):
+        sparsity = 50
+
+        frame_orig_h, frame_orig_w, _ = frame_orig.shape
+        frame_size = np.array([frame_orig_w, frame_orig_h], dtype=np.int32)
+        xx, yy = np.meshgrid(np.linspace(0, 1, frame_orig_w // sparsity),
+                             np.linspace(0, 1, frame_orig_h // sparsity))
+        coords = np.array([xx.ravel(), yy.ravel()], dtype=np.float32).T
+
+        coords = self._screen2spherical(coords)
+        coords = self._gnomonic_forward(coords)
+        coords = self._spherical2screen(coords)
+
+        coords = (coords * frame_size).astype(np.int32)
+
+        for x, y in coords:
+            cv2.circle(frame_orig, [x, y], radius=5,
+                       color=color, thickness=-1)
 
     def process_input(self, key, mouseX, mouseY):
         is_alive = True

@@ -119,7 +119,6 @@ while is_alive:
             camera.ball_filter.draw_particles_(frame_orig)
 
     frame = camera.get_frame(frame_orig)
-    # camera.draw_grid_(frame_orig) # TODO
     camera.draw_center_(frame_orig)
     if Config.autocam["drawing"]["enabled"] and Config.autocam["dead_zone"]["enabled"]:
         camera.draw_dead_zone_(frame)
@@ -132,6 +131,8 @@ while is_alive:
         frame_splitter.draw_roi_(frame_orig)
         # camera.draw_players_bb(frame_orig, bbs_joined)
         camera.draw_roi_(frame_orig)
+        if Config.autocam["drawing"]["draw_grid"]:
+            camera.draw_grid_(frame_orig)
     if not args.hide_windows and Config.autocam["drawing"]["show_original"]:
         player.show_frame(frame_orig, "Original")
 

@@ -14,6 +14,7 @@
 	},
 	"drawing": {
 		"enabled": true,
+		"draw_grid": false,
 		"show_split_frames": false,
 		"show_original": true,
 		"show_top_down_window": false
