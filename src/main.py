@@ -1,6 +1,5 @@
 import cv2
 import argparse
-from camera.cyllindrical_camera import CyllindricalCamera
 from camera.spherical_camera import SphericalCamera
 from utils.config import Config
 from detection.detector import YoloPlayerDetector
@@ -41,9 +40,7 @@ player = VideoPlayer(config.video_path)
 delay = player.get_delay(args.record)
 
 is_alive, frame_orig = player.get_next_frame()
-# camera = CyllindricalCamera(frame_orig, config)
 camera = SphericalCamera(frame_orig, config)
-camera.center
 frame_splitter = FrameSplitter(frame_orig, config)
 top_down = TopDown(config.pitch_coords, camera)
 detector = YoloPlayerDetector(frame_orig, top_down, config)
@@ -77,18 +74,19 @@ while is_alive:
         "ids": []
     }
 
-    # Split
-    profiler.start("Split")
-    frames = frame_splitter.split(frame_orig_masked)
-    profiler.stop("Split")
-    # Detect
-    profiler.start("Detect")
-    bbs, bbs_frames = detector.detect(frames)
-    profiler.stop("Detect")
-    # Join
-    profiler.start("Join")
-    bbs_joined = frame_splitter.join_bbs(bbs)
-    profiler.stop("Detect")
+    if Config.autocam["detect"]:
+        # Split
+        profiler.start("Split")
+        frames = frame_splitter.split(frame_orig_masked)
+        profiler.stop("Split")
+        # Detect
+        profiler.start("Detect")
+        bbs, bbs_frames = detector.detect(frames)
+        profiler.stop("Detect")
+        # Join
+        profiler.start("Join")
+        bbs_joined = frame_splitter.join_bbs(bbs)
+        profiler.stop("Detect")
 
     profiler.start("Other")
 

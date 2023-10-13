@@ -1,5 +1,5 @@
 import numpy as np
-from camera.cyllindrical_camera import CyllindricalCamera
+from camera.spherical_camera import SphericalCamera
 from utils.constants import colors
 from utils.config import Config
 
@@ -9,7 +9,7 @@ from utils.helpers import apply_homography, iou
 class FrameSplitter:
     def __init__(self, frame, config: Config):
         self.cameras = [
-            CyllindricalCamera(frame, config).set_ptz(
+            SphericalCamera(frame, config).set_ptz(
                 pan_deg=camera_params["pan_deg"],
                 tilt_deg=camera_params["tilt_deg"],
                 zoom_f=camera_params["zoom_f"]

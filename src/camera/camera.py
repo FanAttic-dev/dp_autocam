@@ -5,9 +5,9 @@ from utils.protocols import HasStats
 
 
 class Camera(ABC, HasStats):
-    FRAME_ASPECT_RATIO = 16/9
     FRAME_W = 1920
-    FRAME_H = int(FRAME_W / FRAME_ASPECT_RATIO)
+    FRAME_H = 1080
+    FRAME_ASPECT_RATIO = FRAME_W/FRAME_H
     FRAME_CORNERS = np.array([
         [0, 0],
         [0, FRAME_H-1],

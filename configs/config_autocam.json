@@ -4,8 +4,9 @@
 		"video": "main_p0.mp4"
 	},
 	"use_trnava_zilina": true,
-	"correct_rotation": false,
+	"correct_rotation": true,
 	"debug": true,
+	"detect": false,
 	"verbose": true,
 	"eval": {
 		"export_enabled": true,
@@ -14,7 +15,7 @@
 	},
 	"drawing": {
 		"enabled": true,
-		"draw_grid": false,
+		"draw_grid": true,
 		"show_split_frames": false,
 		"show_original": true,
 		"show_top_down_window": false

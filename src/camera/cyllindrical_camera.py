@@ -3,7 +3,6 @@ import numpy as np
 from camera.camera import Camera
 from camera.projective_camera import ProjectiveCamera
 from utils.config import Config
-from utils.helpers import get_pitch_rotation_rad, rotate_pts
 from utils.constants import INTERPOLATION_TYPE, colors
 
 
@@ -13,29 +12,6 @@ class CyllindricalCamera(ProjectiveCamera):
     def __init__(self, frame_orig, config: Config):
         super().__init__(frame_orig, config)
         self.sensor_w = CyllindricalCamera.SENSOR_W
-
-    @property
-    def H(self):
-        src = self.get_corner_pts()
-        dst = Camera.FRAME_CORNERS
-
-        H, _ = cv2.findHomography(src, dst)
-
-        if Config.autocam["correct_rotation"]:
-            # TODO: use lookup table
-            pitch_coords_orig = self.config.pitch_coords_pts
-            pitch_coords_frame = cv2.perspectiveTransform(
-                pitch_coords_orig.astype(np.float64), H)
-            roll_rad = get_pitch_rotation_rad(pitch_coords_frame)
-
-            src = np.array(rotate_pts(src, roll_rad), dtype=np.int32)
-            H, _ = cv2.findHomography(src, dst)
-
-        return H
-
-    @property
-    def H_inv(self):
-        return np.linalg.inv(self.H)
 
     @property
     def center(self):

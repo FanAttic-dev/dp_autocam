@@ -7,16 +7,14 @@ from utils.constants import INTERPOLATION_TYPE, colors
 
 
 class SphericalCamera(ProjectiveCamera):
-    ZOOM_DZ = 1
-    SENSOR_W = 100
+    ZOOM_DZ = 10
+    SENSOR_DX = 10
+    FOV_DX = 5
 
     def __init__(self, frame_orig, config: Config):
         self.lens_fov_horiz_deg = 115
-        self.lens_fov_vert_deg = 99
-        self.sensor_w = SphericalCamera.SENSOR_W
-
-        self.lens_fov_horiz_rad = np.deg2rad(self.lens_fov_horiz_deg)
-        self.lens_fov_vert_rad = np.deg2rad(self.lens_fov_vert_deg)
+        self.lens_fov_vert_deg = self.lens_fov_horiz_deg / Camera.FRAME_ASPECT_RATIO  # 99
+        self.sensor_w = 100
 
         coords_screen_frame = self._get_coords_screen_frame()
         self.coords_spherical_frame = self._screen2spherical(
@@ -25,9 +23,9 @@ class SphericalCamera(ProjectiveCamera):
 
         super().__init__(frame_orig, config)
 
-    @property
+    @property  # TODO: make cached
     def limits(self):
-        return np.array([self.lens_fov_horiz_rad, self.lens_fov_vert_rad], dtype=np.float32) / 2
+        return np.deg2rad(np.array([self.lens_fov_horiz_deg, self.lens_fov_vert_deg], dtype=np.float32)) / 2
 
     @property
     def coords_spherical_fov(self):
@@ -80,6 +78,10 @@ class SphericalCamera(ProjectiveCamera):
     def fov_horiz_deg(self):
         return np.rad2deg(2 * np.arctan(self.sensor_w / (2 * self.zoom_f)))
 
+    @property
+    def fov_vert_deg(self):
+        return self.fov_horiz_deg / Camera.FRAME_ASPECT_RATIO
+
     def get_corner_pts(self):
         coords = self.coords_screen_fov * self.frame_orig_size
         coords = np.reshape(coords, (Camera.FRAME_H, Camera.FRAME_W, 2))
@@ -89,11 +91,7 @@ class SphericalCamera(ProjectiveCamera):
         rb = coords[-1, -1]
         rt = coords[0, -1]
 
-        return [lt, lb, rb, rt]
-
-    @property
-    def fov_vert_deg(self):
-        return self.fov_horiz_deg / Camera.FRAME_ASPECT_RATIO
+        return np.array([lt, lb, rb, rt], dtype=np.int32)
 
     def _gnomonic_forward(self, coord_spherical):
         """ In/out range: [-FoV_lens/2, FoV_lens/2] """
@@ -101,8 +99,8 @@ class SphericalCamera(ProjectiveCamera):
         lambda_rad = coord_spherical.T[0]
         phi_rad = coord_spherical.T[1]
 
-        center_pan_rad = np.deg2rad(self.pan_deg)
-        center_tilt_rad = np.deg2rad(self.tilt_deg)
+        center_pan_rad = -np.deg2rad(self.pan_deg)
+        center_tilt_rad = -np.deg2rad(self.tilt_deg)
 
         cos_c = np.sin(center_tilt_rad) * np.sin(phi_rad) + np.cos(center_tilt_rad) * \
             np.cos(phi_rad) * np.cos(lambda_rad - center_pan_rad)
@@ -197,13 +195,13 @@ class SphericalCamera(ProjectiveCamera):
     def process_input(self, key, mouseX, mouseY):
         is_alive = True
         if key == ord('8'):
-            self.sensor_w += SphericalCamera.SENSOR_W_DX
+            self.sensor_w += SphericalCamera.SENSOR_DX
         elif key == ord('2'):
-            self.sensor_w -= SphericalCamera.SENSOR_W_DX
+            self.sensor_w -= SphericalCamera.SENSOR_DX
         elif key == ord('6'):
-            self.zoom(SphericalCamera.ZOOM_DZ)
+            self.lens_fov_horiz_deg += SphericalCamera.FOV_DX
         elif key == ord('4'):
-            self.zoom(-SphericalCamera.ZOOM_DZ)
+            self.lens_fov_horiz_deg -= SphericalCamera.FOV_DX
         else:
             is_alive = super().process_input(key, mouseX, mouseY)
         return is_alive
