@@ -1,6 +1,7 @@
 from pathlib import Path
 import cv2
 import numpy as np
+from camera.camera import Camera
 from detection.detector import YoloDetector
 from utils.helpers import apply_homography, coords2pts, discard_extreme_points_, load_json
 from utils.constants import INTERPOLATION_TYPE, colors
@@ -11,7 +12,7 @@ class TopDown:
     pitch_model_path = assets_path / 'pitch_model.png'
     pitch_coords_path = assets_path / 'coords_pitch_model.json'
 
-    def __init__(self, video_pitch_coords, camera):
+    def __init__(self, video_pitch_coords, camera: Camera):
         self.pitch_model = cv2.imread(str(TopDown.pitch_model_path))
         self.pitch_model_red = self.get_pitch_model_red()
         self.pitch_coords = load_json(TopDown.pitch_coords_path)
@@ -129,7 +130,7 @@ class TopDown:
 
     def get_frame(self, bbs):
         top_down_frame = self.pitch_model.copy()
-        # self.draw_roi_(top_down_frame)
+        self.draw_roi_(top_down_frame)
 
         self.draw_bbs_(top_down_frame, bbs, discard_extremes=True)
         self.draw_screen_point_(

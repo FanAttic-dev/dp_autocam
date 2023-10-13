@@ -5,7 +5,7 @@
 	},
 	"use_trnava_zilina": true,
 	"correct_rotation": false,
-	"debug": false,
+	"debug": true,
 	"verbose": true,
 	"eval": {
 		"export_enabled": true,

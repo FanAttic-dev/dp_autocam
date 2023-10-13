@@ -81,8 +81,15 @@ class SphericalCamera(ProjectiveCamera):
         return np.rad2deg(2 * np.arctan(self.sensor_w / (2 * self.zoom_f)))
 
     def get_corner_pts(self):
-        # TODO
-        ...
+        coords = self.coords_screen_fov * self.frame_orig_size
+        coords = np.reshape(coords, (Camera.FRAME_H, Camera.FRAME_W, 2))
+
+        lt = coords[0, 0]
+        lb = coords[-1, 0]
+        rb = coords[-1, -1]
+        rt = coords[0, -1]
+
+        return [lt, lb, rb, rt]
 
     @property
     def fov_vert_deg(self):

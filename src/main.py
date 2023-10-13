@@ -123,8 +123,8 @@ while is_alive:
     if Config.autocam["drawing"]["enabled"] and Config.autocam["dead_zone"]["enabled"]:
         camera.draw_dead_zone_(frame)
 
-    # if Config.params["debug"]:
-    #     camera.print()
+    if Config.autocam["debug"]:
+        camera.print()
 
     """ Original frame """
     if Config.autocam["drawing"]["enabled"]:
