@@ -1,5 +1,6 @@
 import cv2
 import argparse
+from camera.cyllindrical_camera import CyllindricalCamera
 from camera.spherical_camera import SphericalCamera
 from utils.config import Config
 from detection.detector import YoloPlayerDetector
@@ -8,7 +9,7 @@ from utils.profiler import Profiler
 from camera.top_down import TopDown
 from video_tools.video_player import VideoPlayer
 from video_tools.video_recorder import VideoRecorder
-from utils.constants import colors
+from utils.constants import colors, Colors
 
 mousePos = {
     "x": 0,
@@ -42,6 +43,7 @@ delay = player.get_delay(args.record)
 
 is_alive, frame_orig = player.get_next_frame()
 camera = SphericalCamera(frame_orig, config)
+# camera = CyllindricalCamera(frame_orig, config)
 frame_splitter = FrameSplitter(frame_orig, config)
 top_down = TopDown(config.pitch_coords, camera)
 detector = YoloPlayerDetector(frame_orig, top_down, config)
@@ -132,7 +134,7 @@ while is_alive:
         # camera.draw_players_bb(frame_orig, bbs_joined) # TODO
     if is_debug and Config.autocam["debug"]["draw_grid"]:
         camera.draw_grid_(frame_orig)
-    if not args.hide_windows and is_debug and Config.autocam["debug"]["show_original"]:
+    if not args.hide_windows and Config.autocam["show_original"]:
         player.show_frame(frame_orig, "Original")
 
     """ Top-down """
@@ -169,7 +171,7 @@ while is_alive:
     """ Profiler """
     profiler.stop("Other")
     profiler.stop("Total")
-    if Config.autocam["debug"]["print_profiler_stats"]:
+    if Config.autocam["print_profiler_stats"]:
         profiler.print_summary()
 
     """ Next frame """

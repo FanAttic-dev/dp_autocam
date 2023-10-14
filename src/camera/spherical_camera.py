@@ -1,3 +1,4 @@
+from functools import cached_property
 import cv2
 import numpy as np
 from camera.camera import Camera
@@ -13,19 +14,22 @@ class SphericalCamera(ProjectiveCamera):
 
     def __init__(self, frame_orig, config: Config):
         self.lens_fov_horiz_deg = 115
-        self.lens_fov_vert_deg = self.lens_fov_horiz_deg / Camera.FRAME_ASPECT_RATIO  # 99
         self.sensor_w = 100
-
-        coords_screen_frame = self._get_coords_screen_frame()
-        self.coords_spherical_frame = self._screen2spherical(
-            coords_screen_frame
-        )
 
         super().__init__(frame_orig, config)
 
     @property  # TODO: make cached
+    def lens_fov_vert_deg(self):
+        return self.lens_fov_horiz_deg / Camera.FRAME_ASPECT_RATIO  # 99
+
+    @property  # TODO: make cached
     def limits(self):
         return np.deg2rad(np.array([self.lens_fov_horiz_deg, self.lens_fov_vert_deg], dtype=np.float32)) / 2
+
+    @cached_property
+    def coords_spherical_frame(self):
+        coords_screen_frame = self._get_coords_screen_frame()
+        return self._screen2spherical(coords_screen_frame)
 
     @property
     def coords_spherical_fov(self):

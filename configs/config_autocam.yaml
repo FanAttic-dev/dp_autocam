@@ -1,34 +1,46 @@
 ---
+
+# Debug
+debug:
+  enabled: true
+  show_split_frames: false
+  show_top_down_window: false
+  show_warped_frame: false
+  draw_grid: false
+  draw_detections: false
+  draw_roi: true
+  print_camera_stats: true
+print_profiler_stats: true
+show_original: true
+
+# Dataset
 dataset:
   config: "./configs/config_trnava_zilina.yaml"
   video: main_p0.mp4
 use_trnava_zilina: true
 correct_rotation: true
-detect: false
+
+# Evaluation
 eval:
   export_enabled: true
   export_every_x_seconds: 20
   pitch_overlay: false
-debug:
-  enabled: true
-  print_profiler_stats: true
-  print_camera_stats: true
-  show_split_frames: false
-  show_original: true
-  show_top_down_window: false
-  show_warped_frame: false
-  draw_grid: true
-  draw_detections: false
-  draw_roi: true
+
+# Dead zone
 dead_zone:
   enabled: false
   size:
   - 80
   - 300
+
+# Detection
+detect: false
 detector:
   ball_confidence: 0.35
   ball_max_det: 1
   players_confidence: 0.25
+
+# Filters
 ball_pf:
   dt: 0.1
   N: 500
@@ -39,12 +51,14 @@ players_kf:
   dt: 0.1
   std_acc: 1
   std_meas: 5
-zoom:
-  var_min: 100
-  var_max: 5000
 u_control:
   center:
     alpha: 0.1
     var_th: 5000
   velocity:
     alpha: 3
+
+# Bounds
+zoom:
+  var_min: 100
+  var_max: 5000
