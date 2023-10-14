@@ -13,7 +13,7 @@ camera_params:
     max: 50
   zoom_f:
     default: 30
-    min: 10
+    min: 20
     max: 80
 frame_splitter_params:
 - pan_deg: -22
