@@ -129,18 +129,22 @@ def get_bb_center(bb):
     return x, y
 
 
-def rotate_pts(pts, angle_rad):
-    center_x, center_y = np.mean(pts, axis=0)
-    pts_rot = []
-    for x, y in pts:
-        qx = center_x + \
-            math.cos(angle_rad) * (x - center_x) - \
-            math.sin(angle_rad) * (y - center_y)
-        qy = center_y + \
-            math.sin(angle_rad) * (x - center_x) + \
-            math.cos(angle_rad) * (y - center_y)
-        pts_rot.append([qx, qy])
-    return pts_rot
+def rotate_pts(pts, angle_rad, center=None):
+    if center is None:
+        center = np.mean(pts, axis=0)
+
+    center_x, center_y = center
+    angle_cos = math.cos(angle_rad)
+    angle_sin = math.sin(angle_rad)
+
+    pts[:, 0] = center_x + \
+        angle_cos * (pts[:, 0] - center_x) - \
+        angle_sin * (pts[:, 1] - center_y)
+    pts[:, 1] = center_y + \
+        angle_sin * (pts[:, 0] - center_x) + \
+        angle_cos * (pts[:, 1] - center_y)
+
+    return pts
 
 
 def get_pitch_rotation_rad(pts):

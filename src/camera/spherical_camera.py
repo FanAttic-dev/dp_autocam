@@ -5,6 +5,7 @@ from camera.camera import Camera
 from camera.projective_camera import ProjectiveCamera
 from utils.config import Config
 from utils.constants import INTERPOLATION_TYPE, Color, DrawingMode
+from utils.helpers import get_pitch_rotation_rad, rotate_pts
 
 
 class SphericalCamera(ProjectiveCamera):
@@ -86,6 +87,14 @@ class SphericalCamera(ProjectiveCamera):
     def fov_vert_deg(self):
         return self.fov_horiz_deg / Camera.FRAME_ASPECT_RATIO
 
+    @property
+    def H(self):
+        src = self.get_corner_pts()
+        dst = Camera.FRAME_CORNERS
+
+        H, _ = cv2.findHomography(src, dst)
+        return H
+
     def get_corner_pts(self):
         coords = self.coords_screen_fov * self.frame_orig_size
         coords = np.reshape(coords, (Camera.FRAME_H, Camera.FRAME_W, 2))
@@ -147,7 +156,17 @@ class SphericalCamera(ProjectiveCamera):
         return cv2.remap(frame_orig, map_x, map_y, interpolation=INTERPOLATION_TYPE)
 
     def get_frame(self, frame_orig):
-        return self._remap(frame_orig, self.coords_screen_fov)
+        coords = self.coords_screen_fov
+
+        if Config.autocam["correct_rotation"]:
+            pitch_coords_orig = self.config.pitch_coords_pts.astype(np.float32)
+            pitch_coords_frame = cv2.perspectiveTransform(
+                pitch_coords_orig, self.H
+            )
+            roll_rad = get_pitch_rotation_rad(pitch_coords_frame)
+            coords = rotate_pts(coords, roll_rad, center=(0, 0))
+
+        return self._remap(frame_orig, coords)
 
     def get_roi_border_pts(self, skip=50):
         coords = self.coords_screen_fov

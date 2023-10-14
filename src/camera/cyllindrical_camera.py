@@ -4,6 +4,7 @@ from camera.camera import Camera
 from camera.projective_camera import ProjectiveCamera
 from utils.config import Config
 from utils.constants import INTERPOLATION_TYPE, Color
+from utils.helpers import get_pitch_rotation_rad, rotate_pts
 
 
 class CyllindricalCamera(ProjectiveCamera):
@@ -51,6 +52,25 @@ class CyllindricalCamera(ProjectiveCamera):
     @property
     def fov_vert_deg(self):
         return self.fov_horiz_deg / Camera.FRAME_ASPECT_RATIO
+
+    @property
+    def H(self):
+        src = self.get_corner_pts()
+        dst = Camera.FRAME_CORNERS
+
+        H, _ = cv2.findHomography(src, dst)
+
+        if Config.autocam["correct_rotation"]:
+            # TODO: use lookup table
+            pitch_coords_orig = self.config.pitch_coords_pts
+            pitch_coords_frame = cv2.perspectiveTransform(
+                pitch_coords_orig.astype(np.float64), H)
+            roll_rad = get_pitch_rotation_rad(pitch_coords_frame)
+
+            src = np.array(rotate_pts(src, roll_rad), dtype=np.int32)
+            H, _ = cv2.findHomography(src, dst)
+
+        return H
 
     def ptz2coords(self, theta_deg, phi_deg):
         theta_rad = np.deg2rad(theta_deg)

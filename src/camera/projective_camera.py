@@ -7,7 +7,7 @@ from utils.config import Config
 from utils.constants import Color
 from filters.kalman_filter import KalmanFilterVel
 from filters.particle_filter import ParticleFilter
-from utils.helpers import apply_homography, discard_extreme_boxes_, filter_bbs_ball, get_bounding_box, get_pitch_rotation_rad, points_average, discard_extreme_points_, get_bb_center, lies_in_rectangle, points_variance, rotate_pts
+from utils.helpers import apply_homography, discard_extreme_boxes_, filter_bbs_ball, get_bounding_box, get_pitch_rotation_rad, points_average, discard_extreme_points_, get_bb_center, lies_in_rectangle, points_variance
 
 
 class ProjectiveCamera(Camera):
@@ -222,23 +222,9 @@ class ProjectiveCamera(Camera):
         ...
 
     @property
+    @abstractmethod
     def H(self):
-        src = self.get_corner_pts()
-        dst = Camera.FRAME_CORNERS
-
-        H, _ = cv2.findHomography(src, dst)
-
-        if Config.autocam["correct_rotation"]:
-            # TODO: use lookup table
-            pitch_coords_orig = self.config.pitch_coords_pts
-            pitch_coords_frame = cv2.perspectiveTransform(
-                pitch_coords_orig.astype(np.float64), H)
-            roll_rad = get_pitch_rotation_rad(pitch_coords_frame)
-
-            src = np.array(rotate_pts(src, roll_rad), dtype=np.int32)
-            H, _ = cv2.findHomography(src, dst)
-
-        return H
+        ...
 
     @property
     def H_inv(self):
