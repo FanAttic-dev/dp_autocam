@@ -2,7 +2,6 @@
 name: SoccerTrack
 path: "../../datasets/SoccerTrack/wide_view/videos"
 camera_params:
-  cyllinder_radius: 1860
   pan_deg:
     default: 12
     min: -60

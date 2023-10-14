@@ -5,6 +5,7 @@ from utils.protocols import HasStats
 
 
 class Camera(ABC, HasStats):
+    SENSOR_W = 36  # FX sensor width [mm]
     FRAME_W = 1920
     FRAME_H = 1080
     FRAME_ASPECT_RATIO = FRAME_W/FRAME_H

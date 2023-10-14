@@ -129,9 +129,8 @@ def get_bb_center(bb):
     return x, y
 
 
-def rotate_pts(pts, angle_rad, center=None):
-    if center is None:
-        center = np.mean(pts, axis=0)
+def rotate_pts(pts, angle_rad):
+    center = np.mean(pts, axis=0)
 
     center_x, center_y = center
     angle_cos = math.cos(angle_rad)

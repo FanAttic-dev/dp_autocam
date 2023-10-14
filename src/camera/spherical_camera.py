@@ -15,7 +15,6 @@ class SphericalCamera(ProjectiveCamera):
 
     def __init__(self, frame_orig, config: Config):
         self.lens_fov_horiz_deg = 115
-        self.sensor_w = 36  # FX sensor size
 
         super().__init__(frame_orig, config)
 
@@ -37,7 +36,7 @@ class SphericalCamera(ProjectiveCamera):
         coords = self.coords_spherical_frame * \
             (self.fov_rad / 2 / self.limits)
 
-        return self._gnomonic_forward(coords)
+        return self._gnomonic(coords)
 
     @property
     def coords_screen_fov(self):
@@ -62,18 +61,24 @@ class SphericalCamera(ProjectiveCamera):
         y = (y / vert_limit + 1.) * 0.5
         return np.array([x, y], dtype=np.float32).T
 
+    @property
+    def center(self):
+        coords_spherical = np.deg2rad(
+            np.array([self.pan_deg, self.tilt_deg], dtype=np.float32)
+        )
+        coords_spherical = self._gnomonic(coords_spherical, (0, 0))
+        coords_screen = self._spherical2screen(coords_spherical)
+        return (coords_screen * self.frame_orig_size).astype(np.uint16)
+
     def set_center(self, x, y, f=None):
         coords_screen = np.array(
             [x, y], dtype=np.float32) / self.frame_orig_size
-        pan_deg, tilt_deg = np.rad2deg(self._screen2spherical(coords_screen))
+        coords_spherical = self._screen2spherical(coords_screen)
+        pan_deg, tilt_deg = np.rad2deg(
+            self._gnomonic_inverse(coords_spherical, (0, 0))
+        )
         f = f if f is not None else self.zoom_f
         self.set_ptz(pan_deg, tilt_deg, f)
-
-    @property
-    def center(self):
-        coords_screen = self._spherical2screen(
-            np.array([self.pan_deg, self.tilt_deg], dtype=np.float32))
-        return (coords_screen * self.frame_orig_size).astype(np.uint16)
 
     @property
     def fov_rad(self):
@@ -106,29 +111,45 @@ class SphericalCamera(ProjectiveCamera):
 
         return np.array([lt, lb, rb, rt], dtype=np.int32)
 
-    def _gnomonic_forward(self, coord_spherical):
-        """ In/out range: [-FoV_lens/2, FoV_lens/2] """
+    def _gnomonic(self, coord_spherical, center=None):
+        """ 
+        Converts latitude (tilt) and longtitude (pan) to x, y coordinates
+        based on the Gnomonic Projection.
+
+        In range: [-FoV_lens/2, FoV_lens/2], out range: [-FoV_lens/2, FoV_lens/2]
+        """
 
         lambda_rad = coord_spherical.T[0]
         phi_rad = coord_spherical.T[1]
 
-        center_pan_rad = -np.deg2rad(self.pan_deg)
-        center_tilt_rad = -np.deg2rad(self.tilt_deg)
+        if center is None:
+            center = -np.deg2rad([self.pan_deg, self.tilt_deg])
+        center_pan_rad, center_tilt_rad = center
 
-        cos_c = np.sin(center_tilt_rad) * np.sin(phi_rad) + np.cos(center_tilt_rad) * \
-            np.cos(phi_rad) * np.cos(lambda_rad - center_pan_rad)
-        x = (np.cos(phi_rad) *
-             np.sin(lambda_rad - center_pan_rad)) / cos_c
-        y = (np.cos(center_tilt_rad) * np.sin(phi_rad) - np.sin(center_tilt_rad)
-             * np.cos(phi_rad) * np.cos(lambda_rad - center_pan_rad)) / cos_c
+        sin_phi = np.sin(phi_rad)
+        cos_phi = np.cos(phi_rad)
+        cos_c = np.sin(center_tilt_rad) * sin_phi + np.cos(center_tilt_rad) * \
+            cos_phi * np.cos(lambda_rad - center_pan_rad)
+        x = (cos_phi * np.sin(lambda_rad - center_pan_rad)) / cos_c
+        y = (np.cos(center_tilt_rad) * sin_phi - np.sin(center_tilt_rad) *
+             cos_phi * np.cos(lambda_rad - center_pan_rad)) / cos_c
 
         return np.array([x, y]).T
 
-    def _gnomonic_inverse(self, coord_spherical):
-        """ In/out range: [-FoV_lens/2, FoV_lens/2] """
+    def _gnomonic_inverse(self, coord_spherical, center=None):
+        """ 
+        Converts x, y coodinates obtained by the Gnomonic Projection
+        to latitude (tilt) and longtitude (pan).
+
+        In range: [-FoV_lens/2, FoV_lens/2], out range: [-FoV_lens/2, FoV_lens/2]
+        """
 
         x = coord_spherical.T[0]
         y = coord_spherical.T[1]
+
+        if center is None:
+            center = -np.deg2rad([self.pan_deg, self.tilt_deg])
+        center_pan_rad, center_tilt_rad = center
 
         rou = np.sqrt(x ** 2 + y ** 2)
         c = np.arctan(rou)
@@ -136,9 +157,9 @@ class SphericalCamera(ProjectiveCamera):
         cos_c = np.cos(c)
 
         lat = np.arcsin(
-            cos_c * np.sin(self.cp[1]) + (y * sin_c * np.cos(self.cp[1])) / rou)
-        lon = self.cp[0] + np.arctan2(x * sin_c, rou * np.cos(self.cp[1])
-                                      * cos_c - y * np.sin(self.cp[1]) * sin_c)
+            cos_c * np.sin(center_tilt_rad) + (y * sin_c * np.cos(center_tilt_rad)) / rou)
+        lon = center_pan_rad + np.arctan2(x * sin_c, rou * np.cos(center_tilt_rad)
+                                          * cos_c - y * np.sin(center_tilt_rad) * sin_c)
 
         return np.array([lon, lat]).T
 
@@ -164,7 +185,7 @@ class SphericalCamera(ProjectiveCamera):
                 pitch_coords_orig, self.H
             )
             roll_rad = get_pitch_rotation_rad(pitch_coords_frame)
-            coords = rotate_pts(coords, roll_rad, center=(0, 0))
+            coords = rotate_pts(coords, roll_rad)
 
         return self._remap(frame_orig, coords)
 
@@ -209,7 +230,7 @@ class SphericalCamera(ProjectiveCamera):
         coords = np.array([xx.ravel(), yy.ravel()], dtype=np.float32).T
 
         coords = self._screen2spherical(coords)
-        coords = self._gnomonic_forward(coords)
+        coords = self._gnomonic(coords)
         coords = self._spherical2screen(coords)
 
         coords = (coords * self.frame_orig_size).astype(np.int32)
@@ -244,5 +265,6 @@ class SphericalCamera(ProjectiveCamera):
             "fov_horiz_deg": self.fov_horiz_deg,
             "fov_vert_deg": self.fov_vert_deg,
             "players_vel": self.players_filter.vel.squeeze(1),
+            "center": self.center,
         }
         return stats

@@ -103,10 +103,10 @@ while is_alive:
 
     """ ROI """
     if args.mouse:
-        camera.pid_x.update(mousePos["x"])
-        camera.pid_y.update(mousePos["y"])
-        pid_x = camera.pid_x.get()
-        pid_y = camera.pid_y.get()
+        # camera.pid_x.update(mousePos["x"])
+        # camera.pid_y.update(mousePos["y"])
+        # pid_x = camera.pid_x.get()
+        # pid_y = camera.pid_y.get()
         # camera.set_center(pid_x, pid_y)
 
         if is_debug and Config.autocam["debug"]["draw_detections"]:
@@ -120,7 +120,6 @@ while is_alive:
             camera.ball_filter.draw_particles_(frame_orig)
 
     frame = camera.get_frame(frame_orig)
-    camera.draw_center_(frame_orig)
     if is_debug and Config.autocam["dead_zone"]["enabled"]:
         camera.draw_dead_zone_(frame)
 

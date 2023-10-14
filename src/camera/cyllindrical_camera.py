@@ -8,11 +8,9 @@ from utils.helpers import get_pitch_rotation_rad, rotate_pts
 
 
 class CyllindricalCamera(ProjectiveCamera):
-    SENSOR_W = 36
-
     def __init__(self, frame_orig, config: Config):
+        self.cyllinder_radius = 2000
         super().__init__(frame_orig, config)
-        self.sensor_w = CyllindricalCamera.SENSOR_W
 
     @property
     def center(self):

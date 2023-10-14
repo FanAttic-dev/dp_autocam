@@ -17,6 +17,7 @@ class ProjectiveCamera(Camera):
 
     def __init__(self, frame_orig, config: Config):
         self.config = config
+        self.sensor_w = Camera.SENSOR_W
         self.init_ptz(config.dataset)
 
         h, w, _ = frame_orig.shape
@@ -172,7 +173,6 @@ class ProjectiveCamera(Camera):
 
     def init_ptz(self, config):
         camera_config = config["camera_params"]
-        self.cyllinder_radius = camera_config["cyllinder_radius"]
 
         self.pan_deg_min = camera_config["pan_deg"]["min"]
         self.pan_deg_max = camera_config["pan_deg"]["max"]

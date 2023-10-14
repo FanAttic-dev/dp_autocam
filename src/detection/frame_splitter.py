@@ -1,4 +1,5 @@
 import numpy as np
+from camera.cyllindrical_camera import CyllindricalCamera
 from camera.spherical_camera import SphericalCamera
 from utils.constants import Color
 from utils.config import Config

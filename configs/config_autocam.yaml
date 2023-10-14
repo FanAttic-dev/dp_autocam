@@ -6,8 +6,8 @@ debug:
   show_split_frames: false
   show_top_down_window: false
   show_warped_frame: false
-  draw_grid: false
-  draw_detections: false
+  draw_grid: true
+  draw_detections: true
   draw_roi: true
   print_camera_stats: true
 print_profiler_stats: true
