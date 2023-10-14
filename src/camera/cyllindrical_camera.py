@@ -3,11 +3,11 @@ import numpy as np
 from camera.camera import Camera
 from camera.projective_camera import ProjectiveCamera
 from utils.config import Config
-from utils.constants import INTERPOLATION_TYPE, Colors
+from utils.constants import INTERPOLATION_TYPE, Color
 
 
 class CyllindricalCamera(ProjectiveCamera):
-    SENSOR_W = 100
+    SENSOR_W = 36
 
     def __init__(self, frame_orig, config: Config):
         super().__init__(frame_orig, config)
@@ -76,7 +76,7 @@ class CyllindricalCamera(ProjectiveCamera):
             flags=INTERPOLATION_TYPE
         )
 
-    def draw_roi_(self, frame_orig, color=Colors.YELLOW):
+    def draw_roi_(self, frame_orig, color=Color.YELLOW):
         pts = self.get_corner_pts()
         cv2.polylines(frame_orig, [pts], True, color, thickness=10)
 
@@ -88,14 +88,14 @@ class CyllindricalCamera(ProjectiveCamera):
 
     def process_input(self, key, mouseX, mouseY):
         is_alive = True
-        if key == ord('c'):
-            self.cyllinder_radius += 10
-        elif key == ord('v'):
-            self.cyllinder_radius -= 10
-        elif key == ord('+'):
-            self.sensor_w += 1
-        elif key == ord('-'):
-            self.sensor_w -= 1
+        if key == ord('6'):
+            self.cyllinder_radius += 50
+        elif key == ord('4'):
+            self.cyllinder_radius -= 50
+        elif key == ord('8'):
+            self.sensor_w += 10
+        elif key == ord('2'):
+            self.sensor_w -= 10
         else:
             is_alive = super().process_input(key, mouseX, mouseY)
         return is_alive
@@ -104,8 +104,8 @@ class CyllindricalCamera(ProjectiveCamera):
         stats = {
             "Name": CyllindricalCamera.__name__,
             "f": f"{self.zoom_f:.2f}",
-            # "sensor_w": self.sensor_w,
-            # "cyllinder_r": self.cyllinder_radius,
+            "sensor_w": self.sensor_w,
+            "cyllinder_r": self.cyllinder_radius,
             "pan_deg": f"{self.pan_deg:.4f}",
             "tilt_deg": f"{self.tilt_deg:.4f}",
             # "fov_horiz_deg": self.fov_horiz_deg,

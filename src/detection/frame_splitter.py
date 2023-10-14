@@ -1,6 +1,6 @@
 import numpy as np
 from camera.spherical_camera import SphericalCamera
-from utils.constants import Colors
+from utils.constants import Color
 from utils.config import Config
 
 from utils.helpers import apply_homography, iou
@@ -48,5 +48,5 @@ class FrameSplitter:
 
     def draw_roi_(self, frame):
         for i, camera in enumerate(self.cameras):
-            camera.draw_roi_(frame, Colors.GREEN)
+            camera.draw_roi_(frame, Color.GREEN)
             # camera.draw_roi_(frame, list(colors.values())[2+i])

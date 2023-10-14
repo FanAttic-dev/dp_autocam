@@ -4,7 +4,7 @@ import numpy as np
 from camera.PID import PID
 from camera.camera import Camera
 from utils.config import Config
-from utils.constants import Colors
+from utils.constants import Color
 from filters.kalman_filter import KalmanFilterVel
 from filters.particle_filter import ParticleFilter
 from utils.helpers import apply_homography, discard_extreme_boxes_, filter_bbs_ball, get_bounding_box, get_pitch_rotation_rad, points_average, discard_extreme_points_, get_bb_center, lies_in_rectangle, points_variance, rotate_pts
@@ -264,10 +264,10 @@ class ProjectiveCamera(Camera):
         return x, y
 
     @abstractmethod
-    def draw_roi_(self, frame_orig, color=Colors.YELLOW):
+    def draw_roi_(self, frame_orig, color=Color.YELLOW):
         ...
 
-    def draw_center_(self, frame_orig, color=Colors.RED):
+    def draw_center_(self, frame_orig, color=Color.RED):
         cv2.circle(frame_orig, self.center,
                    radius=5, color=color, thickness=5)
 
@@ -289,13 +289,13 @@ class ProjectiveCamera(Camera):
     def draw_dead_zone_(self, frame):
         start, end = self.dead_zone
         cv2.rectangle(frame, start, end,
-                      color=Colors.RED, thickness=1)
+                      color=Color.RED, thickness=1)
 
     @abstractmethod
     def draw_frame_mask(self, frame_orig):
         ...
 
-    def draw_players_bb(self, frame_orig, bbs, color=Colors.TEAL):
+    def draw_players_bb(self, frame_orig, bbs, color=Color.TEAL):
         x1, y1, x2, y2 = get_bounding_box(bbs)
         cv2.rectangle(frame_orig, (x1, y1), (x2, y2),
                       color, thickness=5)

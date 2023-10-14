@@ -3,7 +3,7 @@ import numpy as np
 from utils.config import Config
 
 from utils.helpers import coords2pts
-from utils.constants import Colors
+from utils.constants import Color
 
 
 class ImagePreprocessor:
@@ -27,7 +27,7 @@ class ImagePreprocessor:
         pts = top_down.top_down_points2pts(pts_top_down).astype(np.int32)
 
         self.mask = np.zeros(frame_orig.shape[:2], dtype=np.uint8)
-        cv2.fillPoly(self.mask, pts=[pts], color=Colors.WHITE)
+        cv2.fillPoly(self.mask, pts=[pts], color=Color.WHITE)
 
     def draw_mask(self, img):
         return cv2.bitwise_and(img, img, mask=self.mask)

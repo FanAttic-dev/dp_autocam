@@ -1,7 +1,8 @@
+from enum import Enum
 import cv2
 
 
-class Colors:
+class Color:
     @staticmethod
     def hex2bgr(hex):
         hex = hex.lstrip("#")
@@ -16,6 +17,11 @@ class Colors:
     VIOLET = hex2bgr("#e645be")
     BLUE = hex2bgr("#456de6")
     GREEN = hex2bgr("#45e645")
+
+
+class DrawingMode(Enum):
+    LINES = 1
+    CIRCLES = 2
 
 
 INTERPOLATION_TYPE = cv2.INTER_NEAREST

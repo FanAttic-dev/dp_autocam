@@ -7,7 +7,7 @@ from ultralytics import YOLO
 from utils.config import Config
 
 from detection.image_preprocessor import ImagePreprocessor
-from utils.constants import Colors
+from utils.constants import Color
 from utils.helpers import get_bb_center
 
 
@@ -40,10 +40,10 @@ class YoloDetector(Detector):
         'verbose': False
     }
     cls2color = {
-        0: Colors.WHITE,  # ball
-        1: Colors.TEAL,  # player
-        2: Colors.YELLOW,  # referee
-        3: Colors.ORANGE,  # goalkeeper
+        0: Color.WHITE,  # ball
+        1: Color.TEAL,  # player
+        2: Color.YELLOW,  # referee
+        3: Color.ORANGE,  # goalkeeper
     }
 
     def __init__(self, frame_orig, top_down, config):
@@ -88,7 +88,7 @@ class YoloDetector(Detector):
                 img=img,
                 text=f"{id}",
                 org=(x1, y1),
-                color=Colors.WHITE,
+                color=Color.WHITE,
                 fontFace=cv2.FONT_HERSHEY_DUPLEX,
                 fontScale=0.3,
                 thickness=1

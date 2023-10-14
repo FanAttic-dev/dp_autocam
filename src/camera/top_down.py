@@ -4,7 +4,7 @@ import numpy as np
 from camera.camera import Camera
 from detection.detector import YoloDetector
 from utils.helpers import apply_homography, coords2pts, discard_extreme_points_, load_yaml
-from utils.constants import INTERPOLATION_TYPE, Colors
+from utils.constants import INTERPOLATION_TYPE, Color
 
 
 class TopDown:
@@ -88,7 +88,7 @@ class TopDown:
                 thickness=-1
             )
 
-    def draw_screen_point_(self, top_down_frame, pt, color=Colors.VIOLET, radius=30):
+    def draw_screen_point_(self, top_down_frame, pt, color=Color.VIOLET, radius=30):
         if pt is None:
             return
 
@@ -126,7 +126,7 @@ class TopDown:
         pts_warped = np.array(pts_warped, dtype=np.int32)
 
         cv2.polylines(frame, [pts_warped], isClosed=True,
-                      color=Colors.YELLOW, thickness=5)
+                      color=Color.YELLOW, thickness=5)
 
     def get_frame(self, bbs):
         top_down_frame = self.pitch_model.copy()

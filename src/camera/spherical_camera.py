@@ -4,7 +4,7 @@ import numpy as np
 from camera.camera import Camera
 from camera.projective_camera import ProjectiveCamera
 from utils.config import Config
-from utils.constants import INTERPOLATION_TYPE, Colors
+from utils.constants import INTERPOLATION_TYPE, Color, DrawingMode
 
 
 class SphericalCamera(ProjectiveCamera):
@@ -14,7 +14,7 @@ class SphericalCamera(ProjectiveCamera):
 
     def __init__(self, frame_orig, config: Config):
         self.lens_fov_horiz_deg = 115
-        self.sensor_w = 100
+        self.sensor_w = 36  # FX sensor size
 
         super().__init__(frame_orig, config)
 
@@ -161,24 +161,27 @@ class SphericalCamera(ProjectiveCamera):
 
         return np.concatenate([top, right, np.flip(bottom, axis=0), left])
 
-    def draw_roi_(self, frame_orig, color=Colors.VIOLET):
-        skip = 50
-
-        coords = self.get_roi_border_pts(skip)
-
-        for x, y in coords:
-            cv2.circle(frame_orig, [x, y], radius=5,
-                       color=color, thickness=-1)
+    def draw_roi_(self, frame_orig, color=Color.VIOLET, drawing_mode=DrawingMode.LINES):
+        if drawing_mode == DrawingMode.LINES:
+            skip = 5
+            coords = self.get_roi_border_pts(skip)
+            cv2.polylines(frame_orig, [coords], True, color, thickness=10)
+        elif drawing_mode == DrawingMode.CIRCLES:
+            skip = 50
+            coords = self.get_roi_border_pts(skip)
+            for x, y in coords:
+                cv2.circle(frame_orig, [x, y], radius=5,
+                           color=color, thickness=-1)
 
     def draw_frame_mask(self, frame_orig):
+        skip = 50
+
         mask = np.zeros(frame_orig.shape[:2], dtype=np.uint8)
-
-        pts = self.get_roi_border_pts(skip=50)
-
+        pts = self.get_roi_border_pts(skip)
         cv2.fillPoly(mask, [pts], 255)
         return cv2.bitwise_and(frame_orig, frame_orig, mask=mask)
 
-    def draw_grid_(self, frame_orig, color=Colors.YELLOW):
+    def draw_grid_(self, frame_orig, color=Color.YELLOW):
         skip = 50
 
         frame_orig_w, frame_orig_h = self.frame_orig_size
