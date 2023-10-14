@@ -56,18 +56,23 @@ class CyllindricalCamera(ProjectiveCamera):
         src = self.get_corner_pts()
         dst = Camera.FRAME_CORNERS
 
-        H, _ = cv2.findHomography(src, dst)
-
         if Config.autocam["correct_rotation"]:
-            # TODO: use lookup table
-            pitch_coords_orig = self.config.pitch_coords_pts
-            pitch_coords_frame = cv2.perspectiveTransform(
-                pitch_coords_orig.astype(np.float64), H)
-            roll_rad = get_pitch_rotation_rad(pitch_coords_frame)
-
-            src = np.array(rotate_pts(src, roll_rad), dtype=np.int32)
+            H = self.correct_rotation(src, dst)
+        else:
             H, _ = cv2.findHomography(src, dst)
 
+        return H
+
+    def correct_rotation(self, src, dst):
+        # TODO: use lookup table
+        H, _ = cv2.findHomography(src, dst)
+        pitch_coords_orig = self.config.pitch_coords_pts
+        pitch_coords_frame = cv2.perspectiveTransform(
+            pitch_coords_orig.astype(np.float64), H)
+        roll_rad = get_pitch_rotation_rad(pitch_coords_frame)
+
+        src = np.array(rotate_pts(src, roll_rad), dtype=np.int32)
+        H, _ = cv2.findHomography(src, dst)
         return H
 
     def ptz2coords(self, pan_deg, tilt_deg):

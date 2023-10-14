@@ -109,32 +109,38 @@ class SphericalCamera(ProjectiveCamera):
         return np.array([lt, lb, rb, rt], dtype=np.int32)
 
     def roi2original(self, coords_screen_roi):
-        # TODO: fix
-
         frame_size = np.array([Camera.FRAME_W, Camera.FRAME_H], dtype=np.int16)
         coords_screen = coords_screen_roi / frame_size
+
+        if Config.autocam["correct_rotation"]:
+            coords_screen = rotate_pts(
+                coords_screen, self.roll_rad,
+                center=np.array([0.5, 0.5], dtype=np.float32)
+            )
 
         coords_spherical_roi = self._screen2spherical(coords_screen)
         coords_spherical_roi = coords_spherical_roi * \
             (self.fov_rad / 2 / self.limits)
 
-        coords_spherical_roi = self._gnomonic_inverse(coords_spherical_roi)
+        coords_spherical_roi = self._gnomonic(coords_spherical_roi)
         coords_screen = self._spherical2screen(coords_spherical_roi)
 
         coords_screen = (coords_screen * self.frame_orig_size).astype(np.int16)
-
         return coords_screen
+
+    def correct_rotation(self, coords, center=None):
+        pitch_coords_orig = self.config.pitch_coords_pts.astype(np.float32)
+        pitch_coords_frame = cv2.perspectiveTransform(
+            pitch_coords_orig, self.H
+        )
+        self.roll_rad = get_pitch_rotation_rad(pitch_coords_frame)
+        return rotate_pts(coords, self.roll_rad, center)
 
     def get_frame(self, frame_orig):
         coords = self.coords_screen_fov
 
         if Config.autocam["correct_rotation"]:
-            pitch_coords_orig = self.config.pitch_coords_pts.astype(np.float32)
-            pitch_coords_frame = cv2.perspectiveTransform(
-                pitch_coords_orig, self.H
-            )
-            roll_rad = get_pitch_rotation_rad(pitch_coords_frame)
-            coords = rotate_pts(coords, roll_rad)
+            coords = self.correct_rotation(coords)
 
         return self._remap(frame_orig, coords)
 

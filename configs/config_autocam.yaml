@@ -8,7 +8,7 @@ debug:
   show_warped_frame: false
   draw_grid: false
   draw_detections: true
-  draw_roi: true
+  draw_roi: false
   print_camera_stats: true
 print_profiler_stats: true
 show_original: true
