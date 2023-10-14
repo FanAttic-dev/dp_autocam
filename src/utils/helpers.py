@@ -1,6 +1,5 @@
 import math
 import numpy as np
-import json
 import yaml
 
 
@@ -31,11 +30,6 @@ def iou(bb1, bb2):
         max(0, inner_y2 - inner_y1 + 1)
 
     return intersection / float(bb1_area + bb2_area - intersection)
-
-
-def load_json(file_name):
-    with open(file_name, 'r') as f:
-        return json.load(f)
 
 
 def load_yaml(file_name):

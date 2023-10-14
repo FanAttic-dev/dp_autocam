@@ -3,19 +3,19 @@ import cv2
 import numpy as np
 from camera.camera import Camera
 from detection.detector import YoloDetector
-from utils.helpers import apply_homography, coords2pts, discard_extreme_points_, load_json
+from utils.helpers import apply_homography, coords2pts, discard_extreme_points_, load_yaml
 from utils.constants import INTERPOLATION_TYPE, colors
 
 
 class TopDown:
     assets_path = Path('assets')
     pitch_model_path = assets_path / 'pitch_model.png'
-    pitch_coords_path = assets_path / 'coords_pitch_model.json'
+    pitch_coords_path = assets_path / 'coords_pitch_model.yaml'
 
     def __init__(self, video_pitch_coords, camera: Camera):
         self.pitch_model = cv2.imread(str(TopDown.pitch_model_path))
         self.pitch_model_red = self.get_pitch_model_red()
-        self.pitch_coords = load_json(TopDown.pitch_coords_path)
+        self.pitch_coords = load_yaml(TopDown.pitch_coords_path)
         self.video_pitch_coords = video_pitch_coords
         self.H, _ = cv2.findHomography(coords2pts(video_pitch_coords),
                                        coords2pts(self.pitch_coords))

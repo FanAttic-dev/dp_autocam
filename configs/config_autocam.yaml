@@ -1,6 +1,6 @@
 ---
 dataset:
-  config: "./configs/config_trnava_zilina.json"
+  config: "./configs/config_trnava_zilina.yaml"
   video: main_p0.mp4
 use_trnava_zilina: true
 correct_rotation: true
