@@ -1,11 +1,11 @@
 from functools import cached_property
 from pathlib import Path
-from utils.helpers import coords2pts, load_json
+from utils.helpers import coords2pts, load_json, load_yaml
 import random
 
 
 class Config:
-    autocam = load_json("./configs/config_autocam.json")
+    autocam = load_yaml("./configs/config_autocam.yaml")
 
     def __init__(self, args):
         self.dataset = Config.load_dataset_config(args)

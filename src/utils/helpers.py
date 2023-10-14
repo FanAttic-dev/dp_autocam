@@ -1,6 +1,7 @@
 import math
 import numpy as np
 import json
+import yaml
 
 
 def coords2pts(coords):
@@ -35,6 +36,11 @@ def iou(bb1, bb2):
 def load_json(file_name):
     with open(file_name, 'r') as f:
         return json.load(f)
+
+
+def load_yaml(file_name):
+    with open(file_name, 'r') as f:
+        return yaml.safe_load(f)
 
 
 def apply_homography(H, x, y):
