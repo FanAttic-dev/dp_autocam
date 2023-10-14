@@ -3,7 +3,7 @@ import numpy as np
 from camera.camera import Camera
 from camera.projective_camera import ProjectiveCamera
 from utils.config import Config
-from utils.constants import INTERPOLATION_TYPE, colors
+from utils.constants import INTERPOLATION_TYPE, Colors
 
 
 class CyllindricalCamera(ProjectiveCamera):
@@ -76,7 +76,7 @@ class CyllindricalCamera(ProjectiveCamera):
             flags=INTERPOLATION_TYPE
         )
 
-    def draw_roi_(self, frame_orig, color=colors["yellow"]):
+    def draw_roi_(self, frame_orig, color=Colors.YELLOW):
         pts = self.get_corner_pts()
         cv2.polylines(frame_orig, [pts], True, color, thickness=10)
 

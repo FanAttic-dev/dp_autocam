@@ -9,7 +9,7 @@ from utils.profiler import Profiler
 from camera.top_down import TopDown
 from video_tools.video_player import VideoPlayer
 from video_tools.video_recorder import VideoRecorder
-from utils.constants import colors, Colors
+from utils.constants import Colors
 
 mousePos = {
     "x": 0,
@@ -115,8 +115,8 @@ while is_alive:
         camera.update_by_bbs(bbs_joined, top_down)
 
         if is_debug and Config.autocam["debug"]["draw_detections"]:
-            camera.draw_ball_prediction_(frame_orig, colors["red"])
-            camera.draw_ball_u_(frame_orig, colors["orange"])
+            camera.draw_ball_prediction_(frame_orig, Colors.RED)
+            camera.draw_ball_u_(frame_orig, Colors.ORANGE)
             camera.ball_filter.draw_particles_(frame_orig)
 
     frame = camera.get_frame(frame_orig)

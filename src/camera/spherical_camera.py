@@ -4,7 +4,7 @@ import numpy as np
 from camera.camera import Camera
 from camera.projective_camera import ProjectiveCamera
 from utils.config import Config
-from utils.constants import INTERPOLATION_TYPE, colors
+from utils.constants import INTERPOLATION_TYPE, Colors
 
 
 class SphericalCamera(ProjectiveCamera):
@@ -161,7 +161,7 @@ class SphericalCamera(ProjectiveCamera):
 
         return np.concatenate([top, right, np.flip(bottom, axis=0), left])
 
-    def draw_roi_(self, frame_orig, color=colors["violet"]):
+    def draw_roi_(self, frame_orig, color=Colors.VIOLET):
         skip = 50
 
         coords = self.get_roi_border_pts(skip)
@@ -178,7 +178,7 @@ class SphericalCamera(ProjectiveCamera):
         cv2.fillPoly(mask, [pts], 255)
         return cv2.bitwise_and(frame_orig, frame_orig, mask=mask)
 
-    def draw_grid_(self, frame_orig, color=colors["yellow"]):
+    def draw_grid_(self, frame_orig, color=Colors.YELLOW):
         skip = 50
 
         frame_orig_w, frame_orig_h = self.frame_orig_size

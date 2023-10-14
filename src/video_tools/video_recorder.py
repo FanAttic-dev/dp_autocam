@@ -2,7 +2,7 @@ from functools import cached_property
 from pathlib import Path
 import cv2
 from utils.config import Config
-from utils.constants import colors
+from utils.constants import Colors
 from utils.protocols import HasStats
 from utils.helpers import path2str
 
@@ -93,7 +93,7 @@ class VideoRecorder:
                     img=frame,
                     text=text,
                     org=(self.text_x, text_y),
-                    color=colors["white"],
+                    color=Colors.WHITE,
                     **VideoRecorder.TEXT_FORMAT
                 )
                 text_y += self.spacing
