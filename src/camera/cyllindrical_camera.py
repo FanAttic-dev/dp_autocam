@@ -4,7 +4,7 @@ from camera.camera import Camera
 from camera.projective_camera import ProjectiveCamera
 from utils.config import Config
 from utils.constants import INTERPOLATION_TYPE, Color
-from utils.helpers import get_pitch_rotation_rad, rotate_pts
+from utils.helpers import apply_homography, get_pitch_rotation_rad, rotate_pts
 
 
 class CyllindricalCamera(ProjectiveCamera):
@@ -70,12 +70,12 @@ class CyllindricalCamera(ProjectiveCamera):
 
         return H
 
-    def ptz2coords(self, theta_deg, phi_deg):
-        theta_rad = np.deg2rad(theta_deg)
-        x = np.tan(theta_rad) * self.cyllinder_radius
+    def ptz2coords(self, pan_deg, tilt_deg):
+        pan_rad = np.deg2rad(pan_deg)
+        x = np.tan(pan_rad) * self.cyllinder_radius
 
-        phi_rad = np.deg2rad(phi_deg)
-        y = np.tan(phi_rad) * \
+        tilt_rad = np.deg2rad(tilt_deg)
+        y = np.tan(tilt_rad) * \
             np.sqrt(self.cyllinder_radius**2 + x**2)
         return self.shift_coords(int(x), int(y))
 
@@ -94,7 +94,17 @@ class CyllindricalCamera(ProjectiveCamera):
             flags=INTERPOLATION_TYPE
         )
 
-    def draw_roi_(self, frame_orig, color=Color.YELLOW):
+    def roi2original(self, pts):
+        H_inv = np.linalg.inv(self.H)
+        pts = pts.copy()
+
+        for i in range(0, len(pts), 2):
+            x, y = pts[i:i+2]
+            pts[i:i+2] = apply_homography(H_inv, x, y)
+
+        return pts.astype(np.int16)
+
+    def draw_roi_(self, frame_orig, color=Color.VIOLET):
         pts = self.get_corner_pts()
         cv2.polylines(frame_orig, [pts], True, color, thickness=10)
 
@@ -103,6 +113,21 @@ class CyllindricalCamera(ProjectiveCamera):
         pts = self.get_corner_pts()
         cv2.fillPoly(mask, [pts], 255)
         return cv2.bitwise_and(frame_orig, frame_orig, mask=mask)
+
+    def draw_grid_(self, frame_orig, color=Color.YELLOW):
+        step = 10
+        fov_horiz_deg = 120
+        fov_vert_deg = fov_horiz_deg / Camera.FRAME_ASPECT_RATIO
+
+        frame_orig_w, frame_orig_h = self.frame_orig_size
+        xx, yy = np.meshgrid(np.linspace(-fov_horiz_deg / 2, fov_horiz_deg / 2, frame_orig_w // step),
+                             np.linspace(-fov_vert_deg / 2, fov_vert_deg / 2, frame_orig_h // step))
+        coords = np.array([xx.ravel(), yy.ravel()], dtype=np.int16)
+
+        for pan_deg, tilt_deg in coords.T:
+            x, y = self.ptz2coords(pan_deg, tilt_deg)
+            cv2.circle(frame_orig, [x, y], radius=5,
+                       color=color, thickness=-1)
 
     def process_input(self, key, mouseX, mouseY):
         is_alive = True

@@ -111,6 +111,35 @@ class SphericalCamera(ProjectiveCamera):
 
         return np.array([lt, lb, rb, rt], dtype=np.int32)
 
+    def roi2original(self, pts):
+        ...
+
+    def get_frame(self, frame_orig):
+        coords = self.coords_screen_fov
+
+        if Config.autocam["correct_rotation"]:
+            pitch_coords_orig = self.config.pitch_coords_pts.astype(np.float32)
+            pitch_coords_frame = cv2.perspectiveTransform(
+                pitch_coords_orig, self.H
+            )
+            roll_rad = get_pitch_rotation_rad(pitch_coords_frame)
+            coords = rotate_pts(coords, roll_rad)
+
+        return self._remap(frame_orig, coords)
+
+    def _remap(self, frame_orig, coords):
+        """ In range: [0, 1], Out img range: [0, frame_size] """
+
+        frame_orig_h, frame_orig_w, _ = frame_orig.shape
+        frame_size = [Camera.FRAME_H, Camera.FRAME_W]
+
+        map_x = coords[:, 0] * frame_orig_w
+        map_y = coords[:, 1] * frame_orig_h
+        map_x = np.reshape(map_x, frame_size)
+        map_y = np.reshape(map_y, frame_size)
+
+        return cv2.remap(frame_orig, map_x, map_y, interpolation=INTERPOLATION_TYPE)
+
     def _gnomonic(self, coord_spherical, center=None):
         """ 
         Converts latitude (tilt) and longtitude (pan) to x, y coordinates
@@ -162,32 +191,6 @@ class SphericalCamera(ProjectiveCamera):
                                           * cos_c - y * np.sin(center_tilt_rad) * sin_c)
 
         return np.array([lon, lat]).T
-
-    def _remap(self, frame_orig, coords):
-        """ In range: [0, 1], Out img range: [0, frame_size] """
-
-        frame_orig_h, frame_orig_w, _ = frame_orig.shape
-        frame_size = [Camera.FRAME_H, Camera.FRAME_W]
-
-        map_x = coords[:, 0] * frame_orig_w
-        map_y = coords[:, 1] * frame_orig_h
-        map_x = np.reshape(map_x, frame_size)
-        map_y = np.reshape(map_y, frame_size)
-
-        return cv2.remap(frame_orig, map_x, map_y, interpolation=INTERPOLATION_TYPE)
-
-    def get_frame(self, frame_orig):
-        coords = self.coords_screen_fov
-
-        if Config.autocam["correct_rotation"]:
-            pitch_coords_orig = self.config.pitch_coords_pts.astype(np.float32)
-            pitch_coords_frame = cv2.perspectiveTransform(
-                pitch_coords_orig, self.H
-            )
-            roll_rad = get_pitch_rotation_rad(pitch_coords_frame)
-            coords = rotate_pts(coords, roll_rad)
-
-        return self._remap(frame_orig, coords)
 
     def get_roi_border_pts(self, skip=50):
         coords = self.coords_screen_fov

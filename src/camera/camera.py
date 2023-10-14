@@ -31,10 +31,6 @@ class Camera(ABC, HasStats):
         }
 
     @abstractmethod
-    def get_frame(self, frame_orig):
-        ...
-
-    @abstractmethod
     def pan(self, dx):
         ...
 

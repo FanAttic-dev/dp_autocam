@@ -10,7 +10,7 @@ from utils.helpers import apply_homography, iou
 class FrameSplitter:
     def __init__(self, frame, config: Config):
         self.cameras = [
-            SphericalCamera(frame, config).set_ptz(
+            CyllindricalCamera(frame, config).set_ptz(
                 pan_deg=camera_params["pan_deg"],
                 tilt_deg=camera_params["tilt_deg"],
                 zoom_f=camera_params["zoom_f"]
@@ -30,11 +30,7 @@ class FrameSplitter:
         }
         for camera, frame_bbs in zip(self.cameras, bbs):
             for i, (bb, cls) in enumerate(zip(frame_bbs["boxes"], frame_bbs["cls"])):
-                H_inv = np.linalg.inv(camera.H)
-                x1, y1, x2, y2 = bb
-                x1, y1 = apply_homography(H_inv, x1, y1)
-                x2, y2 = apply_homography(H_inv, x2, y2)
-                bb_inv = [int(x) for x in [x1, y1, x2, y2]]
+                bb_inv = camera.roi2original(bb)
                 bbs_joined["boxes"].append(bb_inv)
                 bbs_joined["cls"].append(cls)
                 if len(frame_bbs["ids"]) > 0:

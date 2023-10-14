@@ -250,7 +250,11 @@ class ProjectiveCamera(Camera):
         return x, y
 
     @abstractmethod
-    def draw_roi_(self, frame_orig, color=Color.YELLOW):
+    def draw_roi_(self, frame_orig, color=Color.VIOLET):
+        ...
+
+    @abstractmethod
+    def draw_grid_(self, frame_orig, color=Color.VIOLET):
         ...
 
     def draw_center_(self, frame_orig, color=Color.RED):
@@ -288,6 +292,10 @@ class ProjectiveCamera(Camera):
 
     @abstractmethod
     def get_frame(self, frame_orig):
+        ...
+
+    @abstractmethod
+    def roi2original(self, pts):
         ...
 
     def pan(self, dx):

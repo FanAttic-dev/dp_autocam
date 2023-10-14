@@ -33,7 +33,7 @@ dead_zone:
   - 300
 
 # Detection
-detect: false
+detect: true
 detector:
   ball_confidence: 0.35
   ball_max_det: 1
