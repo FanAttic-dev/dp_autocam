@@ -211,6 +211,8 @@ class SphericalCamera(ProjectiveCamera):
             "Name": SphericalCamera.__name__,
             "f": f"{self.zoom_f:.2f}",
             "sensor_w": self.sensor_w,
+            "lens_fov_horiz_deg": self.lens_fov_horiz_deg,
+            "lens_fov_vert_deg": self.lens_fov_vert_deg,
             "pan_deg": f"{self.pan_deg:.4f}",
             "tilt_deg": f"{self.tilt_deg:.4f}",
             "fov_horiz_deg": self.fov_horiz_deg,

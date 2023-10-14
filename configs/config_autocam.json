@@ -5,20 +5,23 @@
 	},
 	"use_trnava_zilina": true,
 	"correct_rotation": true,
-	"debug": true,
 	"detect": false,
-	"verbose": true,
 	"eval": {
 		"export_enabled": true,
 		"export_every_x_seconds": 20,
 		"pitch_overlay": false
 	},
-	"drawing": {
+	"debug": {
 		"enabled": true,
-		"draw_grid": true,
+		"print_profiler_stats": true,
+		"print_camera_stats": true,
 		"show_split_frames": false,
 		"show_original": true,
-		"show_top_down_window": false
+		"show_top_down_window": false,
+		"show_warped_frame": false,
+		"draw_grid": true,
+		"draw_detections": false,
+		"draw_roi": true
 	},
 	"dead_zone": {
 		"enabled": false,

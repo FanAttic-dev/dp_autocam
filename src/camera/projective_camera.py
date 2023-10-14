@@ -327,9 +327,9 @@ class ProjectiveCamera(Camera):
         elif key == ord('s'):
             self.tilt(ProjectiveCamera.TILT_DY)
         elif key == ord('+'):
-            self.zoom(ProjectiveCamera.ZOOM_DZ)
+            self.zoom(self.__class__.ZOOM_DZ)
         elif key == ord('-'):
-            self.zoom(-ProjectiveCamera.ZOOM_DZ)
+            self.zoom(-self.__class__.ZOOM_DZ)
         elif key == ord('f'):
             self.set_center(mouseX, mouseY)
         elif key == ord('q'):
