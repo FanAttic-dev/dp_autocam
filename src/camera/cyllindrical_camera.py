@@ -98,9 +98,9 @@ class CyllindricalCamera(ProjectiveCamera):
         H_inv = np.linalg.inv(self.H)
         pts = pts.copy()
 
-        for i in range(0, len(pts), 2):
-            x, y = pts[i:i+2]
-            pts[i:i+2] = apply_homography(H_inv, x, y)
+        for i in range(0, len(pts)):
+            x, y = pts[i]
+            pts[i] = apply_homography(H_inv, x, y)
 
         return pts.astype(np.int16)
 
@@ -114,8 +114,8 @@ class CyllindricalCamera(ProjectiveCamera):
         cv2.fillPoly(mask, [pts], 255)
         return cv2.bitwise_and(frame_orig, frame_orig, mask=mask)
 
-    def draw_grid_(self, frame_orig, color=Color.YELLOW):
-        step = 10
+    def draw_grid_(self, frame_orig, color=Color.BLUE):
+        step = 20
         fov_horiz_deg = 120
         fov_vert_deg = fov_horiz_deg / Camera.FRAME_ASPECT_RATIO
 

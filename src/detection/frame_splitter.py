@@ -30,7 +30,9 @@ class FrameSplitter:
         }
         for camera, frame_bbs in zip(self.cameras, bbs):
             for i, (bb, cls) in enumerate(zip(frame_bbs["boxes"], frame_bbs["cls"])):
+                bb = bb.reshape((2, 2))
                 bb_inv = camera.roi2original(bb)
+                bb_inv = bb_inv.ravel()
                 bbs_joined["boxes"].append(bb_inv)
                 bbs_joined["cls"].append(cls)
                 if len(frame_bbs["ids"]) > 0:

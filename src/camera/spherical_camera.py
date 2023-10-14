@@ -32,15 +32,12 @@ class SphericalCamera(ProjectiveCamera):
         return self._screen2spherical(coords_screen_frame)
 
     @property
-    def coords_spherical_fov(self):
-        coords = self.coords_spherical_frame * \
+    def coords_screen_fov(self):
+        coords_spherical_fov = self.coords_spherical_frame * \
             (self.fov_rad / 2 / self.limits)
 
-        return self._gnomonic(coords)
-
-    @property
-    def coords_screen_fov(self):
-        return self._spherical2screen(self.coords_spherical_fov)
+        coords_spherical_fov = self._gnomonic(coords_spherical_fov)
+        return self._spherical2screen(coords_spherical_fov)
 
     def _get_coords_screen_frame(self):
         xx, yy = np.meshgrid(np.linspace(0, 1, Camera.FRAME_W),
@@ -111,8 +108,22 @@ class SphericalCamera(ProjectiveCamera):
 
         return np.array([lt, lb, rb, rt], dtype=np.int32)
 
-    def roi2original(self, pts):
-        ...
+    def roi2original(self, coords_screen_roi):
+        # TODO: fix
+
+        frame_size = np.array([Camera.FRAME_W, Camera.FRAME_H], dtype=np.int16)
+        coords_screen = coords_screen_roi / frame_size
+
+        coords_spherical_roi = self._screen2spherical(coords_screen)
+        coords_spherical_roi = coords_spherical_roi * \
+            (self.fov_rad / 2 / self.limits)
+
+        coords_spherical_roi = self._gnomonic_inverse(coords_spherical_roi)
+        coords_screen = self._spherical2screen(coords_spherical_roi)
+
+        coords_screen = (coords_screen * self.frame_orig_size).astype(np.int16)
+
+        return coords_screen
 
     def get_frame(self, frame_orig):
         coords = self.coords_screen_fov
@@ -224,8 +235,8 @@ class SphericalCamera(ProjectiveCamera):
         cv2.fillPoly(mask, [pts], 255)
         return cv2.bitwise_and(frame_orig, frame_orig, mask=mask)
 
-    def draw_grid_(self, frame_orig, color=Color.YELLOW):
-        skip = 50
+    def draw_grid_(self, frame_orig, color=Color.BLUE):
+        skip = 40
 
         frame_orig_w, frame_orig_h = self.frame_orig_size
         xx, yy = np.meshgrid(np.linspace(0, 1, frame_orig_w // skip),

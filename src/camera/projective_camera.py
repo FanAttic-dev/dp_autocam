@@ -254,7 +254,7 @@ class ProjectiveCamera(Camera):
         ...
 
     @abstractmethod
-    def draw_grid_(self, frame_orig, color=Color.VIOLET):
+    def draw_grid_(self, frame_orig, color=Color.BLUE):
         ...
 
     def draw_center_(self, frame_orig, color=Color.RED):
