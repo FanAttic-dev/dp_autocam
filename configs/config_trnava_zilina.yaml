@@ -3,16 +3,16 @@ name: TrnavaZilina
 path: "../../datasets/TrnavaZilina/main"
 camera_params:
   pan_deg:
-    default: 0
-    min: -100
-    max: 100
+    default: -1
+    min: -27
+    max: 32
   tilt_deg:
-    default: 0
-    min: -100
-    max: 100
+    default: -2
+    min: -2
+    max: 4
   zoom_f:
-    default: 30
-    min: 20
+    default: 40
+    min: 40
     max: 80
 frame_splitter_params:
 - pan_deg: -22.3
