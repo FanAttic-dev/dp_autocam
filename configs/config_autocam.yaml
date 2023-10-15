@@ -34,7 +34,7 @@ dead_zone:
 
 # Detection
 detector:
-  enabled: false
+  enabled: true
   filter_detections: true
   ball_confidence: 0.35
   ball_max_det: 1

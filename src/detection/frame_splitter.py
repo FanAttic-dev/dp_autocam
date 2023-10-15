@@ -4,13 +4,11 @@ from camera.spherical_camera import SphericalCamera
 from utils.constants import Color
 from utils.config import Config
 
-from utils.helpers import apply_homography, iou
-
 
 class FrameSplitter:
     def __init__(self, frame, config: Config):
         self.cameras = [
-            SphericalCamera(frame, config).set_ptz(
+            CyllindricalCamera(frame, config).set_ptz(
                 pan_deg=camera_params["pan_deg"],
                 tilt_deg=camera_params["tilt_deg"],
                 zoom_f=camera_params["zoom_f"]

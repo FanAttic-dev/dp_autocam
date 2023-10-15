@@ -9,7 +9,7 @@ from utils.helpers import apply_homography, get_pitch_rotation_rad, rotate_pts
 
 class CyllindricalCamera(ProjectiveCamera):
     def __init__(self, frame_orig, config: Config):
-        self.cyllinder_radius = 2000
+        self.cyllinder_radius = 1860
         super().__init__(frame_orig, config)
 
     @property
