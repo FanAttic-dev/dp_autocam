@@ -3,7 +3,7 @@ import numpy as np
 from numpy.random import randn
 from scipy import stats
 from utils.config import Config
-from utils.constants import colors
+from utils.constants import Color
 from filterpy.monte_carlo import systematic_resample
 
 from utils.protocols import HasStats
@@ -102,7 +102,7 @@ class ParticleFilter(HasStats):
             self.resample_from_index(indexes)
             # assert np.allclose(self.weights, 1/self.N)
 
-    def draw_particles_(self, frame, color=colors["red"]):
+    def draw_particles_(self, frame, color=Color.RED):
         for particle, weight in zip(self.particles, self.weights):
             x, y = particle
             cv2.circle(frame, (int(x), int(y)), radius=int(weight * self.N),

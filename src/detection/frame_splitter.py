@@ -1,6 +1,7 @@
 import numpy as np
-from camera.camera import PerspectiveCamera
-from utils.constants import colors
+from camera.cyllindrical_camera import CyllindricalCamera
+from camera.spherical_camera import SphericalCamera
+from utils.constants import Color
 from utils.config import Config
 
 from utils.helpers import apply_homography, iou
@@ -9,11 +10,11 @@ from utils.helpers import apply_homography, iou
 class FrameSplitter:
     def __init__(self, frame, config: Config):
         self.cameras = [
-            PerspectiveCamera(
-                frame, config,
+            SphericalCamera(frame, config).set_ptz(
                 pan_deg=camera_params["pan_deg"],
                 tilt_deg=camera_params["tilt_deg"],
-                zoom_f=camera_params["zoom_f"])
+                zoom_f=camera_params["zoom_f"]
+            )
             for camera_params in config.dataset["frame_splitter_params"]
         ]
 
@@ -29,11 +30,9 @@ class FrameSplitter:
         }
         for camera, frame_bbs in zip(self.cameras, bbs):
             for i, (bb, cls) in enumerate(zip(frame_bbs["boxes"], frame_bbs["cls"])):
-                H_inv = np.linalg.inv(camera.H)
-                x1, y1, x2, y2 = bb
-                x1, y1 = apply_homography(H_inv, x1, y1)
-                x2, y2 = apply_homography(H_inv, x2, y2)
-                bb_inv = [int(x) for x in [x1, y1, x2, y2]]
+                bb = bb.reshape((2, 2))
+                bb_inv = camera.roi2original(bb)
+                bb_inv = bb_inv.ravel()
                 bbs_joined["boxes"].append(bb_inv)
                 bbs_joined["cls"].append(cls)
                 if len(frame_bbs["ids"]) > 0:
@@ -48,5 +47,5 @@ class FrameSplitter:
 
     def draw_roi_(self, frame):
         for i, camera in enumerate(self.cameras):
-            camera.draw_roi_(frame, colors["green"])
+            camera.draw_roi_(frame, Color.GREEN)
             # camera.draw_roi_(frame, list(colors.values())[2+i])

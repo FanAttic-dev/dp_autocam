@@ -1,0 +1,58 @@
+---
+name: TrnavaZilina
+path: "../../datasets/TrnavaZilina/main"
+camera_params:
+  pan_deg:
+    default: 0
+    min: -100
+    max: 100
+  tilt_deg:
+    default: 0
+    min: -100
+    max: 100
+  zoom_f:
+    default: 30
+    min: 20
+    max: 80
+frame_splitter_params:
+- pan_deg: -22.3
+  tilt_deg: -2
+  zoom_f: 80
+- pan_deg: 1.8
+  tilt_deg: 0.01
+  zoom_f: 80
+- pan_deg: 26
+  tilt_deg: 1.0
+  zoom_f: 80
+pitch_coords:
+  p0:
+    left bottom:
+      x: 406
+      y: 1117
+    left top:
+      x: 1423
+      y: 821
+    right top:
+      x: 2619
+      y: 880
+    right bottom:
+      x: 3710
+      y: 1508
+  p1:
+    left bottom:
+      x: 404
+      y: 1114
+    left top:
+      x: 1419
+      y: 815
+    right top:
+      x: 2616
+      y: 871
+    right bottom:
+      x: 3706
+      y: 1499
+mask_margins:
+  top: -10
+  right: 40
+  bottom: -30
+  left: -40

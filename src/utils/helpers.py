@@ -1,6 +1,6 @@
 import math
 import numpy as np
-import json
+import yaml
 
 
 def coords2pts(coords):
@@ -32,9 +32,9 @@ def iou(bb1, bb2):
     return intersection / float(bb1_area + bb2_area - intersection)
 
 
-def load_json(file_name):
+def load_yaml(file_name):
     with open(file_name, 'r') as f:
-        return json.load(f)
+        return yaml.safe_load(f)
 
 
 def apply_homography(H, x, y):
@@ -129,18 +129,22 @@ def get_bb_center(bb):
     return x, y
 
 
-def rotate_pts(pts, angle_rad):
-    center_x, center_y = np.mean(pts, axis=0)
-    pts_rot = []
-    for x, y in pts:
-        qx = center_x + \
-            math.cos(angle_rad) * (x - center_x) - \
-            math.sin(angle_rad) * (y - center_y)
-        qy = center_y + \
-            math.sin(angle_rad) * (x - center_x) + \
-            math.cos(angle_rad) * (y - center_y)
-        pts_rot.append([qx, qy])
-    return pts_rot
+def rotate_pts(pts, angle_rad, center=None):
+    if center is None:
+        center = np.mean(pts, axis=0)
+
+    center_x, center_y = center
+    angle_cos = math.cos(angle_rad)
+    angle_sin = math.sin(angle_rad)
+
+    pts[:, 0] = center_x + \
+        angle_cos * (pts[:, 0] - center_x) - \
+        angle_sin * (pts[:, 1] - center_y)
+    pts[:, 1] = center_y + \
+        angle_sin * (pts[:, 0] - center_x) + \
+        angle_cos * (pts[:, 1] - center_y)
+
+    return pts
 
 
 def get_pitch_rotation_rad(pts):
