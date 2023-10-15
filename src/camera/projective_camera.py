@@ -179,6 +179,10 @@ class ProjectiveCamera(Camera):
             outer = np.array([0, 0, w-1, h-1])
             return lies_in_box(inner, outer)
 
+        if Config.autocam["debug"]["ignore_bounds"]:
+            self.pan_deg, self.tilt_deg, self.zoom_f = pan_deg, tilt_deg, zoom_f
+            return self
+
         pan_old, tilt_old, zoom_old = self.pan_deg, self.tilt_deg, self.zoom_f
         _set_ptz(pan_deg, tilt_deg, zoom_f)
         if not _check_corner_pts():

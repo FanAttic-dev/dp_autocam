@@ -10,6 +10,7 @@ debug:
   draw_detections: true
   draw_roi: true
   print_camera_stats: true
+  ignore_bounds: false
 print_profiler_stats: true
 show_original: true
 
