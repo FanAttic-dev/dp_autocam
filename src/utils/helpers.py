@@ -99,13 +99,39 @@ def remove_item_in_dict_lists_(dict, idx):
         dict[k] = np.delete(dict[k], idx, axis=0)
 
 
-def lies_in_rectangle(pt, rect):
-    start_pt, end_pt = rect
+def lies_in_box_pt(pt, box):
+    start_pt, end_pt = box
     start_x, start_y = start_pt
     end_x, end_y = end_pt
     pt_x, pt_y = pt
     return start_x <= pt_x and start_y <= pt_y \
         and pt_x <= end_x and pt_y <= end_y
+
+
+def boxes_overlap(b1, b2):
+    b1_x1, b1_y1, b1_x2, b1_y2 = b1
+    b2_x1, b2_y1, b2_x2, b2_y2 = b2
+
+    if b1_x1 > b2_x2 or b2_x1 > b1_x2:
+        return False
+
+    if b1_y2 > b2_y1 or b2_y2 > b1_y1:
+        return False
+
+    return True
+
+
+def lies_in_box(inner, outer):
+    inner_x1, inner_y1, inner_x2, inner_y2 = inner
+    outer_x1, outer_y1, outer_x2, outer_y2 = outer
+
+    def check_bounds(u, u_min, u_max):
+        return u >= u_min and u <= u_max
+
+    return check_bounds(inner_x1, outer_x1, outer_x2) and \
+        check_bounds(inner_x2, outer_x1, outer_x2) and \
+        check_bounds(inner_y1, outer_y1, outer_y2) and \
+        check_bounds(inner_y2, outer_y1, outer_y2)
 
 
 def get_bounding_box(bbs):

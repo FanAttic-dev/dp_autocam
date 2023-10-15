@@ -76,7 +76,7 @@ while is_alive:
         "ids": []
     }
 
-    if Config.autocam["detect"]:
+    if Config.autocam["detector"]["enabled"]:
         # Split
         profiler.start("Split")
         frames = frame_splitter.split(frame_orig_masked)
@@ -88,6 +88,8 @@ while is_alive:
         # Join
         profiler.start("Join")
         bbs_joined = frame_splitter.join_bbs(bbs)
+        if Config.autocam["detector"]["filter_detections"]:
+            detector.filter_detections_(bbs_joined)
         profiler.stop("Detect")
 
     profiler.start("Other")
@@ -179,7 +181,8 @@ while is_alive:
     """ Input """
     key = cv2.waitKey(delay)
     is_alive = is_alive and camera.process_input(
-        key, mousePos["x"], mousePos["y"])
+        key, mousePos["x"], mousePos["y"]
+    )
 
 
 print(f"Video: {config.video_path}")

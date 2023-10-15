@@ -8,13 +8,15 @@ from utils.config import Config
 
 from detection.image_preprocessor import ImagePreprocessor
 from utils.constants import Color
-from utils.helpers import get_bb_center
+from utils.helpers import get_bb_center, lies_in_box, remove_item_in_dict_lists_
 
 
 class Detector:
-    def __init__(self, frame_orig, top_down, config):
+    def __init__(self, frame_orig, top_down, config: Config):
         self.image_preprocessor = ImagePreprocessor(
             frame_orig, top_down, config)
+
+        self.detection_blacklist = config.dataset["detection_blacklist"]
 
     def preprocess(self, img):
         ...
@@ -27,6 +29,17 @@ class Detector:
 
     def get_stats(self):
         ...
+
+    def filter_detections_(self, bbs):
+        i = 0
+        while i < len(bbs["boxes"]):
+            bb_inner = bbs["boxes"][i]
+            for bb_outer in self.detection_blacklist:
+                if lies_in_box(bb_inner, bb_outer):
+                    remove_item_in_dict_lists_(bbs, i)
+                    i -= 1
+                    break
+            i += 1
 
 
 class YoloDetector(Detector):

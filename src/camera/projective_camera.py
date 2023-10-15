@@ -7,7 +7,7 @@ from utils.config import Config
 from utils.constants import Color
 from filters.kalman_filter import KalmanFilterVel
 from filters.particle_filter import ParticleFilter
-from utils.helpers import apply_homography, discard_extreme_boxes_, filter_bbs_ball, get_bounding_box, get_pitch_rotation_rad, points_average, discard_extreme_points_, get_bb_center, lies_in_rectangle, points_variance
+from utils.helpers import apply_homography, discard_extreme_boxes_, filter_bbs_ball, get_bounding_box, get_pitch_rotation_rad, points_average, discard_extreme_points_, get_bb_center, lies_in_box_pt, points_variance
 
 
 class ProjectiveCamera(Camera):
@@ -237,7 +237,7 @@ class ProjectiveCamera(Camera):
 
         meas = np.array([[self.ball_mu_last]], dtype=np.float32)
         meas_frame_coord = cv2.perspectiveTransform(meas, self.H)[0][0]
-        return lies_in_rectangle(meas_frame_coord, self.dead_zone)
+        return lies_in_box_pt(meas_frame_coord, self.dead_zone)
 
     def shift_coords(self, x, y):
         x = x + self.frame_orig_center_x
