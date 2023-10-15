@@ -3,7 +3,7 @@
 # Debug
 debug:
   enabled: true
-  show_split_frames: true
+  show_split_frames: false
   show_top_down_window: false
   show_warped_frame: false
   draw_grid: false
