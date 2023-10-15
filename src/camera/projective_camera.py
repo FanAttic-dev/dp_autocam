@@ -7,7 +7,7 @@ from utils.config import Config
 from utils.constants import Color
 from filters.kalman_filter import KalmanFilterVel
 from filters.particle_filter import ParticleFilter
-from utils.helpers import apply_homography, discard_extreme_boxes_, filter_bbs_ball, get_bounding_box, get_pitch_rotation_rad, points_average, discard_extreme_points_, get_bb_center, lies_in_box_pt, points_variance
+from utils.helpers import apply_homography, discard_extreme_boxes_, filter_bbs_ball, get_bounding_box, get_pitch_rotation_rad, lies_in_box, points_average, discard_extreme_points_, get_bb_center, lies_in_box_pt, points_variance
 
 
 class ProjectiveCamera(Camera):
@@ -154,21 +154,36 @@ class ProjectiveCamera(Camera):
         self.is_initialized = True
 
     def set_ptz(self, pan_deg, tilt_deg, zoom_f):
-        self.pan_deg = np.clip(
-            pan_deg,
-            self.pan_deg_min,
-            self.pan_deg_max,
-        )
-        self.tilt_deg = np.clip(
-            tilt_deg,
-            self.tilt_deg_min,
-            self.tilt_deg_max
-        )
-        self.zoom_f = np.clip(
-            zoom_f,
-            self.zoom_f_min,
-            self.zoom_f_max
-        )
+        def _set_ptz(pan_deg, tilt_deg, zoom_f):
+            self.pan_deg = np.clip(
+                pan_deg,
+                self.pan_deg_min,
+                self.pan_deg_max,
+            )
+            self.tilt_deg = np.clip(
+                tilt_deg,
+                self.tilt_deg_min,
+                self.tilt_deg_max
+            )
+            self.zoom_f = np.clip(
+                zoom_f,
+                self.zoom_f_min,
+                self.zoom_f_max
+            )
+
+        def _check_corner_pts():
+            corner_pts = self.get_corner_pts()
+            inner = np.array([corner_pts[0], corner_pts[2]],
+                             dtype=np.int32).ravel()
+            w, h = self.frame_orig_size
+            outer = np.array([0, 0, w-1, h-1])
+            return lies_in_box(inner, outer)
+
+        pan_old, tilt_old, zoom_old = self.pan_deg, self.tilt_deg, self.zoom_f
+        _set_ptz(pan_deg, tilt_deg, zoom_f)
+        if not _check_corner_pts():
+            _set_ptz(pan_old, tilt_old, zoom_old)
+
         return self
 
     def init_ptz(self, config):
@@ -186,8 +201,9 @@ class ProjectiveCamera(Camera):
         self.zoom_f_max = camera_config["zoom_f"]["max"]
         self.zoom_f_default = camera_config["zoom_f"]["default"]
 
-        self.set_ptz(self.pan_deg_default,
-                     self.tilt_deg_default, self.zoom_f_default)
+        self.pan_deg = self.pan_deg_default
+        self.tilt_deg = self.tilt_deg_default
+        self.zoom_f = self.zoom_f_default
 
     def init_dead_zone(self):
         size = np.array(Config.autocam["dead_zone"]["size"])

@@ -75,6 +75,7 @@ class SphericalCamera(ProjectiveCamera):
             self._gnomonic_inverse(coords_spherical, (0, 0))
         )
         f = f if f is not None else self.zoom_f
+
         self.set_ptz(pan_deg, tilt_deg, f)
 
     @property

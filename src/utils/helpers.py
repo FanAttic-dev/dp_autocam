@@ -122,11 +122,11 @@ def boxes_overlap(b1, b2):
 
 
 def lies_in_box(inner, outer):
-    inner_x1, inner_y1, inner_x2, inner_y2 = inner
-    outer_x1, outer_y1, outer_x2, outer_y2 = outer
-
     def check_bounds(u, u_min, u_max):
         return u >= u_min and u <= u_max
+
+    inner_x1, inner_y1, inner_x2, inner_y2 = inner
+    outer_x1, outer_y1, outer_x2, outer_y2 = outer
 
     return check_bounds(inner_x1, outer_x1, outer_x2) and \
         check_bounds(inner_x2, outer_x1, outer_x2) and \
