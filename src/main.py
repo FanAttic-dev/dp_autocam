@@ -48,7 +48,7 @@ top_down = TopDown(config.pitch_coords, camera)
 detector = YoloPlayerDetector(frame_orig, top_down, config)
 
 # args.record = True
-args.mouse = True
+# args.mouse = True
 
 if args.mouse:
     player.create_window("Original")
