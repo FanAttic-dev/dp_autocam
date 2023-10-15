@@ -21,8 +21,8 @@ frame_splitter_params:
 - pan_deg: 1.8
   tilt_deg: 0.01
   zoom_f: 80
-- pan_deg: 25
-  tilt_deg: 1.9
+- pan_deg: 26
+  tilt_deg: 1.0
   zoom_f: 80
 pitch_coords:
   p0:

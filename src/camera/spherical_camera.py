@@ -9,7 +9,7 @@ from utils.helpers import get_pitch_rotation_rad, rotate_pts
 
 
 class SphericalCamera(ProjectiveCamera):
-    ZOOM_DZ = 10
+    ZOOM_DZ = 5
     SENSOR_DX = 10
     FOV_DX = 5
 
@@ -121,7 +121,6 @@ class SphericalCamera(ProjectiveCamera):
         coords_spherical_roi = self._screen2spherical(coords_screen)
         coords_spherical_roi = coords_spherical_roi * \
             (self.fov_rad / 2 / self.limits)
-
         coords_spherical_roi = self._gnomonic(coords_spherical_roi)
         coords_screen = self._spherical2screen(coords_spherical_roi)
 
