@@ -90,7 +90,7 @@ while is_alive:
         bbs_joined = frame_splitter.join_bbs(bbs)
         if Config.autocam["detector"]["filter_detections"]:
             detector.filter_detections_(bbs_joined)
-        profiler.stop("Detect")
+        profiler.stop("Join")
 
     profiler.start("Other")
 
