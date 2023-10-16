@@ -78,14 +78,20 @@ class ProjectiveCamera(Camera):
 
         def measure_zoom_bbs(bbs):
             discard_extreme_boxes_(bbs)
+            alpha = Config.autocam["zoom"]["bb"]["alpha"]
+            margin_px = Config.autocam["zoom"]["bb"]["margin_px"]
+
             bb_x_min, bb_y_min, bb_x_max, bb_y_max = get_bounding_box(bbs)
+            bb_x_min -= margin_px
+            bb_x_max += margin_px
 
             corner_pts = self.get_corner_pts()
             roi_x_min, roi_y_min = corner_pts[0]
             roi_x_max, roi_y_max = corner_pts[2]
 
             dz = (bb_x_min - roi_x_min) + (roi_x_max - bb_x_max)
-            f = self.pid_f.target + 0.01 * dz
+            f = self.pid_f.target + alpha * dz
+            f = np.clip(f, self.zoom_f_min, self.zoom_f_max)
             return f
 
         def measure_u(balls_detected, players_center, ball_var):
@@ -139,8 +145,8 @@ class ProjectiveCamera(Camera):
         self.pid_x.update(mu_x)
         self.pid_y.update(mu_y)
 
-        f = measure_zoom_var(ball_var)
-        # f = measure_zoom_bbs(bbs)
+        # f = measure_zoom_var(ball_var)
+        f = measure_zoom_bbs(bbs)
         self.pid_f.update(f)
 
         pid_x = self.pid_x.get()
@@ -306,7 +312,10 @@ class ProjectiveCamera(Camera):
         ...
 
     def draw_players_bb(self, frame_orig, bbs, color=Color.TEAL):
+        margin_px = Config.autocam["zoom"]["bb"]["margin_px"]
         x1, y1, x2, y2 = get_bounding_box(bbs)
+        x1 -= margin_px
+        x2 += margin_px
         cv2.rectangle(frame_orig, (x1, y1), (x2, y2),
                       color, thickness=5)
 
