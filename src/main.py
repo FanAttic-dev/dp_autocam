@@ -93,8 +93,6 @@ while is_alive:
             detector.filter_detections_(bbs_joined)
         profiler.stop("Join")
 
-    profiler.start("Other")
-
     # Render
     if is_debug and Config.autocam["debug"]["draw_detections"]:
         detector.draw_bbs_(frame_orig, bbs_joined)
@@ -114,7 +112,9 @@ while is_alive:
         if is_debug and Config.autocam["debug"]["draw_detections"]:
             camera.draw_center_(frame_orig)
     else:
+        profiler.start("Update by BBS")
         camera.update_by_bbs(bbs_joined, top_down)
+        profiler.stop("Update by BBS")
 
         if is_debug and Config.autocam["debug"]["draw_detections"]:
             camera.draw_ball_prediction_(frame_orig, Color.RED)
@@ -124,7 +124,12 @@ while is_alive:
             camera.draw_players_bb_(frame_orig, bbs_joined)
 
     # camera.draw_zoom_target_(frame_orig)
+    profiler.start("Get frame")
     frame = camera.get_frame(frame_orig)
+    profiler.stop("Get frame")
+
+    profiler.start("Other")
+
     if is_debug and Config.autocam["dead_zone"]["enabled"]:
         camera.draw_dead_zone_(frame)
 

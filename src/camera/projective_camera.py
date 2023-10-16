@@ -64,34 +64,40 @@ class ProjectiveCamera(Camera):
             x, y = apply_homography(top_down.H_inv, *points_mu)
             return np.array([x, y])
 
-        def measure_zoom_var(ball_var):
-            """ Map the PF variance to the camera zoom bounds. """
-            ball_var = np.mean(ball_var)
-            var_min = Config.autocam["zoom"]["var_min"]
-            var_max = Config.autocam["zoom"]["var_max"]
-            ball_var = np.clip(ball_var, var_min, var_max)
+        def measure_zoom(ball_var, bbs):
+            def measure_zoom_var(ball_var):
+                """ Maps the PF variance to the camera zoom bounds. """
 
-            # zoom is inversely proportional to the variance
-            zoom_level = 1 - (ball_var - var_min) / (var_max - var_min)
-            zoom_range = self.zoom_f_max - self.zoom_f_min
-            f = self.zoom_f_min + zoom_level * zoom_range
-            return f
+                ball_var = np.mean(ball_var)
+                var_min = Config.autocam["zoom"]["var_min"]
+                var_max = Config.autocam["zoom"]["var_max"]
+                ball_var = np.clip(ball_var, var_min, var_max)
 
-        def measure_zoom_bbs(bbs):
-            discard_extreme_boxes_(bbs)
-            alpha = Config.autocam["zoom"]["bb"]["alpha"]
-            margin_px = Config.autocam["zoom"]["bb"]["margin_px"]
+                # zoom is inversely proportional to the variance
+                zoom_level = 1 - (ball_var - var_min) / (var_max - var_min)
+                zoom_range = self.zoom_f_max - self.zoom_f_min
+                f = self.zoom_f_min + zoom_level * zoom_range
+                return f
 
-            bb_x_min, _, bb_x_max, _ = get_bounding_box(bbs)
-            bb_x_min -= margin_px
-            bb_x_max += margin_px
-            bb_width = bb_x_max - bb_x_min
+            def measure_zoom_bb(bbs):
+                """ Calculates the focal length based on the players' bounding box. """
 
-            frame_orig_width, _ = self.frame_orig_size
-            fov_target_deg = self.lens_fov_horiz_deg / frame_orig_width * bb_width
-            f = self.fov2f(fov_target_deg)
-            f = np.clip(f, self.zoom_f_min, self.zoom_f_max)
-            return f
+                margin_px = Config.autocam["zoom"]["bb"]["margin_px"]
+
+                discard_extreme_boxes_(bbs)
+                bb_x_min, _, bb_x_max, _ = get_bounding_box(bbs)
+                bb_x_min -= margin_px
+                bb_x_max += margin_px
+                bb_width = bb_x_max - bb_x_min
+
+                fov_target_deg = self.screen_width_px2fov(bb_width)
+                f = self.fov2f(fov_target_deg)
+                f = np.clip(f, self.zoom_f_min, self.zoom_f_max)
+                return f
+
+            f_var = measure_zoom_var(ball_var)
+            f_bb = measure_zoom_bb(bbs)
+            return max(f_var, f_bb)
 
         def measure_u(balls_detected, players_center, ball_var):
             def measure_players_center():
@@ -144,8 +150,7 @@ class ProjectiveCamera(Camera):
         self.pid_x.update(mu_x)
         self.pid_y.update(mu_y)
 
-        # f = measure_zoom_var(ball_var)
-        f = measure_zoom_bbs(bbs)
+        f = measure_zoom(ball_var, bbs)
         self.pid_f.update(f)
 
         pid_x = self.pid_x.get()
@@ -239,7 +244,15 @@ class ProjectiveCamera(Camera):
         return np.deg2rad(np.array([self.fov_horiz_deg, self.fov_vert_deg]), dtype=np.float32)
 
     def fov2f(self, fov_deg):
+        """ Calculates the focal length based on the field of view. """
+
         return self.sensor_w / (2 * np.tan(np.deg2rad(fov_deg) / 2))
+
+    def screen_width_px2fov(self, px):
+        """ Calculates the field of view given by a width in screen space [px]. """
+
+        frame_orig_width, _ = self.frame_orig_size
+        return self.lens_fov_horiz_deg / frame_orig_width * px
 
     @property
     @abstractmethod
