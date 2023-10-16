@@ -4,7 +4,7 @@ from utils.config import Config
 
 from video_tools.video_player import VideoPlayer
 
-videos_dir = Path("../../datasets/TrnavaZilina/VAR")
+videos_dir = Path("../../datasets/TrnavaZilina/VAR/full")
 im_size = (1280, 720)
 export_interval_sec = Config.autocam["eval"]["export_every_x_seconds"]
 
