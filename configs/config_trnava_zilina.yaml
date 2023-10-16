@@ -1,6 +1,6 @@
 ---
 name: TrnavaZilina
-path: "../../datasets/TrnavaZilina"
+path: "../../datasets/TrnavaZilina/main"
 
 camera_params:
   pan_deg:
