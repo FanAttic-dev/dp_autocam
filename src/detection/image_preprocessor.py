@@ -2,8 +2,8 @@ import cv2
 import numpy as np
 from utils.config import Config
 
-from utils.helpers import coords2pts
 from utils.constants import Color
+import utils.utils as utils
 
 
 class ImagePreprocessor:
@@ -13,7 +13,7 @@ class ImagePreprocessor:
         self.init_mask(frame_orig, top_down, pitch_coords, margins)
 
     def init_mask(self, frame_orig, top_down, pitch_coords, margins):
-        pts = coords2pts(pitch_coords).squeeze()
+        pts = utils.coords2pts(pitch_coords).squeeze()
         pts_top_down = top_down.pts2top_down_points(pts)
 
         lb, lt, rt, rb = pts_top_down

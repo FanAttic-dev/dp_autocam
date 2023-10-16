@@ -2,7 +2,7 @@ from algorithm.algo import Algo
 from camera.projective_camera import ProjectiveCamera
 from camera.top_down import TopDown
 from utils.config import Config
-import utils.helpers as helpers
+import utils.utils as utils
 import numpy as np
 
 
@@ -59,16 +59,16 @@ class AutocamAlgo(Algo):
     def measure_ball(self, bb_ball):
         """ Get the ball center point. """
 
-        return helpers.get_bb_center(bb_ball)
+        return utils.get_bb_center(bb_ball)
 
     def measure_players(self, bbs):
         """ Get the players' center point in frame_orig space. """
 
         points = self.top_down.bbs2points(bbs)
-        helpers.discard_extreme_points_(points)
-        points_mu = helpers.points_average(points)
-        self.players_var = helpers.points_variance(points, points_mu)
-        x, y = helpers.apply_homography(self.top_down.H_inv, *points_mu)
+        utils.discard_extreme_points_(points)
+        points_mu = utils.points_average(points)
+        self.players_var = utils.points_variance(points, points_mu)
+        x, y = utils.apply_homography(self.top_down.H_inv, *points_mu)
         return np.array([x, y])
 
     def measure_zoom_var(self, ball_var):
@@ -90,8 +90,8 @@ class AutocamAlgo(Algo):
 
         margin_px = Config.autocam["zoom"]["bb"]["margin_px"]
 
-        helpers.discard_extreme_boxes_(bbs)
-        bb_x_min, _, bb_x_max, _ = helpers.get_bounding_box(bbs)
+        utils.discard_extreme_boxes_(bbs)
+        bb_x_min, _, bb_x_max, _ = utils.get_bounding_box(bbs)
         bb_x_min -= margin_px
         bb_x_max += margin_px
         bb_width = bb_x_max - bb_x_min

@@ -5,7 +5,7 @@ from camera.camera import Camera
 from camera.projective_camera import ProjectiveCamera
 from utils.config import Config
 from utils.constants import INTERPOLATION_TYPE, Color, DrawingMode
-from utils.helpers import get_pitch_rotation_rad, rotate_pts
+import utils.utils as utils
 
 
 class SphericalCamera(ProjectiveCamera):
@@ -100,7 +100,7 @@ class SphericalCamera(ProjectiveCamera):
         coords_screen = coords_screen_roi / frame_size
 
         if Config.autocam["correct_rotation"]:
-            coords_screen = rotate_pts(
+            coords_screen = utils.rotate_pts(
                 coords_screen, self.roll_rad,
                 center=np.array([0.5, 0.5], dtype=np.float32)
             )
@@ -119,8 +119,8 @@ class SphericalCamera(ProjectiveCamera):
         pitch_coords_frame = cv2.perspectiveTransform(
             pitch_coords_orig, self.H
         )
-        self.roll_rad = get_pitch_rotation_rad(pitch_coords_frame)
-        return rotate_pts(coords, self.roll_rad, center)
+        self.roll_rad = utils.get_pitch_rotation_rad(pitch_coords_frame)
+        return utils.rotate_pts(coords, self.roll_rad, center)
 
     def get_frame(self, frame_orig):
         coords = self.coords_screen_fov

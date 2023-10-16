@@ -3,8 +3,8 @@ import cv2
 import numpy as np
 from camera.camera import Camera
 from detection.detector import YoloDetector
-from utils.helpers import apply_homography, coords2pts, discard_extreme_points_, load_yaml
 from utils.constants import INTERPOLATION_TYPE, Color
+import utils.utils as utils
 
 
 class TopDown:
@@ -15,10 +15,10 @@ class TopDown:
     def __init__(self, video_pitch_coords, camera: Camera):
         self.pitch_model = cv2.imread(str(TopDown.pitch_model_path))
         self.pitch_model_red = self.get_pitch_model_red()
-        self.pitch_coords = load_yaml(TopDown.pitch_coords_path)
+        self.pitch_coords = utils.load_yaml(TopDown.pitch_coords_path)
         self.video_pitch_coords = video_pitch_coords
-        self.H, _ = cv2.findHomography(coords2pts(video_pitch_coords),
-                                       coords2pts(self.pitch_coords))
+        self.H, _ = cv2.findHomography(utils.coords2pts(video_pitch_coords),
+                                       utils.coords2pts(self.pitch_coords))
         self.camera = camera
 
     @property
@@ -45,10 +45,10 @@ class TopDown:
         return frame_warped
 
     def pts2top_down_points(self, pts):
-        return np.array([apply_homography(self.H, *pt) for pt in pts])
+        return np.array([utils.apply_homography(self.H, *pt) for pt in pts])
 
     def top_down_points2pts(self, pts):
-        return np.array([apply_homography(self.H_inv, *pt) for pt in pts])
+        return np.array([utils.apply_homography(self.H_inv, *pt) for pt in pts])
 
     def bbs2points(self, bbs):
         points = {
@@ -57,8 +57,8 @@ class TopDown:
         }
         for bb, cls in zip(bbs["boxes"], bbs["cls"]):
             x1, y1, x2, y2 = bb
-            x1, y1 = apply_homography(self.H, x1, y1)
-            x2, y2 = apply_homography(self.H, x2, y2)
+            x1, y1 = utils.apply_homography(self.H, x1, y1)
+            x2, y2 = utils.apply_homography(self.H, x2, y2)
             center_x = int((x1 + x2) / 2)
             center_y = int(y2)
 
@@ -77,7 +77,7 @@ class TopDown:
         points = self.bbs2points(bbs)
 
         if discard_extremes:
-            discard_extreme_points_(points)
+            utils.discard_extreme_points_(points)
 
         for pt, cls in zip(points["points"], points["cls"]):
             cv2.circle(
@@ -113,7 +113,7 @@ class TopDown:
     def draw_roi_(self, frame):
         margin = 50
 
-        pitch_pts = coords2pts(self.video_pitch_coords)
+        pitch_pts = utils.coords2pts(self.video_pitch_coords)
         x_min, y_min = np.min(pitch_pts, axis=0)[0] - margin
         x_max, y_max = np.max(pitch_pts, axis=0)[0] + margin
 
@@ -121,7 +121,7 @@ class TopDown:
         for x, y in self.camera.get_corner_pts():
             x = np.clip(x, x_min, x_max)
             y = np.clip(y, y_min, y_max)
-            x_, y_ = apply_homography(self.H, x, y)
+            x_, y_ = utils.apply_homography(self.H, x, y)
             pts_warped.append((x_, y_))
         pts_warped = np.array(pts_warped, dtype=np.int32)
 

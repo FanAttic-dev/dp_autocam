@@ -8,7 +8,7 @@ from utils.config import Config
 
 from detection.image_preprocessor import ImagePreprocessor
 from utils.constants import Color
-from utils.helpers import get_bb_center, lies_in_box, remove_item_in_dict_lists_
+import utils.utils as utils
 
 
 class Detector:
@@ -35,8 +35,8 @@ class Detector:
         while i < len(bbs["boxes"]):
             bb_inner = bbs["boxes"][i]
             for bb_outer in self.detection_blacklist:
-                if lies_in_box(bb_inner, bb_outer):
-                    remove_item_in_dict_lists_(bbs, i)
+                if utils.lies_in_box(bb_inner, bb_outer):
+                    utils.remove_item_in_dict_lists_(bbs, i)
                     i -= 1
                     break
             i += 1

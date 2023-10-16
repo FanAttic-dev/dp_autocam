@@ -4,7 +4,7 @@ import cv2
 from utils.config import Config
 from utils.constants import Color
 from utils.protocols import HasStats
-from utils.helpers import path2str
+import utils.utils as utils
 
 
 class VideoRecorder:
@@ -31,14 +31,14 @@ class VideoRecorder:
 
     def init_writer(self):
         self.writer = cv2.VideoWriter(
-            path2str(self.file_path),
+            utils.path2str(self.file_path),
             VideoRecorder.FOURCC,
             self.video_player.fps,
             self.frame_size,
             VideoRecorder.IS_COLOR
         )
 
-        print(f"Video recorder initialized: {path2str(self.file_path)}")
+        print(f"Video recorder initialized: {utils.path2str(self.file_path)}")
 
     @staticmethod
     def get_file_path(video_player):
@@ -157,7 +157,7 @@ class VideoRecorder:
         filename += VideoRecorder.IMG_SUFFIX
 
         filepath = dir_path / filename
-        cv2.imwrite(path2str(filepath), frame)
+        cv2.imwrite(utils.path2str(filepath), frame)
 
     def release(self):
         if self.writer is not None:

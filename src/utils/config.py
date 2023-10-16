@@ -1,11 +1,11 @@
 from functools import cached_property
 from pathlib import Path
-from utils.helpers import coords2pts, load_yaml
+import utils.utils as utils
 import random
 
 
 class Config:
-    autocam = load_yaml("./configs/config_autocam.yaml")
+    autocam = utils.load_yaml("./configs/config_autocam.yaml")
 
     def __init__(self, args):
         self.dataset = Config.load_dataset_config(args)
@@ -14,8 +14,8 @@ class Config:
     @staticmethod
     def load_dataset_config(args):
         if args.config_path:
-            return load_yaml(args.config_path)
-        return load_yaml(Config.autocam["dataset"]["config"])
+            return utils.load_yaml(args.config_path)
+        return utils.load_yaml(Config.autocam["dataset"]["config"])
 
     @staticmethod
     def get_video_path(config, args):
@@ -36,7 +36,7 @@ class Config:
 
     @cached_property
     def pitch_coords_pts(self):
-        return coords2pts(self.pitch_coords)
+        return utils.coords2pts(self.pitch_coords)
 
     def get_random_file(dir):
         files = list(dir.iterdir())

@@ -4,7 +4,7 @@ from camera.camera import Camera
 from camera.projective_camera import ProjectiveCamera
 from utils.config import Config
 from utils.constants import INTERPOLATION_TYPE, Color
-from utils.helpers import apply_homography, get_pitch_rotation_rad, rotate_pts
+import utils.utils as utils
 
 
 class CyllindricalCamera(ProjectiveCamera):
@@ -61,9 +61,9 @@ class CyllindricalCamera(ProjectiveCamera):
         pitch_coords_orig = self.config.pitch_coords_pts
         pitch_coords_frame = cv2.perspectiveTransform(
             pitch_coords_orig.astype(np.float64), H)
-        roll_rad = get_pitch_rotation_rad(pitch_coords_frame)
+        roll_rad = utils.get_pitch_rotation_rad(pitch_coords_frame)
 
-        src = np.array(rotate_pts(src, roll_rad), dtype=np.int32)
+        src = np.array(utils.rotate_pts(src, roll_rad), dtype=np.int32)
         H, _ = cv2.findHomography(src, dst)
         return H
 
@@ -97,7 +97,7 @@ class CyllindricalCamera(ProjectiveCamera):
 
         for i in range(0, len(pts)):
             x, y = pts[i]
-            pts[i] = apply_homography(H_inv, x, y)
+            pts[i] = utils.apply_homography(H_inv, x, y)
 
         return pts.astype(np.int16)
 

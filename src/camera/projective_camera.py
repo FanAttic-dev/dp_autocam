@@ -7,7 +7,7 @@ from utils.config import Config
 from utils.constants import Color
 from filters.kalman_filter import KalmanFilterVel
 from filters.particle_filter import ParticleFilter
-from utils.helpers import get_bounding_box, lies_in_box, lies_in_box_pt
+import utils.utils as utils
 
 
 class ProjectiveCamera(Camera):
@@ -74,7 +74,7 @@ class ProjectiveCamera(Camera):
                              dtype=np.int32).ravel()
             w, h = self.frame_orig_size
             outer = np.array([0, 0, w-1, h-1])
-            return lies_in_box(inner, outer)
+            return utils.lies_in_box(inner, outer)
 
         if Config.autocam["debug"]["ignore_bounds"]:
             self.pan_deg, self.tilt_deg, self.zoom_f = pan_deg, tilt_deg, zoom_f
@@ -167,7 +167,7 @@ class ProjectiveCamera(Camera):
 
         meas = np.array([[self.ball_mu_last]], dtype=np.float32)
         meas_frame_coord = cv2.perspectiveTransform(meas, self.H)[0][0]
-        return lies_in_box_pt(meas_frame_coord, self.dead_zone)
+        return utils.lies_in_box_pt(meas_frame_coord, self.dead_zone)
 
     def shift_coords(self, x, y):
         x = x + self.frame_orig_center_x
@@ -217,7 +217,7 @@ class ProjectiveCamera(Camera):
 
     def draw_players_bb_(self, frame_orig, bbs, color=Color.TEAL):
         margin_px = Config.autocam["zoom"]["bb"]["margin_px"]
-        x1, y1, x2, y2 = get_bounding_box(bbs)
+        x1, y1, x2, y2 = utils.get_bounding_box(bbs)
         x1 -= margin_px
         x2 += margin_px
         cv2.rectangle(frame_orig, (x1, y1), (x2, y2),
