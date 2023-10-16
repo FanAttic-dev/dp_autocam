@@ -21,7 +21,10 @@ class Config:
     def get_video_path(config, args):
         videos_dir = Path(config["path"])
         video_name = args.video_name if args.video_name else Config.autocam["dataset"]["video"]
-        return next(videos_dir.glob(f"**/{video_name}"))
+        try:
+            return next(videos_dir.glob(f"**/{video_name}"))
+        except Exception as e:
+            raise FileNotFoundError(e)
 
     @cached_property
     def period(self):
