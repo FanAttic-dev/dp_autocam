@@ -30,6 +30,7 @@ def parse_args():
     parser.add_argument('-v', "--video-name", action='store', required=False)
     parser.add_argument("--config-path", action='store', required=False)
     parser.add_argument("--hide-windows", action='store_true', default=False)
+    parser.add_argument("--export-frames", action='store_true', default=False)
     return parser.parse_args()
 
 
@@ -119,6 +120,8 @@ while is_alive:
             camera.draw_ball_prediction_(frame_orig, Color.RED)
             camera.draw_ball_u_(frame_orig, Color.ORANGE)
             camera.ball_filter.draw_particles_(frame_orig)
+        if is_debug and Config.autocam["debug"]["draw_players_bb"]:
+            camera.draw_players_bb(frame_orig, bbs_joined)
 
     frame = camera.get_frame(frame_orig)
     if is_debug and Config.autocam["dead_zone"]["enabled"]:
@@ -131,7 +134,6 @@ while is_alive:
     if is_debug and Config.autocam["debug"]["draw_roi"]:
         frame_splitter.draw_roi_(frame_orig)
         camera.draw_roi_(frame_orig)
-        # camera.draw_players_bb(frame_orig, bbs_joined) # TODO
     if is_debug and Config.autocam["debug"]["draw_grid"]:
         camera.draw_grid_(frame_orig)
     if not args.hide_windows and Config.autocam["show_original"]:
@@ -159,7 +161,7 @@ while is_alive:
     )
 
     frame_sec = frame_id / int(player.fps)
-    if args.record and Config.autocam["eval"]["export_enabled"] and \
+    if args.record and args.export_frames and \
             frame_sec % export_interval_sec == 0:
         frame_img_id = int(frame_sec // export_interval_sec)
         recorder.save_frame(frame, frame_img_id)

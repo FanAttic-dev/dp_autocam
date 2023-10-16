@@ -9,6 +9,7 @@ debug:
   draw_grid: false
   draw_detections: true
   draw_roi: true
+  draw_players_bb: true
   print_camera_stats: false
   ignore_bounds: false
 
@@ -27,7 +28,6 @@ correct_rotation: true
 # -----------------------------------------------------------------------------
 # Evaluation
 eval:
-  export_enabled: true
   export_every_x_seconds: 20
   pitch_overlay: false
 
@@ -84,6 +84,9 @@ u_control: # PF control input
 zoom:
   var_min: 100
   var_max: 5000
+  bb:
+    alpha: 0.005
+    margin_px: 200
 
 # -----------------------------------------------------------------------------
 # Dead zone
