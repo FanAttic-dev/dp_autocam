@@ -23,8 +23,8 @@ class Config:
         video_name = args.video_name if args.video_name else Config.autocam["dataset"]["video"]
         try:
             return next(videos_dir.glob(f"**/{video_name}"))
-        except Exception as e:
-            raise FileNotFoundError(e)
+        except:
+            raise FileNotFoundError(f"File {video_name} not found.")
 
     @cached_property
     def period(self):
