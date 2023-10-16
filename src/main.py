@@ -26,19 +26,25 @@ def mouse_callback(event, x, y, flags, param):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-r', "--record", action='store_true')
-    parser.add_argument('-m', "--mouse", action='store_true')
+    parser.add_argument('-r', "--record", action='store_true',
+                        help="Export output as video.")
+    parser.add_argument('-m', "--mouse", action='store_true',
+                        help="Debug mode for moving the camera with mouse.")
     parser.add_argument('-v', "--video-name", action='store', required=False)
     parser.add_argument("--config-path", action='store', required=False)
-    parser.add_argument("--hide-windows", action='store_true', default=False)
-    parser.add_argument("--export-frames", action='store_true', default=False)
+    parser.add_argument("--hide-windows", action='store_true', default=False,
+                        help="Hide all windows while running.")
+    parser.add_argument("--export-frames", action='store_true', default=False,
+                        help="Export frames every X seconds (used for evaluation).")
+    parser.add_argument("--no-debug", action='store_true', default=False,
+                        help="Do not generate debug frame.")
     return parser.parse_args()
 
 
 """ Init """
 args = parse_args()
 config = Config(args)
-is_debug = Config.autocam["debug"]["enabled"]
+is_debug = not args.no_debug
 
 player = VideoPlayer(config.video_path)
 delay = player.get_delay(args.record)
@@ -60,6 +66,8 @@ if args.mouse:
 recorder = VideoRecorder(player, camera, detector)
 if args.record:
     recorder.init_writer()
+    if is_debug:
+        recorder.init_debug_writer()
 
 frame_id = 0
 export_interval_sec = Config.autocam["eval"]["export_every_x_seconds"]
@@ -95,21 +103,17 @@ while is_alive:
             detector.filter_detections_(bbs_joined)
         profiler.stop("Join")
 
-    # Render
-    if is_debug and Config.autocam["debug"]["draw_detections"]:
-        detector.draw_bbs_(frame_orig, bbs_joined)
-
-    if is_debug and Config.autocam["debug"]["show_split_frames"]:
+    if is_debug and not args.hide_windows and Config.autocam["debug"]["show_split_frames"]:
         for i, bbs_frame in enumerate(bbs_frames):
             player.show_frame(bbs_frame, f"bbs_frame {i}")
 
     """ ROI """
     if args.mouse:
-        # camera.pid_x.update(mousePos["x"])
-        # camera.pid_y.update(mousePos["y"])
-        # pid_x = camera.pid_x.get()
-        # pid_y = camera.pid_y.get()
-        # camera.set_center(pid_x, pid_y)
+        camera.pid_x.update(mousePos["x"])
+        camera.pid_y.update(mousePos["y"])
+        pid_x = camera.pid_x.get()
+        pid_y = camera.pid_y.get()
+        camera.set_center(pid_x, pid_y)
 
         if is_debug and Config.autocam["debug"]["draw_detections"]:
             camera.draw_center_(frame_orig)
@@ -118,22 +122,26 @@ while is_alive:
         algo.update_by_bbs(bbs_joined)
         profiler.stop("Update by BBS")
 
-        if is_debug and Config.autocam["debug"]["draw_detections"]:
-            camera.draw_ball_prediction_(frame_orig, Color.RED)
-            camera.draw_ball_u_(frame_orig, Color.ORANGE)
-            camera.ball_filter.draw_particles_(frame_orig)
-        if is_debug and Config.autocam["debug"]["draw_players_bb"]:
-            camera.draw_players_bb_(frame_orig, bbs_joined)
-
     # camera.draw_zoom_target_(frame_orig)
     profiler.start("Get frame")
     frame = camera.get_frame(frame_orig)
     profiler.stop("Get frame")
 
     profiler.start("Other")
+    if not args.mouse and is_debug and Config.autocam["detector"]["enabled"]:
+        if Config.autocam["debug"]["draw_detections"]:
+            detector.draw_bbs_(frame_orig, bbs_joined)
+            camera.draw_ball_prediction_(frame_orig, Color.RED)
+            camera.draw_ball_u_(frame_orig, Color.ORANGE)
+            camera.ball_filter.draw_particles_(frame_orig)
+        if Config.autocam["debug"]["draw_players_bb"]:
+            camera.draw_players_bb_(frame_orig, bbs_joined)
+
+    if is_debug:
+        frame_debug = camera.get_frame(frame_orig)
 
     if is_debug and Config.autocam["dead_zone"]["enabled"]:
-        camera.draw_dead_zone_(frame)
+        camera.draw_dead_zone_(frame_debug)
 
     if is_debug and Config.autocam["debug"]["print_camera_stats"]:
         camera.print()
@@ -153,13 +161,16 @@ while is_alive:
         player.show_frame(top_down_frame, "top down")
 
     """ Recorder """
-    recorder_frame = recorder.get_frame(frame, top_down_frame)
+    if is_debug:
+        frame_debug = recorder.decorate_frame(frame_debug, top_down_frame)
 
     if not args.hide_windows:
-        player.show_frame(recorder_frame, "ROI")
+        player.show_frame(frame_debug if is_debug else frame, "ROI")
 
     if args.record:
-        recorder.write(recorder_frame)
+        recorder.write(frame)
+        if is_debug:
+            recorder.write_debug(frame_debug)
 
     """ Warp frame """
     frame_orig_masked = camera.draw_frame_mask(frame_orig)

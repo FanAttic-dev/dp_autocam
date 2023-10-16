@@ -2,7 +2,6 @@
 # -----------------------------------------------------------------------------
 # Debug
 debug:
-  enabled: true
   show_split_frames: false
   show_top_down_window: false
   show_warped_frame: false
@@ -28,7 +27,7 @@ correct_rotation: true
 # -----------------------------------------------------------------------------
 # Evaluation
 eval:
-  export_every_x_seconds: 20
+  export_every_x_seconds: 10
   pitch_overlay: false
 
 # -----------------------------------------------------------------------------

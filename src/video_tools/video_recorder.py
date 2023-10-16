@@ -1,10 +1,13 @@
 from functools import cached_property
 from pathlib import Path
 import cv2
+from camera.camera import Camera
+from detection.detector import Detector
 from utils.config import Config
 from utils.constants import Color
 from utils.protocols import HasStats
 import utils.utils as utils
+from video_tools.video_player import VideoPlayer
 
 
 class VideoRecorder:
@@ -22,12 +25,13 @@ class VideoRecorder:
         "thickness": 1
     }
 
-    def __init__(self, video_player, camera, detector):
+    def __init__(self, video_player: VideoPlayer, camera: Camera, detector: Detector):
         self.camera = camera
         self.video_player = video_player
         self.detector = detector
         self.file_path = VideoRecorder.get_file_path(video_player)
         self.writer = None
+        self.writer_debug = None
 
     def init_writer(self):
         self.writer = cv2.VideoWriter(
@@ -40,8 +44,22 @@ class VideoRecorder:
 
         print(f"Video recorder initialized: {utils.path2str(self.file_path)}")
 
+    def init_debug_writer(self):
+        self.file_path_debug = self.file_path.with_stem(
+            self.file_path.stem + "_debug")
+        self.writer_debug = cv2.VideoWriter(
+            utils.path2str(self.file_path_debug),
+            VideoRecorder.FOURCC,
+            self.video_player.fps,
+            self.frame_size_debug,
+            VideoRecorder.IS_COLOR
+        )
+
+        print(
+            f"Video debug recorder initialized: {utils.path2str(self.file_path_debug)}")
+
     @staticmethod
-    def get_file_path(video_player):
+    def get_file_path(video_player: VideoPlayer) -> Path:
         VideoRecorder.RECORDINGS_FOLDER.mkdir(exist_ok=True)
 
         video_path = video_player.video_path.stem
@@ -62,14 +80,15 @@ class VideoRecorder:
 
     @cached_property
     def frame_size(self):
-        if Config.autocam["debug"]:
-            return self.camera.FRAME_W + VideoRecorder.STATS_WIDTH, self.camera.FRAME_H
-
         return self.camera.FRAME_W, self.camera.FRAME_H
 
     @cached_property
+    def frame_size_debug(self):
+        return self.camera.FRAME_W + VideoRecorder.STATS_WIDTH, self.camera.FRAME_H
+
+    @cached_property
     def text_x(self):
-        frame_w, _ = self.frame_size
+        frame_w, _ = self.frame_size_debug
         return frame_w - VideoRecorder.STATS_WIDTH + VideoRecorder.TEXT_MARGIN
 
     @cached_property
@@ -137,15 +156,18 @@ class VideoRecorder:
         frame[0:top_down_h, -top_down_w-1:-1] = top_down_frame_res
         return frame
 
-    def get_frame(self, frame, top_down_frame):
-        if Config.autocam["debug"]:
-            frame = self.add_top_down(frame, top_down_frame)
-            frame = self.add_stats_bar(frame)
+    def decorate_frame(self, frame, top_down_frame):
+        frame = self.add_top_down(frame, top_down_frame)
+        frame = self.add_stats_bar(frame)
         return frame
 
     def write(self, frame):
         assert self.writer is not None
         self.writer.write(frame)
+
+    def write_debug(self, frame):
+        assert self.writer_debug is not None
+        self.writer_debug.write(frame)
 
     def save_frame(self, frame, frame_id, suffix=""):
         dir_path = self.file_path.parent / f"{self.file_path.stem}_frames"
@@ -162,3 +184,5 @@ class VideoRecorder:
     def release(self):
         if self.writer is not None:
             self.writer.release()
+        if self.writer_debug is not None:
+            self.writer_debug.release()

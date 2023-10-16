@@ -216,6 +216,9 @@ class ProjectiveCamera(Camera):
         ...
 
     def draw_players_bb_(self, frame_orig, bbs, color=Color.TEAL):
+        if len(bbs["boxes"]) == 0:
+            return
+
         margin_px = Config.autocam["zoom"]["bb"]["margin_px"]
         x1, y1, x2, y2 = utils.get_bounding_box(bbs)
         x1 -= margin_px

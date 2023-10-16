@@ -1,4 +1,5 @@
 from functools import cached_property
+from pathlib import Path
 import cv2
 
 
@@ -6,7 +7,7 @@ class VideoPlayer:
     WINDOW_NAME = 'frame'
     WINDOW_FLAGS = cv2.WINDOW_NORMAL  # cv2.WINDOW_AUTOSIZE
 
-    def __init__(self, video_path):
+    def __init__(self, video_path: Path):
         self.video_path = video_path
         self.cap = cv2.VideoCapture(str(video_path.absolute()))
         print(f"Video player initialized: {self.video_path.absolute()}")
