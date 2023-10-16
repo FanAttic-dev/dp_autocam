@@ -84,8 +84,10 @@ u_control: # PF control input
 zoom:
   var_min: 100
   var_max: 5000
+
+  # Zoom based on the players' bounding box.
   bb:
-    margin_px: 200
+    margin_px: 300 # Margin around the player's bounding box.
 
 # -----------------------------------------------------------------------------
 # Dead zone
