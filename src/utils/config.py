@@ -20,8 +20,8 @@ class Config:
     @staticmethod
     def get_video_path(config, args):
         videos_dir = Path(config["path"])
-        video_path = args.video_path if args.video_path else Config.autocam["dataset"]["video"]
-        return videos_dir / video_path
+        video_name = args.video_name if args.video_name else Config.autocam["dataset"]["video"]
+        return next(videos_dir.glob(f"**/{video_name}"))
 
     @cached_property
     def period(self):

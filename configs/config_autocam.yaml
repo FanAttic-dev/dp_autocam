@@ -9,7 +9,7 @@ debug:
   draw_grid: false
   draw_detections: true
   draw_roi: true
-  print_camera_stats: true
+  print_camera_stats: false
   ignore_bounds: false
 
 print_profiler_stats: true
@@ -19,8 +19,9 @@ show_original: true
 # Dataset
 dataset:
   config: "./configs/config_trnava_zilina.yaml"
-  video: main_p0.mp4
-  
+  video: "p0_zoom.mp4"
+  # video: "main_p0.mp4"
+
 correct_rotation: true
 
 # -----------------------------------------------------------------------------
@@ -76,7 +77,7 @@ u_control: # PF control input
     var_th: 5000
   velocity:
     # Weight of panning the camera with the mean players' velocity vector.
-    alpha: 3
+    alpha: 2
 
 # Particle filter variance zoom limits.
 # Maps the PF variance to the camera zoom limits.

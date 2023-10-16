@@ -1,6 +1,6 @@
 ---
 name: TrnavaZilina
-path: "../../datasets/TrnavaZilina/main"
+path: "../../datasets/TrnavaZilina"
 
 camera_params:
   pan_deg:
@@ -60,7 +60,7 @@ mask_margins:
   right: 40
   bottom: -30
   left: -40
-  
+
 detection_blacklist:
   - - 1793 # x1
     - 1186 # y1
