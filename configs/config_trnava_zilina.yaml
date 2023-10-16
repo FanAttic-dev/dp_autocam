@@ -3,6 +3,7 @@ name: TrnavaZilina
 path: "../../datasets/TrnavaZilina/main"
 
 camera_params:
+  lens_fov_horiz_deg: 115
   pan_deg:
     default: -1
     min: -27

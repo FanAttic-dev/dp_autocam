@@ -18,6 +18,7 @@ class ProjectiveCamera(Camera):
     def __init__(self, frame_orig, config: Config):
         self.config = config
         self.sensor_w = Camera.SENSOR_W
+        self.lens_fov_horiz_deg = config.dataset["camera_params"]["lens_fov_horiz_deg"]
         self.init_ptz(config.dataset)
 
         h, w, _ = frame_orig.shape
@@ -81,16 +82,14 @@ class ProjectiveCamera(Camera):
             alpha = Config.autocam["zoom"]["bb"]["alpha"]
             margin_px = Config.autocam["zoom"]["bb"]["margin_px"]
 
-            bb_x_min, bb_y_min, bb_x_max, bb_y_max = get_bounding_box(bbs)
+            bb_x_min, _, bb_x_max, _ = get_bounding_box(bbs)
             bb_x_min -= margin_px
             bb_x_max += margin_px
+            bb_width = bb_x_max - bb_x_min
 
-            corner_pts = self.get_corner_pts()
-            roi_x_min, roi_y_min = corner_pts[0]
-            roi_x_max, roi_y_max = corner_pts[2]
-
-            dz = (bb_x_min - roi_x_min) + (roi_x_max - bb_x_max)
-            f = self.pid_f.target + alpha * dz
+            frame_orig_width, _ = self.frame_orig_size
+            fov_target_deg = self.lens_fov_horiz_deg / frame_orig_width * bb_width
+            f = self.fov2f(fov_target_deg)
             f = np.clip(f, self.zoom_f_min, self.zoom_f_max)
             return f
 
@@ -228,14 +227,19 @@ class ProjectiveCamera(Camera):
         ])
 
     @property
-    @abstractmethod
     def fov_horiz_deg(self):
-        ...
+        return np.rad2deg(2 * np.arctan(self.sensor_w / (2 * self.zoom_f)))
 
     @property
-    @abstractmethod
     def fov_vert_deg(self):
-        ...
+        return self.fov_horiz_deg / Camera.FRAME_ASPECT_RATIO
+
+    @property
+    def fov_rad(self):
+        return np.deg2rad(np.array([self.fov_horiz_deg, self.fov_vert_deg]), dtype=np.float32)
+
+    def fov2f(self, fov_deg):
+        return self.sensor_w / (2 * np.tan(np.deg2rad(fov_deg) / 2))
 
     @property
     @abstractmethod
@@ -311,7 +315,7 @@ class ProjectiveCamera(Camera):
     def draw_frame_mask(self, frame_orig):
         ...
 
-    def draw_players_bb(self, frame_orig, bbs, color=Color.TEAL):
+    def draw_players_bb_(self, frame_orig, bbs, color=Color.TEAL):
         margin_px = Config.autocam["zoom"]["bb"]["margin_px"]
         x1, y1, x2, y2 = get_bounding_box(bbs)
         x1 -= margin_px

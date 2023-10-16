@@ -44,14 +44,6 @@ class CyllindricalCamera(ProjectiveCamera):
         return np.linalg.inv(self.H)
 
     @property
-    def fov_horiz_deg(self):
-        return np.rad2deg(2 * np.arctan(self.sensor_w / (2 * self.zoom_f)))
-
-    @property
-    def fov_vert_deg(self):
-        return self.fov_horiz_deg / Camera.FRAME_ASPECT_RATIO
-
-    @property
     def H(self):
         src = self.get_corner_pts()
         dst = Camera.FRAME_CORNERS

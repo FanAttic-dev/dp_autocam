@@ -14,8 +14,6 @@ class SphericalCamera(ProjectiveCamera):
     FOV_DX = 5
 
     def __init__(self, frame_orig, config: Config):
-        self.lens_fov_horiz_deg = 115
-
         super().__init__(frame_orig, config)
 
     @property  # TODO: make cached
@@ -77,18 +75,6 @@ class SphericalCamera(ProjectiveCamera):
         f = f if f is not None else self.zoom_f
 
         self.set_ptz(pan_deg, tilt_deg, f)
-
-    @property
-    def fov_rad(self):
-        return np.deg2rad(np.array([self.fov_horiz_deg, self.fov_vert_deg]), dtype=np.float32)
-
-    @property
-    def fov_horiz_deg(self):
-        return np.rad2deg(2 * np.arctan(self.sensor_w / (2 * self.zoom_f)))
-
-    @property
-    def fov_vert_deg(self):
-        return self.fov_horiz_deg / Camera.FRAME_ASPECT_RATIO
 
     @property
     def H(self):
@@ -258,6 +244,21 @@ class SphericalCamera(ProjectiveCamera):
         for x, y in coords:
             cv2.circle(frame_orig, [x, y], radius=5,
                        color=color, thickness=-1)
+
+    def draw_zoom_target_(self, frame_orig):
+        target_w = 1000
+        target_h = 200
+
+        # w, h = self.frame_orig_size
+        # w / self.lens_fov_horiz_deg
+
+        x1 = self.frame_orig_center_x - target_w // 2
+        y1 = self.frame_orig_center_y - target_h // 2
+        x2 = self.frame_orig_center_x + target_w // 2
+        y2 = self.frame_orig_center_y + target_h // 2
+
+        cv2.rectangle(frame_orig, (x1, y1), (x2, y2),
+                      color=Color.ORANGE, thickness=10)
 
     def process_input(self, key, mouseX, mouseY):
         is_alive = True
