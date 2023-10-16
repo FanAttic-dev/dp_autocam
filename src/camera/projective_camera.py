@@ -7,7 +7,7 @@ from utils.config import Config
 from utils.constants import Color
 from filters.kalman_filter import KalmanFilterVel
 from filters.particle_filter import ParticleFilter
-from utils.helpers import apply_homography, discard_extreme_boxes_, filter_bbs_ball, get_bounding_box, get_pitch_rotation_rad, lies_in_box, points_average, discard_extreme_points_, get_bb_center, lies_in_box_pt, points_variance
+from utils.helpers import get_bounding_box, lies_in_box, lies_in_box_pt
 
 
 class ProjectiveCamera(Camera):
@@ -49,119 +49,6 @@ class ProjectiveCamera(Camera):
         self.players_var = None
         self.u_last = None
         self.init_dead_zone()
-
-    def update_by_bbs(self, bbs, top_down):
-        def measure_ball(bb_ball):
-            """ Get the ball center point. """
-            return get_bb_center(bb_ball)
-
-        def measure_players(bbs):
-            """ Get the players' center point in frame_orig space. """
-            points = top_down.bbs2points(bbs)
-            discard_extreme_points_(points)
-            points_mu = points_average(points)
-            self.players_var = points_variance(points, points_mu)
-            x, y = apply_homography(top_down.H_inv, *points_mu)
-            return np.array([x, y])
-
-        def measure_zoom(ball_var, bbs):
-            def measure_zoom_var(ball_var):
-                """ Maps the PF variance to the camera zoom bounds. """
-
-                ball_var = np.mean(ball_var)
-                var_min = Config.autocam["zoom"]["var_min"]
-                var_max = Config.autocam["zoom"]["var_max"]
-                ball_var = np.clip(ball_var, var_min, var_max)
-
-                # zoom is inversely proportional to the variance
-                zoom_level = 1 - (ball_var - var_min) / (var_max - var_min)
-                zoom_range = self.zoom_f_max - self.zoom_f_min
-                f = self.zoom_f_min + zoom_level * zoom_range
-                return f
-
-            def measure_zoom_bb(bbs):
-                """ Calculates the focal length based on the players' bounding box. """
-
-                margin_px = Config.autocam["zoom"]["bb"]["margin_px"]
-
-                discard_extreme_boxes_(bbs)
-                bb_x_min, _, bb_x_max, _ = get_bounding_box(bbs)
-                bb_x_min -= margin_px
-                bb_x_max += margin_px
-                bb_width = bb_x_max - bb_x_min
-
-                fov_target_deg = self.screen_width_px2fov(bb_width)
-                f = self.fov2f(fov_target_deg)
-                f = np.clip(f, self.zoom_f_min, self.zoom_f_max)
-                return f
-
-            f_var = measure_zoom_var(ball_var)
-            f_bb = measure_zoom_bb(bbs)
-            return max(f_var, f_bb)
-
-        def measure_u(balls_detected, players_center, ball_var):
-            def measure_players_center():
-                if not balls_detected and np.mean(ball_var) > Config.autocam["u_control"]["center"]["var_th"]:
-                    return Config.autocam["u_control"]["center"]["alpha"] * (players_center - self.ball_mu_last)
-                return np.array([0., 0.])
-
-            def measure_players_movement():
-                if not self.is_initialized:
-                    self.players_filter.set_pos(*players_center)
-                self.players_filter.predict()
-                self.players_filter.update(*players_center)
-                return Config.autocam["u_control"]["velocity"]["alpha"] * self.players_filter.vel.T[0]
-
-            u = np.array([0., 0.])
-
-            u += measure_players_center()
-            u += measure_players_movement()
-
-            return u
-
-        bbs_ball = filter_bbs_ball(bbs)
-        players_detected = len(bbs) > 0 and len(bbs["boxes"]) > 0
-        balls_detected = len(bbs_ball) > 0 and len(bbs_ball['boxes']) > 0
-
-        if not players_detected:
-            return
-
-        players_center = measure_players(bbs)
-
-        # Incorporate measurements into PF
-        if balls_detected:
-            ball_centers = [measure_ball(bb_ball)
-                            for bb_ball in bbs_ball['boxes']]
-            self.ball_filter.update(players_center, ball_centers)
-            self.ball_filter.resample()
-
-        # Apply motion model with uncertainty to PF
-        self.ball_filter.predict()
-
-        # Get estimate
-        ball_mu, ball_var = self.ball_filter.estimate
-
-        # Set control input
-        u = measure_u(balls_detected, players_center, ball_var)
-        self.ball_filter.set_u(u)
-
-        # Camera model
-        mu_x, mu_y = ball_mu if not self.is_meas_in_dead_zone else (None, None)
-        self.pid_x.update(mu_x)
-        self.pid_y.update(mu_y)
-
-        f = measure_zoom(ball_var, bbs)
-        self.pid_f.update(f)
-
-        pid_x = self.pid_x.get()
-        pid_y = self.pid_y.get()
-        pid_f = self.pid_f.get()
-        self.set_center(pid_x, pid_y, pid_f)
-
-        # Update variables
-        self.ball_mu_last = ball_mu
-        self.u_last = u
-        self.is_initialized = True
 
     def set_ptz(self, pan_deg, tilt_deg, zoom_f):
         def _set_ptz(pan_deg, tilt_deg, zoom_f):

@@ -202,25 +202,5 @@ def get_bbs_ball(bbs_joined):
     return bbs_ball, bbs_joined_new
 
 
-def filter_bbs_ball(bbs):
-    bbs_ball = {
-        "boxes": [],
-        "cls": [],
-        "ids": []
-    }
-    for i, (bb, cls) in enumerate(zip(bbs["boxes"], bbs["cls"])):
-        if cls != 0:
-            continue
-
-        bbs_ball["boxes"].append(bb)
-        bbs_ball["cls"].append(cls)
-
-        if i >= len(bbs_ball["ids"]):
-            continue
-
-        bbs_ball["ids"].append(bbs_ball["ids"][i])
-    return bbs_ball
-
-
 def path2str(path):
     return str(path.absolute())

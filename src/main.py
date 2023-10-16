@@ -1,5 +1,6 @@
 import cv2
 import argparse
+from algorithm.autocam_algo import AutocamAlgo
 from camera.cyllindrical_camera import CyllindricalCamera
 from camera.spherical_camera import SphericalCamera
 from utils.config import Config
@@ -47,6 +48,7 @@ camera = SphericalCamera(frame_orig, config)
 frame_splitter = FrameSplitter(frame_orig, config)
 top_down = TopDown(config.pitch_coords, camera)
 detector = YoloPlayerDetector(frame_orig, top_down, config)
+algo = AutocamAlgo(camera, top_down)
 
 # args.record = True
 # args.mouse = True
@@ -113,7 +115,7 @@ while is_alive:
             camera.draw_center_(frame_orig)
     else:
         profiler.start("Update by BBS")
-        camera.update_by_bbs(bbs_joined, top_down)
+        algo.update_by_bbs(bbs_joined)
         profiler.stop("Update by BBS")
 
         if is_debug and Config.autocam["debug"]["draw_detections"]:

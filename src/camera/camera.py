@@ -39,10 +39,6 @@ class Camera(ABC, HasStats):
         ...
 
     @abstractmethod
-    def update_by_bbs(self, bbs):
-        ...
-
-    @abstractmethod
     def get_stats(self) -> dict:
         ...
 
