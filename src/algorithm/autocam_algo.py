@@ -29,6 +29,7 @@ class AutocamAlgo(Algo):
         if not players_detected:
             return
 
+        utils.discard_extreme_boxes_(bbs)
         players_center = self.measure_players(bbs)
 
         # Incorporate measurements into PF
@@ -93,7 +94,6 @@ class AutocamAlgo(Algo):
         """ Get the players' center point in frame_orig space. """
 
         points = self.top_down.bbs2points(bbs)
-        utils.discard_extreme_points_(points)
         points_mu = utils.points_average(points)
         self.players_var = utils.points_variance(points, points_mu)
         x, y = utils.apply_homography(self.top_down.H_inv, *points_mu)
@@ -118,7 +118,6 @@ class AutocamAlgo(Algo):
 
         margin_px = Config.autocam["zoom"]["bb"]["margin_px"]
 
-        utils.discard_extreme_boxes_(bbs)
         bb_x_min, _, bb_x_max, _ = utils.get_bounding_box(bbs)
         bb_x_min -= margin_px
         bb_x_max += margin_px
