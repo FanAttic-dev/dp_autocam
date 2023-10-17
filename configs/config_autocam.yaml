@@ -19,7 +19,7 @@ show_original: true
 # Dataset
 dataset:
   config: "./configs/config_trnava_zilina.yaml"
-  video: "p0_zoom.mp4"
+  video: "p0_shot4.mp4"
   # video: "main_p0.mp4"
 
 correct_rotation: true

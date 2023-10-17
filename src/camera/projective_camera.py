@@ -103,9 +103,11 @@ class ProjectiveCamera(Camera):
         self.zoom_f_max = camera_config["zoom_f"]["max"]
         self.zoom_f_default = camera_config["zoom_f"]["default"]
 
-        self.pan_deg = self.pan_deg_default
-        self.tilt_deg = self.tilt_deg_default
-        self.zoom_f = self.zoom_f_default
+        self.set_ptz(
+            self.pan_deg_default,
+            self.tilt_deg_default,
+            self.zoom_f_default
+        )
 
     def init_pid(self, config: Config, x, y, f):
         pid_config = config.autocam["pid"]

@@ -126,25 +126,17 @@ class VideoRecorder:
             stats["Name"] = f"{name}: {stats['Name']}"
             return stats
 
-        detector_stats = get_stats(self.detector, "Detector")
-        camera_stats = get_stats(self.camera, "Camera")
-        pid_x_stats = get_stats(self.camera.pid_x, "PID_X")
-        pid_y_stats = get_stats(self.camera.pid_y, "PID_Y")
-        pid_f_stats = get_stats(self.camera.pid_f, "PID_F")
-        algo_stats = get_stats(self.algo, "Algo")
-        ball_stats = get_stats(self.algo.ball_filter, "Ball")
-
         text_y = self.spacing
 
         frame = add_border(frame)
 
-        # put_dict_items_(frame, detector_stats)
-        # put_dict_items_(frame, camera_stats)
-        put_dict_items_(frame, pid_x_stats)
-        put_dict_items_(frame, pid_y_stats)
-        put_dict_items_(frame, pid_f_stats)
-        put_dict_items_(frame, algo_stats)
-        # put_dict_items_(frame, ball_stats)
+        # put_dict_items_(frame, get_stats(self.detector, "Detector"))
+        put_dict_items_(frame, get_stats(self.camera, "Camera"))
+        # put_dict_items_(frame, get_stats(self.camera.pid_x, "PID_X"))
+        # put_dict_items_(frame, get_stats(self.camera.pid_y, "PID_Y"))
+        put_dict_items_(frame, get_stats(self.camera.pid_f, "PID_F"))
+        put_dict_items_(frame, get_stats(self.algo, "Algo"))
+        put_dict_items_(frame, get_stats(self.algo.ball_filter, "Ball"))
 
         return frame
 

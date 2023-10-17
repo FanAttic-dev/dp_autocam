@@ -72,12 +72,13 @@ class AutocamAlgo(Algo):
 
         ptz = self.camera.coords2ptz(*center, f)
         ptz = self.camera.clip_ptz(*ptz)
-        coords = self.camera.ptz2coords(*ptz)
         is_valid = self.camera.check_ptz(*ptz)
         if not is_valid:
+            target = (None, None, None)
             print("Update camera: target out of bounds")
-
-        target = (*coords, f) if is_valid else (None, None, None)
+        else:
+            coords = self.camera.ptz2coords(*ptz)
+            target = (*coords, f)
 
         self.camera.update_pid(*target)
         self.camera.set_center(*self.camera.pid_signal)

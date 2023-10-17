@@ -72,7 +72,7 @@ class SphericalCamera(ProjectiveCamera):
         )
         coords_spherical = self._gnomonic(coords_spherical, (0, 0))
         coords_screen = self._spherical2screen(coords_spherical)
-        return (coords_screen * self.frame_orig_size).astype(np.uint16)
+        return (coords_screen * self.frame_orig_size).astype(np.int16)
 
     @property
     def H(self):
