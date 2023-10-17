@@ -215,7 +215,7 @@ class AutocamAlgo(Algo):
         x1 -= margin_px
         x2 += margin_px
         cv2.rectangle(frame_orig, (x1, y1), (x2, y2),
-                      color, thickness=5)
+                      color, thickness=2)
 
     def get_stats(self):
         stats = {

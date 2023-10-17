@@ -53,7 +53,7 @@ delay = player.get_delay(args.record)
 
 is_alive, frame_orig = player.get_next_frame()
 camera = SphericalCamera(frame_orig, config)
-# camera = CyllindricalCamera(frame_orig, config)
+# camera = CyllindricalCamera(frame_orig, config, ignore_bounds=True)
 frame_splitter = FrameSplitter(frame_orig, config)
 top_down = TopDown(config.pitch_coords, camera)
 detector = YoloPlayerDetector(frame_orig, top_down, config)
@@ -77,7 +77,7 @@ while is_alive:
 
     profiler.start("Preprocess")
     frame_orig_masked = detector.preprocess(frame_orig)
-    # frame_orig = frame_orig_masked
+    frame_orig = frame_orig_masked
     profiler.stop("Preprocess")
 
     """ Detection """
@@ -103,13 +103,13 @@ while is_alive:
             detector.filter_detections_(bbs_joined)
         profiler.stop("Join")
 
-    if is_debug and not args.hide_windows and Config.autocam["debug"]["show_split_frames"]:
-        for i, bbs_frame in enumerate(bbs_frames):
-            player.show_frame(bbs_frame, f"bbs_frame {i}")
+        if is_debug and not args.hide_windows and Config.autocam["debug"]["show_split_frames"]:
+            for i, bbs_frame in enumerate(bbs_frames):
+                player.show_frame(bbs_frame, f"bbs_frame {i}")
 
     """ ROI """
     if args.mouse:
-        algo.try_update_camera((mousePos["x"], mousePos["y"]))
+        # algo.try_update_camera((mousePos["x"], mousePos["y"]))
         camera.draw_center_(frame_orig)
     else:
         profiler.start("Update by BBS")

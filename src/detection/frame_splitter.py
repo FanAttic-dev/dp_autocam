@@ -8,7 +8,7 @@ from utils.config import Config
 class FrameSplitter:
     def __init__(self, frame, config: Config):
         self.cameras = [
-            CyllindricalCamera(frame, config).set_ptz(
+            CyllindricalCamera(frame, config, ignore_bounds=True).set_ptz(
                 pan_deg=camera_params["pan_deg"],
                 tilt_deg=camera_params["tilt_deg"],
                 zoom_f=camera_params["zoom_f"]

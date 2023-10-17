@@ -35,7 +35,7 @@ class Camera(ABC, HasStats):
         ...
 
     @abstractmethod
-    def get_corner_pts(self):
+    def get_corner_pts(self, correct_rotation: bool):
         ...
 
     @abstractmethod

@@ -8,9 +8,9 @@ import utils.utils as utils
 
 
 class CyllindricalCamera(ProjectiveCamera):
-    def __init__(self, frame_orig, config: Config):
-        self.cyllinder_radius = 1860
-        super().__init__(frame_orig, config)
+    def __init__(self, frame_orig, config: Config, ignore_bounds=Config.autocam["debug"]["ignore_bounds"]):
+        self.cyllinder_radius = config.dataset["camera_params"]["cyllinder_radius"]
+        super().__init__(frame_orig, config, ignore_bounds)
 
     def ptz2coords(self, pan_deg, tilt_deg, f=None):
         pan_rad = np.deg2rad(pan_deg)
@@ -38,38 +38,20 @@ class CyllindricalCamera(ProjectiveCamera):
             "right top": [self.fov_horiz_deg / 2, -self.fov_vert_deg / 2],
         }
 
-    def get_corner_pts(self):
+    def get_corner_pts(self, correct_rotation):
         pts = [
             self.ptz2coords(
                 self.pan_deg + pan_deg,
                 self.tilt_deg + tilt_deg)
             for pan_deg, tilt_deg in self.corners_ang.values()
         ]
-        return np.array(pts, dtype=np.int32)
+        pts = np.array(pts, dtype=np.int32)
 
-    @property
-    def H_inv(self):
-        return np.linalg.inv(self.H)
+        if not correct_rotation:
+            return pts
 
-    @property
-    def H(self):
-        src = self.get_corner_pts()
-        dst = Camera.FRAME_CORNERS
-
-        H, _ = cv2.findHomography(src, dst)
-        if Config.autocam["correct_rotation"]:
-            src = self.correct_rotation(src, H)
-            H, _ = cv2.findHomography(src, dst)
-
-        return H
-
-    def correct_rotation(self, pts, H):
-        pitch_coords_orig = self.config.pitch_coords_pts
-        pitch_coords_frame = cv2.perspectiveTransform(
-            pitch_coords_orig.astype(np.float64), H)
-        roll_rad = utils.get_pitch_rotation_rad(pitch_coords_frame)
-
-        return np.array(utils.rotate_pts(pts, roll_rad), dtype=np.int32)
+        _, pts = self.correct_rotation(pts)
+        return pts
 
     def get_frame(self, frame_orig):
         return cv2.warpPerspective(
@@ -90,12 +72,12 @@ class CyllindricalCamera(ProjectiveCamera):
         return pts.astype(np.int16)
 
     def draw_roi_(self, frame_orig, color=Color.VIOLET):
-        pts = self.get_corner_pts()
-        cv2.polylines(frame_orig, [pts], True, color, thickness=10)
+        pts = self.get_corner_pts(Config.autocam["correct_rotation"])
+        cv2.polylines(frame_orig, [pts], True, color, thickness=5)
 
     def draw_frame_mask(self, frame_orig):
         mask = np.zeros(frame_orig.shape[:2], dtype=np.uint8)
-        pts = self.get_corner_pts()
+        pts = self.get_corner_pts(Config.autocam["correct_rotation"])
         cv2.fillPoly(mask, [pts], 255)
         return cv2.bitwise_and(frame_orig, frame_orig, mask=mask)
 

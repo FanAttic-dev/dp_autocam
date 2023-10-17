@@ -104,7 +104,7 @@ class YoloDetector(Detector):
                 color=Color.WHITE,
                 fontFace=cv2.FONT_HERSHEY_DUPLEX,
                 fontScale=0.3,
-                thickness=1
+                thickness=5
             )
 
     def plot(self, res):

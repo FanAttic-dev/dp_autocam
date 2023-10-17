@@ -11,17 +11,18 @@ import utils.utils as utils
 
 
 class ProjectiveCamera(Camera):
-    PAN_DX = 1
-    TILT_DY = 1
-    ZOOM_DZ = 1
+    PAN_DX = .1
+    TILT_DY = .1
+    ZOOM_DZ = .5
 
-    def __init__(self, frame_orig, config: Config):
+    def __init__(self, frame_orig, config: Config, ignore_bounds=Config.autocam["debug"]["ignore_bounds"]):
         h, w, _ = frame_orig.shape
         self.frame_orig_size = np.array([w, h], dtype=np.uint16)
         self.frame_orig_center_x = w // 2
         self.frame_orig_center_y = h // 2
 
         self.config = config
+        self.ignore_bounds = ignore_bounds
         self.sensor_w = Camera.SENSOR_W
         self.lens_fov_horiz_deg = config.dataset["camera_params"]["lens_fov_horiz_deg"]
 
@@ -48,7 +49,7 @@ class ProjectiveCamera(Camera):
         self.pid_f.update(pid_f)
 
     def check_ptz(self, pan_deg, tilt_deg, zoom_f):
-        if Config.autocam["debug"]["ignore_bounds"]:
+        if self.ignore_bounds:
             return True
 
         is_valid = pan_deg >= self.pan_deg_min and pan_deg <= self.pan_deg_max and \
@@ -72,10 +73,22 @@ class ProjectiveCamera(Camera):
         return pan_deg, tilt_deg, zoom_f
 
     def check_corner_pts(self):
-        corner_pts = self.get_corner_pts()
+        corner_pts = self.get_corner_pts(Config.autocam["correct_rotation"])
         w, h = self.frame_orig_size
         frame_box = np.array([0, 0, w-1, h-1])
         return utils.polygon_lies_in_box(corner_pts, frame_box)
+
+    def correct_rotation(self, pts, center=None):
+        corner_pts = self.get_corner_pts(correct_rotation=False)
+        H, _ = cv2.findHomography(corner_pts, Camera.FRAME_CORNERS)
+
+        pitch_coords_orig = self.config.pitch_coords_pts.astype(np.float32)
+        pitch_coords_frame = cv2.perspectiveTransform(
+            pitch_coords_orig, H
+        )
+
+        roll_rad = utils.get_pitch_rotation_rad(pitch_coords_frame)
+        return H, utils.rotate_pts(pts, roll_rad, center)
 
     def set_ptz(self, pan_deg, tilt_deg, zoom_f):
         self.pan_deg, self.tilt_deg, self.zoom_f = pan_deg, tilt_deg, zoom_f
@@ -188,9 +201,10 @@ class ProjectiveCamera(Camera):
         return self.try_set_ptz(*ptz)
 
     @property
-    @abstractmethod
     def H(self):
-        ...
+        corner_pts = self.get_corner_pts(Config.autocam["correct_rotation"])
+        H, _ = cv2.findHomography(corner_pts, Camera.FRAME_CORNERS)
+        return H
 
     @property
     def H_inv(self):
@@ -230,7 +244,7 @@ class ProjectiveCamera(Camera):
     def draw_dead_zone_(self, frame):
         start, end = self.dead_zone
         cv2.rectangle(frame, start, end,
-                      color=Color.RED, thickness=1)
+                      color=Color.RED, thickness=5)
 
     @abstractmethod
     def draw_frame_mask(self, frame_orig):

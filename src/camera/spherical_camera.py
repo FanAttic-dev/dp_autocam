@@ -9,12 +9,11 @@ import utils.utils as utils
 
 
 class SphericalCamera(ProjectiveCamera):
-    ZOOM_DZ = 5
     SENSOR_DX = 10
     FOV_DX = 5
 
-    def __init__(self, frame_orig, config: Config):
-        super().__init__(frame_orig, config)
+    def __init__(self, frame_orig, config: Config, ignore_bounds=Config.autocam["debug"]["ignore_bounds"]):
+        super().__init__(frame_orig, config, ignore_bounds)
 
     @property  # TODO: make cached
     def lens_fov_vert_deg(self):
@@ -74,15 +73,7 @@ class SphericalCamera(ProjectiveCamera):
         coords_screen = self._spherical2screen(coords_spherical)
         return (coords_screen * self.frame_orig_size).astype(np.int16)
 
-    @property
-    def H(self):
-        src = self.get_corner_pts()
-        dst = Camera.FRAME_CORNERS
-
-        H, _ = cv2.findHomography(src, dst)
-        return H
-
-    def get_corner_pts(self):
+    def get_corner_pts(self, correct_rotation):
         coords = self.coords_screen_fov * self.frame_orig_size
         coords = np.reshape(coords, (Camera.FRAME_H, Camera.FRAME_W, 2))
 
@@ -91,15 +82,21 @@ class SphericalCamera(ProjectiveCamera):
         rb = coords[-1, -1]
         rt = coords[0, -1]
 
-        return np.array([lt, lb, rb, rt], dtype=np.int32)
+        pts = np.array([lt, lb, rb, rt], dtype=np.int32)
+
+        if not correct_rotation:
+            return pts
+
+        _, pts = self.correct_rotation(pts)
+        return pts
 
     def roi2original(self, coords_screen_roi):
         frame_size = np.array([Camera.FRAME_W, Camera.FRAME_H], dtype=np.int16)
         coords_screen = coords_screen_roi / frame_size
 
         if Config.autocam["correct_rotation"]:
-            coords_screen = utils.rotate_pts(
-                coords_screen, self.roll_rad,
+            _, coords_screen = self.correct_rotation(
+                coords_screen,
                 center=np.array([0.5, 0.5], dtype=np.float32)
             )
 
@@ -112,19 +109,11 @@ class SphericalCamera(ProjectiveCamera):
         coords_screen = (coords_screen * self.frame_orig_size).astype(np.int16)
         return coords_screen
 
-    def correct_rotation(self, coords, center=None):
-        pitch_coords_orig = self.config.pitch_coords_pts.astype(np.float32)
-        pitch_coords_frame = cv2.perspectiveTransform(
-            pitch_coords_orig, self.H
-        )
-        self.roll_rad = utils.get_pitch_rotation_rad(pitch_coords_frame)
-        return utils.rotate_pts(coords, self.roll_rad, center)
-
     def get_frame(self, frame_orig):
         coords = self.coords_screen_fov
 
         if Config.autocam["correct_rotation"]:
-            coords = self.correct_rotation(coords)
+            _, coords = self.correct_rotation(coords)
 
         return self._remap(frame_orig, coords)
 
@@ -209,7 +198,7 @@ class SphericalCamera(ProjectiveCamera):
         if drawing_mode == DrawingMode.LINES:
             skip = 5
             coords = self.get_roi_border_pts(skip)
-            cv2.polylines(frame_orig, [coords], True, color, thickness=10)
+            cv2.polylines(frame_orig, [coords], True, color, thickness=5)
         elif drawing_mode == DrawingMode.CIRCLES:
             skip = 50
             coords = self.get_roi_border_pts(skip)
@@ -256,7 +245,7 @@ class SphericalCamera(ProjectiveCamera):
         y2 = self.frame_orig_center_y + target_h // 2
 
         cv2.rectangle(frame_orig, (x1, y1), (x2, y2),
-                      color=Color.ORANGE, thickness=10)
+                      color=Color.ORANGE, thickness=5)
 
     def process_input(self, key, mouseX, mouseY):
         is_alive = True
