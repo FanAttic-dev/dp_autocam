@@ -37,7 +37,7 @@ detector:
   filter_detections: true
   ball_confidence: 0.35
   ball_max_det: 1
-  players_confidence: 0.25
+  players_confidence: 0.20
 
 # -----------------------------------------------------------------------------
 # Filters
