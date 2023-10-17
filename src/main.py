@@ -109,14 +109,13 @@ while is_alive:
 
     """ ROI """
     if args.mouse:
-        camera.pid_x.update(mousePos["x"])
-        camera.pid_y.update(mousePos["y"])
-        pid_x = camera.pid_x.get()
-        pid_y = camera.pid_y.get()
-        camera.set_center(pid_x, pid_y)
+        # camera.pid_x.update(mousePos["x"])
+        # camera.pid_y.update(mousePos["y"])
+        # pid_x = camera.pid_x.get()
+        # pid_y = camera.pid_y.get()
+        # camera.set_center(pid_x, pid_y)
 
-        if is_debug and Config.autocam["debug"]["draw_detections"]:
-            camera.draw_center_(frame_orig)
+        camera.draw_center_(frame_orig)
     else:
         profiler.start("Update by BBS")
         algo.update_by_bbs(bbs_joined)

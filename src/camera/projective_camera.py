@@ -70,14 +70,13 @@ class ProjectiveCamera(Camera):
 
         def _check_corner_pts():
             corner_pts = self.get_corner_pts()
-            inner = np.array([corner_pts[0], corner_pts[2]],
-                             dtype=np.int32).ravel()
             w, h = self.frame_orig_size
-            outer = np.array([0, 0, w-1, h-1])
-            return utils.lies_in_box(inner, outer)
+            frame_box = np.array([0, 0, w-1, h-1])
+            return utils.polygon_lies_in_box(corner_pts, frame_box)
 
         if Config.autocam["debug"]["ignore_bounds"]:
             self.pan_deg, self.tilt_deg, self.zoom_f = pan_deg, tilt_deg, zoom_f
+            print(_check_corner_pts())
             return self
 
         pan_old, tilt_old, zoom_old = self.pan_deg, self.tilt_deg, self.zoom_f
@@ -167,7 +166,7 @@ class ProjectiveCamera(Camera):
 
         meas = np.array([[self.ball_mu_last]], dtype=np.float32)
         meas_frame_coord = cv2.perspectiveTransform(meas, self.H)[0][0]
-        return utils.lies_in_box_pt(meas_frame_coord, self.dead_zone)
+        return utils.pt_lies_in_box(meas_frame_coord, self.dead_zone)
 
     def shift_coords(self, x, y):
         x = x + self.frame_orig_center_x

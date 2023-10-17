@@ -35,7 +35,7 @@ class Detector:
         while i < len(bbs["boxes"]):
             bb_inner = bbs["boxes"][i]
             for bb_outer in self.detection_blacklist:
-                if utils.lies_in_box(bb_inner, bb_outer):
+                if utils.box_lies_in_box(bb_inner, bb_outer):
                     utils.remove_item_in_dict_lists_(bbs, i)
                     i -= 1
                     break
