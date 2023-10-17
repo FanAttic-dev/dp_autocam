@@ -11,6 +11,7 @@ debug:
   draw_players_bb: true
   print_camera_stats: false
   ignore_bounds: false
+  show_frame_mask: false
 
 print_profiler_stats: true
 show_original: true
@@ -100,7 +101,7 @@ zoom:
 
   # Zoom based on the players' bounding box.
   bb:
-    margin_px: 400 # Margin around the player's bounding box.
+    margin_px: 350 # Margin around the player's bounding box.
 
 # -----------------------------------------------------------------------------
 # Dead zone

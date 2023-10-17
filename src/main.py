@@ -77,7 +77,8 @@ while is_alive:
 
     profiler.start("Preprocess")
     frame_orig_masked = detector.preprocess(frame_orig)
-    frame_orig = frame_orig_masked
+    if Config.autocam["debug"]["show_frame_mask"]:
+        frame_orig = frame_orig_masked
     profiler.stop("Preprocess")
 
     """ Detection """
