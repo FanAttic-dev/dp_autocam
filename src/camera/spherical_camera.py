@@ -28,6 +28,11 @@ class SphericalCamera(ProjectiveCamera):
         coords_screen_frame = self._get_coords_screen_frame()
         return self._screen2spherical(coords_screen_frame)
 
+    @cached_property
+    def coords_spherical_corners(self):
+        coords_screen_frame = self._get_coords_screen_corners()
+        return self._screen2spherical(coords_screen_frame)
+
     @property
     def coords_screen_fov(self):
         coords_spherical_fov = self.coords_spherical_frame * \
@@ -36,10 +41,61 @@ class SphericalCamera(ProjectiveCamera):
         coords_spherical_fov = self._gnomonic(coords_spherical_fov)
         return self._spherical2screen(coords_spherical_fov)
 
+    @property
+    def coords_screen_corners(self):
+        coords_spherical_fov = self.coords_spherical_corners * \
+            (self.fov_rad / 2 / self.limits)
+
+        coords_spherical_fov = self._gnomonic(coords_spherical_fov)
+        return self._spherical2screen(coords_spherical_fov)
+
+    def get_coords_screen_borders(self, skip):
+        coords_screen_frame = self._get_coords_screen_borders(skip)
+        coords_spherical_borders = self._screen2spherical(coords_screen_frame)
+        coords_spherical_fov = coords_spherical_borders * \
+            (self.fov_rad / 2 / self.limits)
+
+        coords_spherical_fov = self._gnomonic(coords_spherical_fov)
+        coords_screen_fov = self._spherical2screen(coords_spherical_fov)
+        return (coords_screen_fov * self.frame_orig_size).astype(np.int32)
+
     def _get_coords_screen_frame(self):
         xx, yy = np.meshgrid(np.linspace(0, 1, Camera.FRAME_W),
                              np.linspace(0, 1, Camera.FRAME_H))
         return np.array([xx.ravel(), yy.ravel()], dtype=np.float32).T
+
+    def _get_coords_screen_corners(self):
+        return np.array([
+            [0, 0],
+            [0, 1],
+            [1, 1],
+            [1, 0]
+        ], dtype=np.float32)
+
+    def _get_coords_screen_borders(self, skip):
+        w = Camera.FRAME_W // skip
+        h = Camera.FRAME_H // skip
+        pts_w = np.linspace(0, 1, w)
+        pts_h = np.linspace(0, 1, h)
+
+        top = np.array([
+            pts_w.copy(),
+            np.zeros(w)
+        ]).T
+        right = np.array([
+            np.ones(h),
+            pts_h.copy()
+        ]).T
+        bottom = np.array([
+            np.flip(pts_w.copy()),
+            np.ones(w)
+        ]).T
+        left = np.array([
+            np.zeros(h),
+            pts_h.copy()
+        ]).T
+
+        return np.concatenate([top, right, bottom, left])
 
     def _screen2spherical(self, coord_screen):
         """ In range: [0, 1], out range: [-FoV_lens/2, FoV_lens/2] """
@@ -74,21 +130,12 @@ class SphericalCamera(ProjectiveCamera):
         return (coords_screen * self.frame_orig_size).astype(np.int16)
 
     def get_corner_pts(self, correct_rotation):
-        coords = self.coords_screen_fov * self.frame_orig_size
-        coords = np.reshape(coords, (Camera.FRAME_H, Camera.FRAME_W, 2))
+        pts = self.coords_screen_corners * self.frame_orig_size
 
-        lt = coords[0, 0]
-        lb = coords[-1, 0]
-        rb = coords[-1, -1]
-        rt = coords[0, -1]
+        if correct_rotation:
+            _, pts = self.correct_rotation(pts)
 
-        pts = np.array([lt, lb, rb, rt], dtype=np.int32)
-
-        if not correct_rotation:
-            return pts
-
-        _, pts = self.correct_rotation(pts)
-        return pts
+        return np.array(pts, dtype=np.int32)
 
     def roi2original(self, coords_screen_roi):
         frame_size = np.array([Camera.FRAME_W, Camera.FRAME_H], dtype=np.int16)
@@ -182,26 +229,14 @@ class SphericalCamera(ProjectiveCamera):
 
         return np.array([lon, lat]).T
 
-    def get_roi_border_pts(self, skip=50):
-        coords = self.coords_screen_fov
-        coords = np.reshape(coords, (Camera.FRAME_H, Camera.FRAME_W, 2))
-        coords = (coords * self.frame_orig_size).astype(np.int32)
-
-        top = coords[0, ::skip, :]
-        right = coords[::skip, -1, :]
-        bottom = coords[-1, ::skip, :]
-        left = coords[::skip, 0, :]
-
-        return np.concatenate([top, right, np.flip(bottom, axis=0), left])
-
     def draw_roi_(self, frame_orig, color=Color.VIOLET, drawing_mode=DrawingMode.LINES):
         if drawing_mode == DrawingMode.LINES:
             skip = 5
-            coords = self.get_roi_border_pts(skip)
+            coords = self.get_coords_screen_borders(skip)
             cv2.polylines(frame_orig, [coords], True, color, thickness=5)
         elif drawing_mode == DrawingMode.CIRCLES:
             skip = 50
-            coords = self.get_roi_border_pts(skip)
+            coords = self.get_coords_screen_borders(skip)
             for x, y in coords:
                 cv2.circle(frame_orig, [x, y], radius=5,
                            color=color, thickness=-1)
@@ -210,7 +245,7 @@ class SphericalCamera(ProjectiveCamera):
         skip = 50
 
         mask = np.zeros(frame_orig.shape[:2], dtype=np.uint8)
-        pts = self.get_roi_border_pts(skip)
+        pts = self.get_coords_screen_borders(skip)
         cv2.fillPoly(mask, [pts], 255)
         return cv2.bitwise_and(frame_orig, frame_orig, mask=mask)
 

@@ -4,7 +4,7 @@ import numpy as np
 from camera.PID import PID
 from camera.camera import Camera
 from utils.config import Config
-from utils.constants import Color
+from utils.constants import INTERPOLATION_TYPE, Color
 from filters.kalman_filter import KalmanFilterVel
 from filters.particle_filter import ParticleFilter
 import utils.utils as utils
@@ -229,9 +229,9 @@ class ProjectiveCamera(Camera):
         y = y - self.frame_orig_center_y
         return x, y
 
-    @abstractmethod
-    def draw_roi_(self, frame_orig, color=Color.VIOLET):
-        ...
+    def draw_roi_homography_(self, frame_orig, color=Color.VIOLET):
+        pts = self.get_corner_pts(Config.autocam["correct_rotation"])
+        cv2.polylines(frame_orig, [pts], True, color, thickness=5)
 
     @abstractmethod
     def draw_grid_(self, frame_orig, color=Color.BLUE):
@@ -250,13 +250,23 @@ class ProjectiveCamera(Camera):
     def draw_frame_mask(self, frame_orig):
         ...
 
-    @abstractmethod
-    def get_frame(self, frame_orig):
-        ...
+    def get_frame_homography(self, frame_orig):
+        return cv2.warpPerspective(
+            frame_orig,
+            self.H,
+            (ProjectiveCamera.FRAME_W, ProjectiveCamera.FRAME_H),
+            flags=INTERPOLATION_TYPE
+        )
 
-    @abstractmethod
-    def roi2original(self, pts):
-        ...
+    def roi2original_homography(self, pts):
+        H_inv = np.linalg.inv(self.H)
+        pts = pts.copy()
+
+        for i in range(0, len(pts)):
+            x, y = pts[i]
+            pts[i] = utils.apply_homography(H_inv, x, y)
+
+        return pts.astype(np.int16)
 
     def pan(self, dx):
         pan_deg = self.pan_deg + dx

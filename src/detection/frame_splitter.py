@@ -1,5 +1,4 @@
 import numpy as np
-from camera.cyllindrical_camera import CyllindricalCamera
 from camera.spherical_camera import SphericalCamera
 from utils.constants import Color
 from utils.config import Config
@@ -8,7 +7,7 @@ from utils.config import Config
 class FrameSplitter:
     def __init__(self, frame, config: Config):
         self.cameras = [
-            CyllindricalCamera(frame, config, ignore_bounds=True).set_ptz(
+            SphericalCamera(frame, config, ignore_bounds=True).set_ptz(
                 pan_deg=camera_params["pan_deg"],
                 tilt_deg=camera_params["tilt_deg"],
                 zoom_f=camera_params["zoom_f"]
@@ -17,7 +16,9 @@ class FrameSplitter:
         ]
 
     def split(self, frame):
-        frames = [camera.get_frame(frame) for camera in self.cameras]
+        frames = [
+            camera.get_frame(frame) for camera in self.cameras
+        ]
         return frames
 
     def join_bbs(self, bbs):
@@ -46,4 +47,3 @@ class FrameSplitter:
     def draw_roi_(self, frame):
         for i, camera in enumerate(self.cameras):
             camera.draw_roi_(frame, Color.GREEN)
-            # camera.draw_roi_(frame, list(colors.values())[2+i])

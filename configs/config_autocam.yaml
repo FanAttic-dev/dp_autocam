@@ -10,8 +10,8 @@ debug:
   draw_roi: true
   draw_players_bb: true
   print_camera_stats: false
-  ignore_bounds: false
-  show_frame_mask: false
+  ignore_bounds: true
+  show_frame_mask: true
 
 print_profiler_stats: true
 show_original: true
@@ -20,8 +20,8 @@ show_original: true
 # Dataset
 dataset:
   config: "./configs/config_trnava_zilina.yaml"
-  video: "p1_goal1.mp4"
-  # video: "main_p0.mp4"
+  # video: "p1_goal1.mp4"
+  video: "main_p0.mp4"
 
 correct_rotation: true
 
@@ -34,7 +34,7 @@ eval:
 # -----------------------------------------------------------------------------
 # Detection
 detector:
-  enabled: true
+  enabled: false
   filter_detections: true
   ball_confidence: 0.35
   ball_max_det: 1

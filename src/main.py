@@ -1,7 +1,6 @@
 import cv2
 import argparse
 from algorithm.autocam_algo import AutocamAlgo
-from camera.cyllindrical_camera import CyllindricalCamera
 from camera.spherical_camera import SphericalCamera
 from utils.config import Config
 from detection.detector import YoloPlayerDetector
@@ -46,14 +45,13 @@ args = parse_args()
 config = Config(args)
 is_debug = not args.no_debug
 # args.record = True
-# args.mouse = True
+args.mouse = True
 
 player = VideoPlayer(config.video_path)
 delay = player.get_delay(args.record)
 
 is_alive, frame_orig = player.get_next_frame()
 camera = SphericalCamera(frame_orig, config)
-# camera = CyllindricalCamera(frame_orig, config, ignore_bounds=True)
 frame_splitter = FrameSplitter(frame_orig, config)
 top_down = TopDown(config.pitch_coords, camera)
 detector = YoloPlayerDetector(frame_orig, top_down, config)
