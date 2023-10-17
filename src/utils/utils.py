@@ -85,6 +85,9 @@ def discard_extreme_points_(points):
 
 
 def discard_extreme_boxes_(bbs):
+    if len(bbs["boxes"]) < 3:
+        return
+
     maxi = np.argmax(bbs["boxes"], axis=0)[2]
     remove_item_in_dict_lists_(bbs, maxi)
 
