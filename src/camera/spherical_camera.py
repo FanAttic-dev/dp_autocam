@@ -56,15 +56,6 @@ class SphericalCamera(ProjectiveCamera):
         y = (y / vert_limit + 1.) * 0.5
         return np.array([x, y], dtype=np.float32).T
 
-    @property
-    def center(self):
-        coords_spherical = np.deg2rad(
-            np.array([self.pan_deg, self.tilt_deg], dtype=np.float32)
-        )
-        coords_spherical = self._gnomonic(coords_spherical, (0, 0))
-        coords_screen = self._spherical2screen(coords_spherical)
-        return (coords_screen * self.frame_orig_size).astype(np.uint16)
-
     def coords2ptz(self, x, y, f=None):
         coords_screen = np.array(
             [x, y], dtype=np.float32) / self.frame_orig_size
@@ -75,13 +66,13 @@ class SphericalCamera(ProjectiveCamera):
         f = f if f is not None else self.zoom_f
         return pan_deg, tilt_deg, f
 
-    def set_center(self, x, y, f=None):
-        ptz = self.coords2ptz(x, y, f)
-        return self.set_ptz(*ptz)
-
-    def try_set_center(self, x, y, f=None):
-        ptz = self.coords2ptz(x, y, f)
-        return self.try_set_ptz(*ptz)
+    def ptz2coords(self, pan_deg, tilt_deg, f=None):
+        coords_spherical = np.deg2rad(
+            np.array([pan_deg, tilt_deg], dtype=np.float32)
+        )
+        coords_spherical = self._gnomonic(coords_spherical, (0, 0))
+        coords_screen = self._spherical2screen(coords_spherical)
+        return (coords_screen * self.frame_orig_size).astype(np.uint16)
 
     @property
     def H(self):

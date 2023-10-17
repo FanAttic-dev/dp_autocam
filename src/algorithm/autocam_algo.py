@@ -59,14 +59,25 @@ class AutocamAlgo(Algo):
 
     def try_update_camera(self, center, f=None):
         """
-            Tries to update the camera PID target
-            by first checking if the new target lies within bounds.        
+            Tries to update the camera PID target.
+
+            It first converts the coords to PTZ,
+            then clips the PTZ to a given PTZ limits,
+            and then verifies if the corner points would lie
+            within the original frame.
+
+            If the new target is valid, the camera PID is updated accordingly.
+            Otherwise, the PID gets updated by its previous target.
         """
 
         ptz = self.camera.coords2ptz(*center, f)
+        ptz = self.camera.clip_ptz(*ptz)
+        coords = self.camera.ptz2coords(*ptz)
         is_valid = self.camera.check_ptz(*ptz)
+        if not is_valid:
+            print("Update camera: target out of bounds")
 
-        target = (*center, f) if is_valid else (None, None, None)
+        target = (*coords, f) if is_valid else (None, None, None)
 
         self.camera.update_pid(*target)
         self.camera.set_center(*self.camera.pid_signal)

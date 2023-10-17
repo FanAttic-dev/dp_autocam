@@ -47,10 +47,6 @@ class ProjectiveCamera(Camera):
         self.pid_y.update(pid_y)
         self.pid_f.update(pid_f)
 
-    @abstractmethod
-    def coords2ptz(self, x, y, f=None):
-        ...
-
     def check_ptz(self, pan_deg, tilt_deg, zoom_f):
         if Config.autocam["debug"]["ignore_bounds"]:
             return True
@@ -68,6 +64,12 @@ class ProjectiveCamera(Camera):
         self.set_ptz(*ptz_old)
 
         return is_valid
+
+    def clip_ptz(self, pan_deg, tilt_deg, zoom_f):
+        pan_deg = np.clip(pan_deg, self.pan_deg_min, self.pan_deg_max)
+        tilt_deg = np.clip(tilt_deg, self.tilt_deg_min, self.tilt_deg_max)
+        zoom_f = np.clip(zoom_f, self.zoom_f_min, self.zoom_f_max)
+        return pan_deg, tilt_deg, zoom_f
 
     def check_corner_pts(self):
         corner_pts = self.get_corner_pts()
@@ -164,17 +166,24 @@ class ProjectiveCamera(Camera):
         return self.lens_fov_horiz_deg / frame_orig_width * px
 
     @property
-    @abstractmethod
     def center(self):
+        return self.ptz2coords(self.pan_deg, self.tilt_deg)
+
+    @abstractmethod
+    def coords2ptz(self, x, y, f=None):
         ...
 
     @abstractmethod
-    def set_center(self, x, y, f=None) -> Camera:
+    def ptz2coords(self, pan_deg, tilt_deg, f=None):
         ...
 
-    @abstractmethod
-    def try_set_center(self, x, y, f=None) -> bool:
-        ...
+    def set_center(self, x, y, f=None):
+        ptz = self.coords2ptz(x, y, f)
+        return self.set_ptz(*ptz)
+
+    def try_set_center(self, x, y, f=None):
+        ptz = self.coords2ptz(x, y, f)
+        return self.try_set_ptz(*ptz)
 
     @property
     @abstractmethod

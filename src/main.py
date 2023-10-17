@@ -45,20 +45,19 @@ def parse_args():
 args = parse_args()
 config = Config(args)
 is_debug = not args.no_debug
+# args.record = True
+# args.mouse = True
 
 player = VideoPlayer(config.video_path)
 delay = player.get_delay(args.record)
 
 is_alive, frame_orig = player.get_next_frame()
-camera = CyllindricalCamera(frame_orig, config)
-# camera = SphericalCamera(frame_orig, config)
+camera = SphericalCamera(frame_orig, config)
+# camera = CyllindricalCamera(frame_orig, config)
 frame_splitter = FrameSplitter(frame_orig, config)
 top_down = TopDown(config.pitch_coords, camera)
 detector = YoloPlayerDetector(frame_orig, top_down, config)
 algo = AutocamAlgo(camera, top_down, config)
-
-# args.record = True
-args.mouse = True
 
 if args.mouse:
     player.create_window("Original")
@@ -128,9 +127,9 @@ while is_alive:
             detector.draw_bbs_(frame_orig, bbs_joined)
             algo.draw_ball_prediction_(frame_orig, Color.RED)
             algo.draw_ball_u_(frame_orig, Color.ORANGE)
-            camera.ball_filter.draw_particles_(frame_orig)
+            algo.ball_filter.draw_particles_(frame_orig)
         if Config.autocam["debug"]["draw_players_bb"]:
-            camera.draw_players_bb_(frame_orig, bbs_joined)
+            algo.draw_players_bb_(frame_orig, bbs_joined)
 
     if is_debug:
         frame_debug = camera.get_frame(frame_orig)

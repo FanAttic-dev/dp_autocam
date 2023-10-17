@@ -12,9 +12,22 @@ class CyllindricalCamera(ProjectiveCamera):
         self.cyllinder_radius = 1860
         super().__init__(frame_orig, config)
 
-    @property
-    def center(self):
-        return self.ptz2coords(self.pan_deg, self.tilt_deg)
+    def ptz2coords(self, pan_deg, tilt_deg, f=None):
+        pan_rad = np.deg2rad(pan_deg)
+        x = np.tan(pan_rad) * self.cyllinder_radius
+
+        tilt_rad = np.deg2rad(tilt_deg)
+        y = np.tan(tilt_rad) * \
+            np.sqrt(self.cyllinder_radius**2 + x**2)
+        return self.shift_coords(int(x), int(y))
+
+    def coords2ptz(self, x, y, f=None):
+        x, y = self.unshift_coords(x, y)
+        pan_deg = np.rad2deg(np.arctan(x / self.cyllinder_radius))
+        tilt_deg = np.rad2deg(
+            np.arctan(y / (np.sqrt(self.cyllinder_radius**2 + x**2))))
+        f = f if f is not None else self.zoom_f
+        return pan_deg, tilt_deg, f
 
     @property
     def corners_ang(self):
@@ -34,14 +47,6 @@ class CyllindricalCamera(ProjectiveCamera):
         ]
         return np.array(pts, dtype=np.int32)
 
-    def set_center(self, x, y, f=None):
-        ptz = self.coords2ptz(x, y, f)
-        self.set_ptz(*ptz)
-
-    def try_set_center(self, x, y, f=None):
-        ptz = self.coords2ptz(x, y, f)
-        return self.try_set_ptz(*ptz)
-
     @property
     def H_inv(self):
         return np.linalg.inv(self.H)
@@ -51,41 +56,20 @@ class CyllindricalCamera(ProjectiveCamera):
         src = self.get_corner_pts()
         dst = Camera.FRAME_CORNERS
 
+        H, _ = cv2.findHomography(src, dst)
         if Config.autocam["correct_rotation"]:
-            H = self.correct_rotation(src, dst)
-        else:
+            src = self.correct_rotation(src, H)
             H, _ = cv2.findHomography(src, dst)
 
         return H
 
-    def correct_rotation(self, src, dst):
-        # TODO: use lookup table
-        H, _ = cv2.findHomography(src, dst)
+    def correct_rotation(self, pts, H):
         pitch_coords_orig = self.config.pitch_coords_pts
         pitch_coords_frame = cv2.perspectiveTransform(
             pitch_coords_orig.astype(np.float64), H)
         roll_rad = utils.get_pitch_rotation_rad(pitch_coords_frame)
 
-        src = np.array(utils.rotate_pts(src, roll_rad), dtype=np.int32)
-        H, _ = cv2.findHomography(src, dst)
-        return H
-
-    def ptz2coords(self, pan_deg, tilt_deg):
-        pan_rad = np.deg2rad(pan_deg)
-        x = np.tan(pan_rad) * self.cyllinder_radius
-
-        tilt_rad = np.deg2rad(tilt_deg)
-        y = np.tan(tilt_rad) * \
-            np.sqrt(self.cyllinder_radius**2 + x**2)
-        return self.shift_coords(int(x), int(y))
-
-    def coords2ptz(self, x, y, f=None):
-        x, y = self.unshift_coords(x, y)
-        pan_deg = np.rad2deg(np.arctan(x / self.cyllinder_radius))
-        tilt_deg = np.rad2deg(
-            np.arctan(y / (np.sqrt(self.cyllinder_radius**2 + x**2))))
-        f = f if f is not None else self.zoom_f
-        return pan_deg, tilt_deg, f
+        return np.array(utils.rotate_pts(pts, roll_rad), dtype=np.int32)
 
     def get_frame(self, frame_orig):
         return cv2.warpPerspective(
