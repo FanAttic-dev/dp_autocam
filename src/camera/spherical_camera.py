@@ -51,12 +51,15 @@ class SphericalCamera(ProjectiveCamera):
 
     def get_coords_screen_borders(self, skip):
         coords_screen_frame = self._get_coords_screen_borders(skip)
+
         coords_spherical_borders = self._screen2spherical(coords_screen_frame)
         coords_spherical_fov = coords_spherical_borders * \
             (self.fov_rad / 2 / self.limits)
 
         coords_spherical_fov = self._gnomonic(coords_spherical_fov)
         coords_screen_fov = self._spherical2screen(coords_spherical_fov)
+        if Config.autocam["correct_rotation"]:
+            _, coords_screen_fov = self.correct_rotation(coords_screen_fov)
         return (coords_screen_fov * self.frame_orig_size).astype(np.int32)
 
     def _get_coords_screen_frame(self):
@@ -231,7 +234,7 @@ class SphericalCamera(ProjectiveCamera):
 
     def draw_roi_(self, frame_orig, color=Color.VIOLET, drawing_mode=DrawingMode.LINES):
         if drawing_mode == DrawingMode.LINES:
-            skip = 5
+            skip = 1
             coords = self.get_coords_screen_borders(skip)
             cv2.polylines(frame_orig, [coords], True, color, thickness=5)
         elif drawing_mode == DrawingMode.CIRCLES:

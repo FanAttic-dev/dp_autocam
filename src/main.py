@@ -45,7 +45,7 @@ args = parse_args()
 config = Config(args)
 is_debug = not args.no_debug
 # args.record = True
-args.mouse = True
+# args.mouse = True
 
 player = VideoPlayer(config.video_path)
 delay = player.get_delay(args.record)
