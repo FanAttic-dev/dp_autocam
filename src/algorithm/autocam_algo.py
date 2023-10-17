@@ -131,8 +131,8 @@ class AutocamAlgo(Algo):
     def measure_zoom(self, ball_var, bbs):
         f_var = self.measure_zoom_var(ball_var)
         f_bb = self.measure_zoom_bb(bbs)
-        return (f_var + f_bb) / 2
-        # return max(f_var, f_bb)
+        # return (f_var + f_bb) / 2
+        return max(f_var, f_bb)
 
     def measure_u(self, balls_detected, players_center, ball_var):
         def measure_players_center():
