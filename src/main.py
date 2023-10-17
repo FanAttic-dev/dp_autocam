@@ -50,20 +50,21 @@ player = VideoPlayer(config.video_path)
 delay = player.get_delay(args.record)
 
 is_alive, frame_orig = player.get_next_frame()
-camera = SphericalCamera(frame_orig, config)
+camera = CyllindricalCamera(frame_orig, config)
+# camera = SphericalCamera(frame_orig, config)
 frame_splitter = FrameSplitter(frame_orig, config)
 top_down = TopDown(config.pitch_coords, camera)
 detector = YoloPlayerDetector(frame_orig, top_down, config)
-algo = AutocamAlgo(camera, top_down)
+algo = AutocamAlgo(camera, top_down, config)
 
 # args.record = True
-# args.mouse = True
+args.mouse = True
 
 if args.mouse:
     player.create_window("Original")
     cv2.setMouseCallback("Original", mouse_callback)
 
-recorder = VideoRecorder(player, camera, detector)
+recorder = VideoRecorder(player, camera, detector, algo)
 if args.record:
     recorder.init_writer()
     if is_debug:
@@ -109,12 +110,7 @@ while is_alive:
 
     """ ROI """
     if args.mouse:
-        # camera.pid_x.update(mousePos["x"])
-        # camera.pid_y.update(mousePos["y"])
-        # pid_x = camera.pid_x.get()
-        # pid_y = camera.pid_y.get()
-        # camera.set_center(pid_x, pid_y)
-
+        algo.try_update_camera((mousePos["x"], mousePos["y"]))
         camera.draw_center_(frame_orig)
     else:
         profiler.start("Update by BBS")
@@ -130,8 +126,8 @@ while is_alive:
     if not args.mouse and is_debug and Config.autocam["detector"]["enabled"]:
         if Config.autocam["debug"]["draw_detections"]:
             detector.draw_bbs_(frame_orig, bbs_joined)
-            camera.draw_ball_prediction_(frame_orig, Color.RED)
-            camera.draw_ball_u_(frame_orig, Color.ORANGE)
+            algo.draw_ball_prediction_(frame_orig, Color.RED)
+            algo.draw_ball_u_(frame_orig, Color.ORANGE)
             camera.ball_filter.draw_particles_(frame_orig)
         if Config.autocam["debug"]["draw_players_bb"]:
             camera.draw_players_bb_(frame_orig, bbs_joined)
@@ -155,7 +151,7 @@ while is_alive:
         player.show_frame(frame_orig, "Original")
 
     """ Top-down """
-    top_down_frame = top_down.get_frame(bbs_joined)
+    top_down_frame = top_down.get_frame(bbs_joined, algo.players_filter.pos)
     if not args.hide_windows and is_debug and Config.autocam["debug"]["show_top_down_window"]:
         player.show_frame(top_down_frame, "top down")
 

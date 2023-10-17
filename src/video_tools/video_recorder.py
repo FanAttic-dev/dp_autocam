@@ -1,7 +1,9 @@
 from functools import cached_property
 from pathlib import Path
 import cv2
+from algorithm.autocam_algo import AutocamAlgo
 from camera.camera import Camera
+from camera.projective_camera import ProjectiveCamera
 from detection.detector import Detector
 from utils.config import Config
 from utils.constants import Color
@@ -25,10 +27,11 @@ class VideoRecorder:
         "thickness": 1
     }
 
-    def __init__(self, video_player: VideoPlayer, camera: Camera, detector: Detector):
+    def __init__(self, video_player: VideoPlayer, camera: ProjectiveCamera, detector: Detector, algo: AutocamAlgo):
         self.camera = camera
         self.video_player = video_player
         self.detector = detector
+        self.algo = algo
         self.file_path = VideoRecorder.get_file_path(video_player)
         self.writer = None
         self.writer_debug = None
@@ -128,18 +131,20 @@ class VideoRecorder:
         pid_x_stats = get_stats(self.camera.pid_x, "PID_X")
         pid_y_stats = get_stats(self.camera.pid_y, "PID_Y")
         pid_f_stats = get_stats(self.camera.pid_f, "PID_F")
-        ball_stats = get_stats(self.camera.ball_filter, "Ball")
+        algo_stats = get_stats(self.algo, "Algo")
+        ball_stats = get_stats(self.algo.ball_filter, "Ball")
 
         text_y = self.spacing
 
         frame = add_border(frame)
 
         # put_dict_items_(frame, detector_stats)
-        put_dict_items_(frame, camera_stats)
-        # put_dict_items_(frame, pid_x_stats)
-        # put_dict_items_(frame, pid_y_stats)
+        # put_dict_items_(frame, camera_stats)
+        put_dict_items_(frame, pid_x_stats)
+        put_dict_items_(frame, pid_y_stats)
         put_dict_items_(frame, pid_f_stats)
-        put_dict_items_(frame, ball_stats)
+        put_dict_items_(frame, algo_stats)
+        # put_dict_items_(frame, ball_stats)
 
         return frame
 

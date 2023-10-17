@@ -33,7 +33,7 @@ eval:
 # -----------------------------------------------------------------------------
 # Detection
 detector:
-  enabled: true
+  enabled: false
   filter_detections: true
   ball_confidence: 0.35
   ball_max_det: 1
@@ -77,6 +77,20 @@ u_control: # PF control input
   velocity:
     # Weight of panning the camera with the mean players' velocity vector.
     alpha: 2
+
+pid:
+  x:
+    kp: 0.03
+    ki: 0.009
+    kd: 0
+  y:
+    kp: 0.03
+    ki: 0.009
+    kd: 0
+  f:
+    kp: 0.01
+    ki: 0
+    kd: 0
 
 # Particle filter variance zoom limits.
 # Maps the PF variance to the camera zoom limits.

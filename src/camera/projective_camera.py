@@ -16,78 +16,78 @@ class ProjectiveCamera(Camera):
     ZOOM_DZ = 1
 
     def __init__(self, frame_orig, config: Config):
-        self.config = config
-        self.sensor_w = Camera.SENSOR_W
-        self.lens_fov_horiz_deg = config.dataset["camera_params"]["lens_fov_horiz_deg"]
-        self.init_ptz(config.dataset)
-
         h, w, _ = frame_orig.shape
         self.frame_orig_size = np.array([w, h], dtype=np.uint16)
         self.frame_orig_center_x = w // 2
         self.frame_orig_center_y = h // 2
 
-        self.pid_x = PID(kp=0.03, ki=0.009)
-        self.pid_y = PID()
-        self.pid_f = PID(kp=0.01)
-        center_x, center_y = self.center
-        self.pid_x.init(center_x)
-        self.pid_y.init(center_y)
-        self.pid_f.init(self.zoom_f)
+        self.config = config
+        self.sensor_w = Camera.SENSOR_W
+        self.lens_fov_horiz_deg = config.dataset["camera_params"]["lens_fov_horiz_deg"]
 
-        self.ball_filter = ParticleFilter(Config.autocam["ball_pf"])
-        self.ball_filter.init(self.center)
-        self.ball_mu_last = self.center
+        self.init_ptz(config)
+        self.init_pid(config, *self.center, self.zoom_f)
 
-        self.players_filter = KalmanFilterVel(
-            Config.autocam["players_kf"]["dt"],
-            Config.autocam["players_kf"]["std_acc"],
-            Config.autocam["players_kf"]["std_meas"],
-        )
-        self.players_filter.set_pos(*self.center)
+        self.init_dead_zone(config)
 
-        self.is_initialized = False
-        self.players_var = None
-        self.u_last = None
-        self.init_dead_zone()
+    @property
+    def ptz(self):
+        return self.pan_deg, self.tilt_deg, self.zoom_f
+
+    @property
+    def pid_target(self):
+        return self.pid_x.target, self.pid_y.target, self.pid_f.target
+
+    @property
+    def pid_signal(self):
+        return self.pid_x.signal, self.pid_y.signal, self.pid_f.signal
+
+    def update_pid(self, pid_x=None, pid_y=None, pid_f=None):
+        self.pid_x.update(pid_x)
+        self.pid_y.update(pid_y)
+        self.pid_f.update(pid_f)
+
+    @abstractmethod
+    def coords2ptz(self, x, y, f=None):
+        ...
+
+    def check_ptz(self, pan_deg, tilt_deg, zoom_f):
+        if Config.autocam["debug"]["ignore_bounds"]:
+            return True
+
+        is_valid = pan_deg >= self.pan_deg_min and pan_deg <= self.pan_deg_max and \
+            tilt_deg >= self.tilt_deg_min and tilt_deg <= self.tilt_deg_max and \
+            zoom_f >= self.zoom_f_min and zoom_f <= self.zoom_f_max
+
+        if not is_valid:
+            return False
+
+        ptz_old = self.ptz
+        self.set_ptz(pan_deg, tilt_deg, zoom_f)
+        is_valid = self.check_corner_pts()
+        self.set_ptz(*ptz_old)
+
+        return is_valid
+
+    def check_corner_pts(self):
+        corner_pts = self.get_corner_pts()
+        w, h = self.frame_orig_size
+        frame_box = np.array([0, 0, w-1, h-1])
+        return utils.polygon_lies_in_box(corner_pts, frame_box)
 
     def set_ptz(self, pan_deg, tilt_deg, zoom_f):
-        def _set_ptz(pan_deg, tilt_deg, zoom_f):
-            self.pan_deg = np.clip(
-                pan_deg,
-                self.pan_deg_min,
-                self.pan_deg_max,
-            )
-            self.tilt_deg = np.clip(
-                tilt_deg,
-                self.tilt_deg_min,
-                self.tilt_deg_max
-            )
-            self.zoom_f = np.clip(
-                zoom_f,
-                self.zoom_f_min,
-                self.zoom_f_max
-            )
-
-        def _check_corner_pts():
-            corner_pts = self.get_corner_pts()
-            w, h = self.frame_orig_size
-            frame_box = np.array([0, 0, w-1, h-1])
-            return utils.polygon_lies_in_box(corner_pts, frame_box)
-
-        if Config.autocam["debug"]["ignore_bounds"]:
-            self.pan_deg, self.tilt_deg, self.zoom_f = pan_deg, tilt_deg, zoom_f
-            print(_check_corner_pts())
-            return self
-
-        pan_old, tilt_old, zoom_old = self.pan_deg, self.tilt_deg, self.zoom_f
-        _set_ptz(pan_deg, tilt_deg, zoom_f)
-        if not _check_corner_pts():
-            _set_ptz(pan_old, tilt_old, zoom_old)
-
+        self.pan_deg, self.tilt_deg, self.zoom_f = pan_deg, tilt_deg, zoom_f
         return self
 
-    def init_ptz(self, config):
-        camera_config = config["camera_params"]
+    def try_set_ptz(self, pan_deg, tilt_deg, zoom_f):
+        if not self.check_ptz(pan_deg, tilt_deg, zoom_f):
+            return False
+
+        self.set_ptz(pan_deg, tilt_deg, zoom_f)
+        return True
+
+    def init_ptz(self, config: Config):
+        camera_config = config.dataset["camera_params"]
 
         self.pan_deg_min = camera_config["pan_deg"]["min"]
         self.pan_deg_max = camera_config["pan_deg"]["max"]
@@ -105,8 +105,31 @@ class ProjectiveCamera(Camera):
         self.tilt_deg = self.tilt_deg_default
         self.zoom_f = self.zoom_f_default
 
-    def init_dead_zone(self):
-        size = np.array(Config.autocam["dead_zone"]["size"])
+    def init_pid(self, config: Config, x, y, f):
+        pid_config = config.autocam["pid"]
+
+        self.pid_x = PID(
+            kp=pid_config["x"]["kp"],
+            ki=pid_config["x"]["ki"],
+            kd=pid_config["x"]["kd"]
+        )
+        self.pid_y = PID(
+            kp=pid_config["y"]["kp"],
+            ki=pid_config["y"]["ki"],
+            kd=pid_config["y"]["kd"]
+        )
+        self.pid_f = PID(
+            kp=pid_config["f"]["kp"],
+            ki=pid_config["f"]["ki"],
+            kd=pid_config["f"]["kd"]
+        )
+
+        self.pid_x.init(x)
+        self.pid_y.init(y)
+        self.pid_f.init(f)
+
+    def init_dead_zone(self, config: Config):
+        size = np.array(config.autocam["dead_zone"]["size"])
 
         center = np.array([
             ProjectiveCamera.FRAME_W // 2,
@@ -145,9 +168,12 @@ class ProjectiveCamera(Camera):
     def center(self):
         ...
 
-    @property
     @abstractmethod
-    def set_center(self, x, y, f=None):
+    def set_center(self, x, y, f=None) -> Camera:
+        ...
+
+    @abstractmethod
+    def try_set_center(self, x, y, f=None) -> bool:
         ...
 
     @property
@@ -190,21 +216,6 @@ class ProjectiveCamera(Camera):
         cv2.circle(frame_orig, self.center,
                    radius=5, color=color, thickness=5)
 
-    def draw_ball_prediction_(self, frame_orig, color):
-        x, y = self.ball_mu_last
-        cv2.circle(frame_orig, (int(x), int(y)),
-                   radius=4, color=color, thickness=5)
-
-    def draw_ball_u_(self, frame_orig, color):
-        if self.u_last is None:
-            return
-
-        u_x, u_y = self.u_last
-        mu_x, mu_y = self.ball_mu_last
-        pt1 = np.array([mu_x, mu_y], dtype=np.int32)
-        pt2 = np.array([mu_x + u_x, mu_y + u_y], dtype=np.int32)
-        cv2.line(frame_orig, pt1, pt2, color=color, thickness=2)
-
     def draw_dead_zone_(self, frame):
         start, end = self.dead_zone
         cv2.rectangle(frame, start, end,
@@ -213,17 +224,6 @@ class ProjectiveCamera(Camera):
     @abstractmethod
     def draw_frame_mask(self, frame_orig):
         ...
-
-    def draw_players_bb_(self, frame_orig, bbs, color=Color.TEAL):
-        if len(bbs["boxes"]) == 0:
-            return
-
-        margin_px = Config.autocam["zoom"]["bb"]["margin_px"]
-        x1, y1, x2, y2 = utils.get_bounding_box(bbs)
-        x1 -= margin_px
-        x2 += margin_px
-        cv2.rectangle(frame_orig, (x1, y1), (x2, y2),
-                      color, thickness=5)
 
     @abstractmethod
     def get_frame(self, frame_orig):
@@ -235,15 +235,15 @@ class ProjectiveCamera(Camera):
 
     def pan(self, dx):
         pan_deg = self.pan_deg + dx
-        self.set_ptz(pan_deg, self.tilt_deg, self.zoom_f)
+        self.try_set_ptz(pan_deg, self.tilt_deg, self.zoom_f)
 
     def tilt(self, dy):
         tilt_deg = self.tilt_deg + dy
-        self.set_ptz(self.pan_deg, tilt_deg, self.zoom_f)
+        self.try_set_ptz(self.pan_deg, tilt_deg, self.zoom_f)
 
     def zoom(self, dz):
         f = self.zoom_f + dz
-        self.set_ptz(self.pan_deg, self.tilt_deg, f)
+        self.try_set_ptz(self.pan_deg, self.tilt_deg, f)
 
     def process_input(self, key, mouseX, mouseY):
         is_alive = True
@@ -260,7 +260,7 @@ class ProjectiveCamera(Camera):
         elif key == ord('-'):
             self.zoom(-self.__class__.ZOOM_DZ)
         elif key == ord('f'):
-            self.set_center(mouseX, mouseY)
+            self.try_set_center(mouseX, mouseY)
         elif key == ord('q'):
             is_alive = False
         return is_alive

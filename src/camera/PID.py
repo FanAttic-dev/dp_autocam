@@ -4,7 +4,7 @@ from utils.protocols import HasStats
 
 
 class PID(HasStats):
-    def __init__(self, kp=0.03, ki=0, kd=0):
+    def __init__(self, kp, ki=0, kd=0):
         self.dt = 0.01
         self.kp = kp
         self.ki = ki  # 0.009
@@ -15,23 +15,19 @@ class PID(HasStats):
         self.D = 0
 
         self.target = 0
+        self.e_prev = 0
         self.init(0)
 
     def init(self, signal):
         self.signal = signal
-        self.set_target(signal)
+        self._set_target(signal)
 
-    def set_target(self, target):
-        if target is None or np.isclose(target, self.target):
-            return
+    def _set_target(self, target):
         self.target = target
-        self.e_prev = self.target - self.signal
 
-    def get(self):
-        return self.signal
-
-    def update(self, target):
-        self.set_target(target)
+    def update(self, target=None):
+        if target is not None:
+            self._set_target(target)
 
         e = self.target - self.signal
 

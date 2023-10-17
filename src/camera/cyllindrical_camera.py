@@ -35,9 +35,12 @@ class CyllindricalCamera(ProjectiveCamera):
         return np.array(pts, dtype=np.int32)
 
     def set_center(self, x, y, f=None):
-        pan_deg, tilt_deg = self.coords2ptz(x, y)
-        f = f if f is not None else self.zoom_f
-        self.set_ptz(pan_deg, tilt_deg, f)
+        ptz = self.coords2ptz(x, y, f)
+        self.set_ptz(*ptz)
+
+    def try_set_center(self, x, y, f=None):
+        ptz = self.coords2ptz(x, y, f)
+        return self.try_set_ptz(*ptz)
 
     @property
     def H_inv(self):
@@ -76,12 +79,13 @@ class CyllindricalCamera(ProjectiveCamera):
             np.sqrt(self.cyllinder_radius**2 + x**2)
         return self.shift_coords(int(x), int(y))
 
-    def coords2ptz(self, x, y):
+    def coords2ptz(self, x, y, f=None):
         x, y = self.unshift_coords(x, y)
         pan_deg = np.rad2deg(np.arctan(x / self.cyllinder_radius))
         tilt_deg = np.rad2deg(
             np.arctan(y / (np.sqrt(self.cyllinder_radius**2 + x**2))))
-        return pan_deg, tilt_deg
+        f = f if f is not None else self.zoom_f
+        return pan_deg, tilt_deg, f
 
     def get_frame(self, frame_orig):
         return cv2.warpPerspective(
@@ -150,7 +154,5 @@ class CyllindricalCamera(ProjectiveCamera):
             "tilt_deg": f"{self.tilt_deg:.4f}",
             # "fov_horiz_deg": self.fov_horiz_deg,
             # "fov_vert_deg": self.fov_vert_deg,
-            "players_vel": self.players_filter.vel.squeeze(1),
-            "players_std": np.sqrt(self.players_var) if self.players_var is not None else "",
         }
         return stats

@@ -65,7 +65,7 @@ class SphericalCamera(ProjectiveCamera):
         coords_screen = self._spherical2screen(coords_spherical)
         return (coords_screen * self.frame_orig_size).astype(np.uint16)
 
-    def set_center(self, x, y, f=None):
+    def coords2ptz(self, x, y, f=None):
         coords_screen = np.array(
             [x, y], dtype=np.float32) / self.frame_orig_size
         coords_spherical = self._screen2spherical(coords_screen)
@@ -73,8 +73,15 @@ class SphericalCamera(ProjectiveCamera):
             self._gnomonic_inverse(coords_spherical, (0, 0))
         )
         f = f if f is not None else self.zoom_f
+        return pan_deg, tilt_deg, f
 
-        self.set_ptz(pan_deg, tilt_deg, f)
+    def set_center(self, x, y, f=None):
+        ptz = self.coords2ptz(x, y, f)
+        return self.set_ptz(*ptz)
+
+    def try_set_center(self, x, y, f=None):
+        ptz = self.coords2ptz(x, y, f)
+        return self.try_set_ptz(*ptz)
 
     @property
     def H(self):
@@ -285,7 +292,6 @@ class SphericalCamera(ProjectiveCamera):
             "tilt_deg": f"{self.tilt_deg:.4f}",
             "fov_horiz_deg": self.fov_horiz_deg,
             "fov_vert_deg": self.fov_vert_deg,
-            "players_vel": self.players_filter.vel.squeeze(1),
             "center": self.center,
         }
         return stats
