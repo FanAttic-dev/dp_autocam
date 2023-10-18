@@ -75,8 +75,10 @@ while is_alive:
 
     profiler.start("Preprocess")
     frame_orig_masked = detector.preprocess(frame_orig)
-    if Config.autocam["debug"]["show_frame_mask"]:
+    if is_debug and Config.autocam["debug"]["show_frame_mask"]:
         frame_orig = frame_orig_masked
+    if is_debug:
+        frame_orig_debug = frame_orig.copy()
     profiler.stop("Preprocess")
 
     """ Detection """
@@ -109,7 +111,7 @@ while is_alive:
     """ ROI """
     if args.mouse:
         # algo.try_update_camera((mousePos["x"], mousePos["y"]))
-        camera.draw_center_(frame_orig)
+        camera.draw_center_(frame_orig_debug)
     else:
         profiler.start("Update by BBS")
         algo.update_by_bbs(bbs_joined)
@@ -121,17 +123,16 @@ while is_alive:
     profiler.stop("Get frame")
 
     profiler.start("Other")
+    if is_debug:
+        frame_debug = frame.copy()
     if not args.mouse and is_debug and Config.autocam["detector"]["enabled"]:
         if Config.autocam["debug"]["draw_detections"]:
-            detector.draw_bbs_(frame_orig, bbs_joined)
-            algo.draw_ball_prediction_(frame_orig, Color.RED)
-            algo.draw_ball_u_(frame_orig, Color.ORANGE)
-            algo.ball_filter.draw_particles_(frame_orig)
+            detector.draw_bbs_(frame_orig_debug, bbs_joined)
+            algo.draw_ball_prediction_(frame_orig_debug, Color.RED)
+            algo.draw_ball_u_(frame_orig_debug, Color.ORANGE)
+            algo.ball_filter.draw_particles_(frame_orig_debug)
         if Config.autocam["debug"]["draw_players_bb"]:
-            algo.draw_players_bb_(frame_orig, bbs_joined)
-
-    if is_debug:
-        frame_debug = camera.get_frame(frame_orig)
+            algo.draw_players_bb_(frame_orig_debug, bbs_joined)
 
     if is_debug and Config.autocam["dead_zone"]["enabled"]:
         camera.draw_dead_zone_(frame_debug)
@@ -141,12 +142,13 @@ while is_alive:
 
     """ Original frame """
     if is_debug and Config.autocam["debug"]["draw_roi"]:
-        frame_splitter.draw_roi_(frame_orig)
-        camera.draw_roi_(frame_orig)
+        frame_splitter.draw_roi_(frame_orig_debug)
+        camera.draw_roi_(frame_orig_debug)
     if is_debug and Config.autocam["debug"]["draw_grid"]:
-        camera.draw_grid_(frame_orig)
+        camera.draw_grid_(frame_orig_debug)
     if not args.hide_windows and Config.autocam["show_original"]:
-        player.show_frame(frame_orig, "Original")
+        player.show_frame(
+            frame_orig_debug if is_debug else frame_orig, "Original")
 
     """ Top-down """
     top_down_frame = top_down.get_frame(bbs_joined, algo.players_filter.pos)
