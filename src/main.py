@@ -109,7 +109,7 @@ while is_alive:
                 player.show_frame(bbs_frame, f"bbs_frame {i}")
 
     """ ROI """
-    if args.mouse:
+    if is_debug and args.mouse:
         # algo.try_update_camera((mousePos["x"], mousePos["y"]))
         camera.draw_center_(frame_orig_debug)
     else:
@@ -123,8 +123,6 @@ while is_alive:
     profiler.stop("Get frame")
 
     profiler.start("Other")
-    if is_debug:
-        frame_debug = frame.copy()
     if not args.mouse and is_debug and Config.autocam["detector"]["enabled"]:
         if Config.autocam["debug"]["draw_detections"]:
             detector.draw_bbs_(frame_orig_debug, bbs_joined)
@@ -133,6 +131,8 @@ while is_alive:
             algo.ball_filter.draw_particles_(frame_orig_debug)
         if Config.autocam["debug"]["draw_players_bb"]:
             algo.draw_players_bb_(frame_orig_debug, bbs_joined)
+    if is_debug:
+        frame_debug = camera.get_frame(frame_orig_debug)
 
     if is_debug and Config.autocam["dead_zone"]["enabled"]:
         camera.draw_dead_zone_(frame_debug)
