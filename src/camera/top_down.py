@@ -51,15 +51,16 @@ class TopDown:
 
         return frame_warped
 
-    def pts2top_down_points(self, pts):
+    def pts_screen2tdpts(self, pts):
         return np.array([utils.apply_homography(self.H, *pt) for pt in pts])
 
-    def top_down_points2pts(self, pts):
+    def tdpts2screen(self, pts):
         return np.array([utils.apply_homography(self.H_inv, *pt) for pt in pts])
 
-    def bbs2points(self, bbs):
-        points = {
-            "points": [],
+    def bbs_screen2tdpts(self, bbs):
+        """Convert bounding boxes to top-down points (TDPts)."""
+        tdpts = {
+            "pts": [],
             "cls": []
         }
         for bb, cls in zip(bbs["boxes"], bbs["cls"]):
@@ -69,9 +70,9 @@ class TopDown:
             center_x = int((x1 + x2) / 2)
             center_y = int(y2)
 
-            points["points"].append((center_x, center_y))
-            points["cls"].append(cls)
-        return points
+            tdpts["pts"].append((center_x, center_y))
+            tdpts["cls"].append(cls)
+        return tdpts
 
     def check_bounds(self, x, y):
         h, w, _ = self.pitch_model.shape
@@ -81,12 +82,12 @@ class TopDown:
         if len(bbs) == 0 or len(bbs["boxes"]) == 0:
             return
 
-        points = self.bbs2points(bbs)
+        tdpts = self.bbs_screen2tdpts(bbs)
 
         if discard_extremes:
-            utils.discard_extreme_points_(points)
+            utils.discard_extreme_tdpts_(tdpts)
 
-        for pt, cls in zip(points["points"], points["cls"]):
+        for pt, cls in zip(tdpts["pts"], tdpts["cls"]):
             cv2.circle(
                 top_down_frame,
                 pt,
@@ -95,7 +96,7 @@ class TopDown:
                 thickness=-1
             )
 
-    def draw_screen_point_(self, top_down_frame, pt, color=Color.VIOLET, radius=30):
+    def draw_screen_pt_(self, top_down_frame, pt, color=Color.VIOLET, radius=30):
         if pt is None:
             return
 
@@ -103,11 +104,11 @@ class TopDown:
         pt = np.array(
             [[[np.array(pt_x).item(), np.array(pt_y).item()]]], np.float32)
         pt_top_down_coord = cv2.perspectiveTransform(pt, self.H)[0][0]
-        self.draw_points_(
+        self.draw_pts_(
             top_down_frame, [pt_top_down_coord], color, radius)
 
-    def draw_points_(self, top_down_frame, points, color, radius=10):
-        for pt in points:
+    def draw_pts_(self, top_down_frame, pts, color, radius=10):
+        for pt in pts:
             x, y = pt
             cv2.circle(
                 top_down_frame,
@@ -140,6 +141,6 @@ class TopDown:
         self.draw_roi_(top_down_frame)
 
         self.draw_bbs_(top_down_frame, bbs, discard_extremes=True)
-        self.draw_screen_point_(
+        self.draw_screen_pt_(
             top_down_frame, players_center)
         return top_down_frame

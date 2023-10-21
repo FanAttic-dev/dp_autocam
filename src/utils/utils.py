@@ -59,27 +59,27 @@ def add_bb_ball_(bbs, bb_ball):
     add_bb_(bbs, bb_ball, 0)
 
 
-def points_average(points, weights=None):
-    return np.average(np.array(points["points"]), axis=0, weights=weights)
+def pts_average(pts, weights=None):
+    return np.average(np.array(pts), axis=0, weights=weights)
 
 
-def points_variance(points, mu=None, weights=None):
-    mu = mu if mu is not None else points_average(points, weights)
-    return np.average((points["points"] - mu)**2, axis=0, weights=weights)
+def pts_variance(pts, mu=None, weights=None):
+    mu = mu if mu is not None else pts_average(pts, weights)
+    return np.average((pts - mu)**2, axis=0, weights=weights)
 
 
-def discard_extreme_points_(points):
-    if len(points["points"]) < 3:
+def discard_extreme_tdpts_(tdpts):
+    if len(tdpts["pts"]) < 3:
         return
 
-    maxi = np.argmax(points["points"], axis=0)[0]
-    remove_item_in_dict_lists_(points, maxi)
+    maxi = np.argmax(tdpts["pts"], axis=0)[0]
+    remove_item_in_dict_lists_(tdpts, maxi)
 
-    mini = np.argmin(points["points"], axis=0)[0]
-    remove_item_in_dict_lists_(points, mini)
+    mini = np.argmin(tdpts["pts"], axis=0)[0]
+    remove_item_in_dict_lists_(tdpts, mini)
 
 
-def discard_extreme_boxes_(bbs):
+def discard_extreme_bbs_(bbs):
     if len(bbs["boxes"]) < 3:
         return
 

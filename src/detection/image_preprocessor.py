@@ -15,7 +15,7 @@ class ImagePreprocessor:
 
     def init_mask(self, frame_orig, top_down: TopDown, pitch_corners, margins):
         pts = pitch_corners.squeeze()
-        pts_top_down = top_down.pts2top_down_points(pts)
+        pts_top_down = top_down.pts_screen2tdpts(pts)
 
         lb, lt, rt, rb = pts_top_down
         mt, mr, mb, ml = margins.values()
@@ -25,7 +25,7 @@ class ImagePreprocessor:
         rb += [mr, mb]
 
         pts_top_down = [lb, lt, rt, rb]
-        pts = top_down.top_down_points2pts(pts_top_down).astype(np.int32)
+        pts = top_down.tdpts2screen(pts_top_down).astype(np.int32)
 
         self.mask = np.zeros(frame_orig.shape[:2], dtype=np.uint8)
         cv2.fillPoly(self.mask, pts=[pts], color=Color.WHITE)
