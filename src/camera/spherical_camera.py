@@ -36,7 +36,8 @@ class SphericalCamera(ProjectiveCamera):
     def coords_spherical2screen_fov(
         self,
         coords_spherical,
-        correct_rotation=Config.autocam["correct_rotation"]
+        correct_rotation=Config.autocam["correct_rotation"],
+        normalized=False
     ):
         coords_spherical_fov = coords_spherical * \
             (self.fov_rad / 2 / self.limits)
@@ -47,7 +48,10 @@ class SphericalCamera(ProjectiveCamera):
         if correct_rotation:
             _, coored_screen_fov = self.correct_rotation(coored_screen_fov)
 
-        return coored_screen_fov
+        if normalized:
+            return coored_screen_fov
+
+        return (coored_screen_fov * self.frame_orig_size).astype(np.int32)
 
     def _screen2spherical(self, coord_screen):
         """ In range: [0, 1], out range: [-FoV_lens/2, FoV_lens/2] """
@@ -114,11 +118,10 @@ class SphericalCamera(ProjectiveCamera):
         return self._spherical2screen(coords_spherical_fov)
 
     def get_corner_pts(self, correct_rotation):
-        pts = self.coords_spherical2screen_fov(
+        return self.coords_spherical2screen_fov(
             self.coords_spherical_corners,
             correct_rotation
         )
-        return (pts * self.frame_orig_size).astype(np.int32)
     # endregion
 
     # region Coords Corners
@@ -153,10 +156,9 @@ class SphericalCamera(ProjectiveCamera):
         return self._screen2spherical(coords_screen_frame)
 
     def get_coords_screen_borders(self):
-        coords_screen_fov = self.coords_spherical2screen_fov(
+        return self.coords_spherical2screen_fov(
             self.coords_spherical_borders
         )
-        return (coords_screen_fov * self.frame_orig_size).astype(np.int32)
     # endregion
 
     def roi2original(self, coords_screen_roi):
@@ -180,7 +182,8 @@ class SphericalCamera(ProjectiveCamera):
 
     def get_frame(self, frame_orig):
         coords_screen_fov = self.coords_spherical2screen_fov(
-            self.coords_spherical_frame
+            self.coords_spherical_frame,
+            normalized=True
         )
         return self._remap(frame_orig, coords_screen_fov)
 
