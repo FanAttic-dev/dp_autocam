@@ -2,7 +2,7 @@ from functools import cached_property
 from pathlib import Path
 
 import numpy as np
-from main_args import AutocamArgsNamespace
+from utils.argparse import AutocamArgsNamespace
 from utils.constants import DT_INT
 import utils.utils as utils
 

@@ -1,7 +1,7 @@
 import cv2
 from algorithm.autocam_algo import AutocamAlgo
 from camera.spherical_camera import SphericalCamera
-from main_args import parse_args
+from utils.argparse import parse_args
 from utils.config import Config
 from detection.yolo_detector import YoloPlayerDetector
 from detection.frame_splitter import FrameSplitter
