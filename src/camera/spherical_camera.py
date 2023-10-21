@@ -188,8 +188,17 @@ class SphericalCamera(ProjectiveCamera):
         return self._remap(frame_orig, coords_screen_fov)
 
     def _remap(self, frame_orig, coords):
-        """ In range: [0, 1], Out img range: [0, frame_size] """
+        """ Creates a new frame by mapping from frame_orig based on coords.
 
+        Args:
+            frame_orig: Frame to be sampled from.
+            coords: Mapping scheme.
+                Range: [0, 1]
+
+        Returns:
+            Remapped image
+                Range: [0, frame_size]
+        """
         frame_orig_h, frame_orig_w, _ = frame_orig.shape
         frame_size = [Camera.FRAME_H, Camera.FRAME_W]
 
@@ -201,11 +210,19 @@ class SphericalCamera(ProjectiveCamera):
         return cv2.remap(frame_orig, map_x, map_y, interpolation=INTERPOLATION_TYPE)
 
     def _gnomonic(self, coord_spherical, center=None):
-        """ 
-        Converts latitude (tilt) and longtitude (pan) to x, y coordinates
-        based on the Gnomonic Projection.
+        """ Convert latitude (tilt) and longtitude (pan) to x, y coordinates.
 
-        In range: [-FoV_lens/2, FoV_lens/2], out range: [-FoV_lens/2, FoV_lens/2]
+        The conversion is based on the Gnomonic Projection.
+        https://mathworld.wolfram.com/GnomonicProjection.html
+
+        Args:
+            coord_spherical:
+                Range: [-FoV_lens/2, FoV_lens/2]
+            center: Center of projection.
+
+        Returns:
+            x, y coordinates
+                Range: [-FoV_lens/2, FoV_lens/2]
         """
 
         lambda_rad = coord_spherical.T[0]
@@ -226,11 +243,16 @@ class SphericalCamera(ProjectiveCamera):
         return np.array([x, y]).T
 
     def _gnomonic_inverse(self, coord_spherical, center=None):
-        """ 
-        Converts x, y coodinates obtained by the Gnomonic Projection
-        to latitude (tilt) and longtitude (pan).
+        """Convert x, y coordinates to latitude (tilt) and longtitude (pan).
 
-        In range: [-FoV_lens/2, FoV_lens/2], out range: [-FoV_lens/2, FoV_lens/2]
+        It assumes that the x, y coordinates have been obtained by the Gnomonic Projection.
+        https://mathworld.wolfram.com/GnomonicProjection.html
+
+        Args:
+            coord_spherical:
+                In range: [-FoV_lens/2, FoV_lens/2]
+                Out range: [-FoV_lens/2, FoV_lens/2]
+            center: Center of projection.
         """
 
         x = coord_spherical.T[0]
