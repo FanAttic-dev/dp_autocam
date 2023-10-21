@@ -52,7 +52,7 @@ class VideoPlayer:
     def create_window(self, window_name):
         cv2.namedWindow(window_name, VideoPlayer.WINDOW_FLAGS)
 
-    def initMouse(self, window_name):
+    def init_mouse(self, window_name):
         def mouse_callback(event, x, y, flags, param):
             if event == cv2.EVENT_LBUTTONDOWN:
                 self._mouse_pos["x"] = x

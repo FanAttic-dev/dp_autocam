@@ -30,7 +30,7 @@ detector = YoloPlayerDetector(frame_orig, top_down, config)
 algo = AutocamAlgo(camera, top_down, config)
 
 if args.mouse:
-    player.initMouse("Original")
+    player.init_mouse("Original")
 
 recorder = VideoRecorder(player, camera, detector, algo)
 if args.record:
