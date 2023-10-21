@@ -9,6 +9,8 @@ import utils.utils as utils
 
 
 class TopDown:
+    OVERLAY_OPACITY = 0.5
+
     assets_path = Path('assets')
     pitch_model_path = assets_path / 'pitch_model.png'
     pitch_model_corners_path = assets_path / 'pitch_model_corners.yaml'
@@ -16,8 +18,13 @@ class TopDown:
     def __init__(self, pitch_orig_corners, camera: Camera):
         self.camera = camera
         self.pitch_orig_corners = pitch_orig_corners
+
         self.pitch_model = cv2.imread(str(TopDown.pitch_model_path))
-        self.pitch_model_red = utils.mask_out_red_channel(self.pitch_model)
+        self.pitch_model_overlay = self._get_pitch_model_overlay()
+
+    def _get_pitch_model_overlay(self):
+        self.pitch_model_overlay = utils.mask_out_red_channel(self.pitch_model)
+        return (self.pitch_model_overlay * TopDown.OVERLAY_OPACITY).astype(np.uint8)
 
     @cached_property
     def pitch_model_corners(self):
@@ -46,8 +53,7 @@ class TopDown:
         )
 
         if overlay:
-            frame_warped = cv2.add(
-                frame_warped, (self.pitch_model_red * 0.5).astype(np.uint8))
+            frame_warped = cv2.add(frame_warped, self.pitch_model_overlay)
 
         return frame_warped
 
@@ -142,5 +148,8 @@ class TopDown:
 
         self.draw_bbs_(top_down_frame, bbs, discard_extremes=True)
         self.draw_screen_pt_(
-            top_down_frame, players_center)
+            top_down_frame,
+            players_center
+        )
+
         return top_down_frame

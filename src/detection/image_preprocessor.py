@@ -4,7 +4,6 @@ from camera.top_down import TopDown
 from utils.config import Config
 
 from utils.constants import Color
-import utils.utils as utils
 
 
 class ImagePreprocessor:

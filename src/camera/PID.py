@@ -7,8 +7,8 @@ class PID(HasStats):
     def __init__(self, kp, ki=0, kd=0):
         self.dt = 0.01
         self.kp = kp
-        self.ki = ki  # 0.009
-        self.kd = kd  # 0.006
+        self.ki = ki
+        self.kd = kd
 
         self.P = 0
         self.I = 0

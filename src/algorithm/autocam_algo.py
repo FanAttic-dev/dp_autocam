@@ -85,22 +85,21 @@ class AutocamAlgo(Algo):
         return is_valid
 
     def measure_ball(self, bb_ball):
-        """ Get the ball center point. """
-
+        """Get the ball center point."""
         return utils.get_bb_center(bb_ball)
 
     def measure_players(self, bbs):
-        """ Get the players' center point in frame_orig space. """
-
+        """Get the players' center point in frame_orig space."""
         tdpts = self.top_down.bbs_screen2tdpts(bbs)
         tdpts_mu = utils.pts_average(tdpts["pts"])
         self.players_var = utils.pts_variance(tdpts["pts"], tdpts_mu)
+
         x, y = utils.apply_homography(self.top_down.H_inv, *tdpts_mu)
+
         return np.array([x, y])
 
     def measure_zoom_var(self, ball_var):
-        """ Maps the PF variance to the camera zoom bounds. """
-
+        """Map the PF variance to the camera zoom bounds."""
         ball_var = np.mean(ball_var)
         var_min = Config.autocam["zoom"]["var_min"]
         var_max = Config.autocam["zoom"]["var_max"]
@@ -113,8 +112,7 @@ class AutocamAlgo(Algo):
         return f
 
     def measure_zoom_bb(self, bbs):
-        """ Calculates the focal length based on the players' bounding box. """
-
+        """Calculate the focal length based on the players' bounding box."""
         margin_px = Config.autocam["zoom"]["bb"]["margin_px"]
 
         bb_x_min, _, bb_x_max, _ = utils.get_bounding_box(bbs)
@@ -170,13 +168,13 @@ class AutocamAlgo(Algo):
         self.players_filter.set_pos(*self.camera.center)
 
     def filter_bbs_ball(self, bbs):
-        """ Returns only bbs of class ball. """
-
+        """Filters bbs of class ball."""
         bbs_ball = {
             "boxes": [],
             "cls": [],
             "ids": []
         }
+
         for i, (bb, cls) in enumerate(zip(bbs["boxes"], bbs["cls"])):
             if cls != 0:
                 continue
@@ -188,6 +186,7 @@ class AutocamAlgo(Algo):
                 continue
 
             bbs_ball["ids"].append(bbs_ball["ids"][i])
+
         return bbs_ball
 
     def draw_ball_u_(self, frame_orig, color):

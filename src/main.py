@@ -3,7 +3,7 @@ from algorithm.autocam_algo import AutocamAlgo
 from camera.spherical_camera import SphericalCamera
 from main_args import parse_args
 from utils.config import Config
-from detection.detector import YoloPlayerDetector
+from detection.yolo_detector import YoloPlayerDetector
 from detection.frame_splitter import FrameSplitter
 from utils.profiler import Profiler
 from camera.top_down import TopDown

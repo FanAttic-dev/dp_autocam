@@ -4,7 +4,6 @@ import cv2
 from algorithm.autocam_algo import AutocamAlgo
 from camera.camera import Camera
 from detection.detector import Detector
-from utils.config import Config
 from utils.constants import Color
 from utils.protocols import HasStats
 import utils.utils as utils

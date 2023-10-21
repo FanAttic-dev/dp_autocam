@@ -2,7 +2,7 @@
 import argparse
 
 
-class ArgsNamespace(argparse.Namespace):
+class AutocamArgsNamespace(argparse.Namespace):
     record: bool
     mouse: bool
     video_name: str
@@ -14,7 +14,7 @@ class ArgsNamespace(argparse.Namespace):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    ns = ArgsNamespace()
+    ns = AutocamArgsNamespace()
     parser.add_argument('-r', "--record", action='store_true',
                         help="Export output as video.")
     parser.add_argument('-m', "--mouse", action='store_true',

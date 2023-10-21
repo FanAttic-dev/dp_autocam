@@ -16,10 +16,7 @@ class FrameSplitter:
         ]
 
     def split(self, frame):
-        frames = [
-            camera.get_frame(frame) for camera in self.cameras
-        ]
-        return frames
+        return [camera.get_frame(frame) for camera in self.cameras]
 
     def join_bbs(self, bbs):
         bbs_joined = {
@@ -40,10 +37,6 @@ class FrameSplitter:
 
         return bbs_joined
 
-    def nms(self, bbs):
-        # TODO: remove overlapping bbs
-        ...
-
     def draw_roi_(self, frame):
-        for i, camera in enumerate(self.cameras):
+        for camera in self.cameras:
             camera.draw_roi_(frame, Color.GREEN)
