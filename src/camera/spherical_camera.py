@@ -56,7 +56,7 @@ class SphericalCamera(Camera):
         y = (y / vert_limit + 1.) * 0.5
         return np.array([x, y], dtype=np.float32).T
 
-    def coords2ptz(self, x, y, f=None):
+    def screen2ptz(self, x, y, f=None):
         coords_screen = np.array(
             [x, y], dtype=np.float32) / self.frame_orig_size
         coords_spherical = self._screen2spherical(coords_screen)
@@ -66,7 +66,7 @@ class SphericalCamera(Camera):
         f = f if f is not None else self.zoom_f
         return pan_deg, tilt_deg, f
 
-    def ptz2coords(self, pan_deg, tilt_deg, f=None):
+    def ptz2screen(self, pan_deg, tilt_deg, f=None):
         coords_spherical = np.deg2rad(
             np.array([pan_deg, tilt_deg], dtype=np.float32)
         )
@@ -146,7 +146,7 @@ class SphericalCamera(Camera):
         coords_screen_frame = self._get_coords_screen_borders()
         return self._screen2spherical(coords_screen_frame)
 
-    def get_coords_screen_borders(self):
+    def get_pts_screen_borders(self):
         return self.coords_spherical2screen_fov(
             self.coords_spherical_borders
         )
@@ -178,12 +178,12 @@ class SphericalCamera(Camera):
         )
         return self._remap(frame_orig, coords_screen_fov)
 
-    def _remap(self, frame_orig, coords):
-        """ Creates a new frame by mapping from frame_orig based on coords.
+    def _remap(self, frame_orig, pts):
+        """ Creates a new frame by mapping from frame_orig based on pts.
 
         Args:
             frame_orig: Frame to be sampled from.
-            coords: Mapping scheme.
+            pts: Mapping scheme.
                 Range: [0, 1]
 
         Returns:
@@ -193,8 +193,8 @@ class SphericalCamera(Camera):
         frame_orig_h, frame_orig_w, _ = frame_orig.shape
         frame_size = [Camera.FRAME_H, Camera.FRAME_W]
 
-        map_x = coords[:, 0] * frame_orig_w
-        map_y = coords[:, 1] * frame_orig_h
+        map_x = pts[:, 0] * frame_orig_w
+        map_y = pts[:, 1] * frame_orig_h
         map_x = np.reshape(map_x, frame_size)
         map_y = np.reshape(map_y, frame_size)
 
@@ -268,17 +268,17 @@ class SphericalCamera(Camera):
 
     def draw_roi_(self, frame_orig, color=Color.VIOLET, drawing_mode=DrawingMode.LINES):
         if drawing_mode == DrawingMode.LINES:
-            coords = self.get_coords_screen_borders()
-            cv2.polylines(frame_orig, [coords], True, color, thickness=5)
+            pts = self.get_pts_screen_borders()
+            cv2.polylines(frame_orig, [pts], True, color, thickness=5)
         elif drawing_mode == DrawingMode.CIRCLES:
-            coords = self.get_coords_screen_borders()
-            for x, y in coords:
+            pts = self.get_pts_screen_borders()
+            for x, y in pts:
                 cv2.circle(frame_orig, [x, y], radius=5,
                            color=color, thickness=-1)
 
     def draw_frame_mask(self, frame_orig):
         mask = np.zeros(frame_orig.shape[:2], dtype=np.uint8)
-        pts = self.get_coords_screen_borders()
+        pts = self.get_pts_screen_borders()
         cv2.fillPoly(mask, [pts], 255)
         return cv2.bitwise_and(frame_orig, frame_orig, mask=mask)
 
@@ -286,15 +286,15 @@ class SphericalCamera(Camera):
         frame_orig_w, frame_orig_h = self.frame_orig_size
         xx, yy = np.meshgrid(np.linspace(0, 1, frame_orig_w // SphericalCamera.DRAWING_STEP),
                              np.linspace(0, 1, frame_orig_h // SphericalCamera.DRAWING_STEP))
-        coords = np.array([xx.ravel(), yy.ravel()], dtype=np.float32).T
+        pts = np.array([xx.ravel(), yy.ravel()], dtype=np.float32).T
 
-        coords = self._screen2spherical(coords)
-        coords = self._gnomonic(coords)
-        coords = self._spherical2screen(coords)
+        pts = self._screen2spherical(pts)
+        pts = self._gnomonic(pts)
+        pts = self._spherical2screen(pts)
 
-        coords = (coords * self.frame_orig_size).astype(np.int32)
+        pts = (pts * self.frame_orig_size).astype(np.int16)
 
-        for x, y in coords:
+        for x, y in pts:
             cv2.circle(frame_orig, [x, y], radius=5,
                        color=color, thickness=-1)
 

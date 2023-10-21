@@ -50,11 +50,25 @@ class Camera(ABC, HasStats):
         return self.pan_deg, self.tilt_deg, self.zoom_f
 
     @abstractmethod
-    def coords2ptz(self, x, y, f=None):
+    def screen2ptz(self, x, y, f=None):
+        """Convert x, y screen coordinates to pan-tilt-zoom spherical coordinates.
+
+        Both screen and spherical coordinates are in original frame space.
+
+        Returns:
+            pan_deg, tilt_deg, zoom_f
+        """
         ...
 
     @abstractmethod
-    def ptz2coords(self, pan_deg, tilt_deg, f=None):
+    def ptz2screen(self, pan_deg, tilt_deg, f=None):
+        """Convert ptz spherical coordinates to x, y screen coordinates.
+
+        Both screen and spherical coordinates are in original frame space.
+
+        Returns:
+            x, y screen coordinates in original frame space.
+        """
         ...
 
     def pan(self, dx):
@@ -196,14 +210,14 @@ class Camera(ABC, HasStats):
     # region Center
     @property
     def center(self):
-        return self.ptz2coords(self.pan_deg, self.tilt_deg)
+        return self.ptz2screen(self.pan_deg, self.tilt_deg)
 
     def set_center(self, x, y, f=None):
-        ptz = self.coords2ptz(x, y, f)
+        ptz = self.screen2ptz(x, y, f)
         return self.set_ptz(*ptz)
 
     def try_set_center(self, x, y, f=None):
-        ptz = self.coords2ptz(x, y, f)
+        ptz = self.screen2ptz(x, y, f)
         return self.try_set_ptz(*ptz)
     # endregion
 
@@ -234,13 +248,13 @@ class Camera(ABC, HasStats):
         H, _ = cv2.findHomography(corner_pts, Camera.FRAME_CORNERS)
 
         # Map pitch corners from original frame space to the output frame space.
-        pitch_coords_orig = self.config.pitch_corners.astype(np.float32)
-        pitch_coords_frame = cv2.perspectiveTransform(
-            pitch_coords_orig, H
+        pitch_corners_orig = self.config.pitch_corners.astype(np.float32)
+        pitch_corners_frame = cv2.perspectiveTransform(
+            pitch_corners_orig, H
         )
 
         # Rotate points by the angle between the back line and the (horizontal) x-axis.
-        roll_rad = utils.get_pitch_rotation_rad(pitch_coords_frame)
+        roll_rad = utils.get_pitch_rotation_rad(pitch_corners_frame)
         pts = utils.rotate_pts(pts, roll_rad, center)
         return H, pts
 
