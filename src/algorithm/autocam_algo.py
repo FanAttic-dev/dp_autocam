@@ -61,7 +61,7 @@ class AutocamAlgo(Algo):
     def try_update_camera(self, center, f=None):
         """Try to update the camera PID target.
 
-        It first converts the coords to PTZ,
+        It first converts the points to PTZ,
         then clips the PTZ to a given PTZ limits,
         and then verifies if the corner points would lie
         within the original frame.

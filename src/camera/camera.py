@@ -32,9 +32,12 @@ class Camera(ABC, HasStats):
         ignore_bounds=Config.autocam["debug"]["ignore_bounds"]
     ):
         h, w, _ = frame_orig.shape
-        self.frame_orig_size = np.array([w, h], dtype=np.uint16)
+        self.frame_orig_size = np.array([w, h], dtype=np.int16)
         self.frame_orig_center_x = w // 2
         self.frame_orig_center_y = h // 2
+
+        self.frame_roi_size = np.array(
+            [Camera.FRAME_W, Camera.FRAME_H], dtype=np.int16)
 
         self.config = config
         self.ignore_bounds = ignore_bounds
@@ -195,16 +198,21 @@ class Camera(ABC, HasStats):
         )
 
     def fov2f(self, fov_deg):
-        """ Calculate focal length based on field of view.
+        """Calculate focal length based on field of view.
 
         https://www.edmundoptics.com/knowledge-center/application-notes/imaging/understanding-focal-length-and-field-of-view/
         """
         return self.sensor_w / (2 * np.tan(np.deg2rad(fov_deg) / 2))
 
     def screen_width_px2fov(self, px):
-        """ Calculate field of view given by width in screen space [px]. """
+        """Calculate field of view given by width in screen space [px]."""
         frame_orig_width, _ = self.frame_orig_size
         return self.lens_fov_horiz_deg / frame_orig_width * px
+
+    @abstractmethod
+    def roi2original(self, pts_roi_screen):
+        """Convert coordinates from camera frame space (ROI) to original frame space."""
+        ...
     # endregion
 
     # region Center
@@ -223,13 +231,13 @@ class Camera(ABC, HasStats):
 
     # region Corner Points
     @abstractmethod
-    def get_corner_pts(self, correct_rotation: bool) -> np.ndarray:
+    def get_pts_corners(self, correct_rotation: bool) -> np.ndarray:
         """Get corner points of current view in the space of the original frame."""
         ...
 
     def check_corner_pts(self):
         """Check whether the corner points of the current view lie within the original frame."""
-        corner_pts = self.get_corner_pts(Config.autocam["correct_rotation"])
+        corner_pts = self.get_pts_corners(Config.autocam["correct_rotation"])
         w, h = self.frame_orig_size
         frame_box = np.array([0, 0, w-1, h-1])
         return utils.polygon_lies_in_box(corner_pts, frame_box)
@@ -244,7 +252,7 @@ class Camera(ABC, HasStats):
 
         # Find homography that maps corner points
         # from original frame space to the output frame space.
-        corner_pts = self.get_corner_pts(correct_rotation=False)
+        corner_pts = self.get_pts_corners(correct_rotation=False)
         H, _ = cv2.findHomography(corner_pts, Camera.FRAME_CORNERS)
 
         # Map pitch corners from original frame space to the output frame space.
@@ -257,7 +265,6 @@ class Camera(ABC, HasStats):
         roll_rad = utils.get_pitch_rotation_rad(pitch_corners_frame)
         pts = utils.rotate_pts(pts, roll_rad, center)
         return H, pts
-
     # endregion
 
     # region Drawing

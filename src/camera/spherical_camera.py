@@ -24,26 +24,6 @@ class SphericalCamera(Camera):
         ) / 2
         return np.deg2rad(limits)
 
-    def coords_spherical2screen_fov(
-        self,
-        coords_spherical,
-        correct_rotation=Config.autocam["correct_rotation"],
-        normalized=False
-    ):
-        coords_spherical_fov = coords_spherical * \
-            (self.fov_rad / 2 / self.limits)
-
-        coords_spherical_fov = self._gnomonic(coords_spherical_fov)
-        coored_screen_fov = self._spherical2screen(coords_spherical_fov)
-
-        if correct_rotation:
-            _, coored_screen_fov = self.correct_rotation(coored_screen_fov)
-
-        if normalized:
-            return coored_screen_fov
-
-        return (coored_screen_fov * self.frame_orig_size).astype(np.int32)
-
     def _screen2spherical(self, coord_screen):
         """ In range: [0, 1], out range: [-FoV_lens/2, FoV_lens/2] """
         return (coord_screen * 2 - 1) * self.limits
@@ -56,38 +36,62 @@ class SphericalCamera(Camera):
         y = (y / vert_limit + 1.) * 0.5
         return np.array([x, y], dtype=np.float32).T
 
+    def spherical2screen_fov(
+        self,
+        pts_spherical,
+        correct_rotation=Config.autocam["correct_rotation"],
+        normalized=False,
+        gnomonic_center=None
+    ):
+        pts_spherical_fov = pts_spherical * \
+            (self.fov_rad / 2 / self.limits)
+
+        pts_spherical_fov = self._gnomonic(pts_spherical_fov)
+        pts_screen_fov = self._spherical2screen(pts_spherical_fov)
+
+        if correct_rotation:
+            _, pts_screen_fov = self.correct_rotation(
+                pts_screen_fov,
+                gnomonic_center
+            )
+
+        if normalized:
+            return pts_screen_fov
+
+        return (pts_screen_fov * self.frame_orig_size).astype(np.int32)
+
     def screen2ptz(self, x, y, f=None):
-        coords_screen = np.array(
+        pts_screen = np.array(
             [x, y], dtype=np.float32) / self.frame_orig_size
-        coords_spherical = self._screen2spherical(coords_screen)
+        pts_spherical = self._screen2spherical(pts_screen)
         pan_deg, tilt_deg = np.rad2deg(
-            self._gnomonic_inverse(coords_spherical, (0, 0))
+            self._gnomonic_inverse(pts_spherical, (0, 0))
         )
         f = f if f is not None else self.zoom_f
         return pan_deg, tilt_deg, f
 
     def ptz2screen(self, pan_deg, tilt_deg, f=None):
-        coords_spherical = np.deg2rad(
+        pts_spherical = np.deg2rad(
             np.array([pan_deg, tilt_deg], dtype=np.float32)
         )
-        coords_spherical = self._gnomonic(coords_spherical, (0, 0))
-        coords_screen = self._spherical2screen(coords_spherical)
-        return (coords_screen * self.frame_orig_size).astype(np.int16)
+        pts_spherical = self._gnomonic(pts_spherical, (0, 0))
+        pts_screen = self._spherical2screen(pts_spherical)
+        return (pts_screen * self.frame_orig_size).astype(np.int16)
 
-    # region Coords Frame
-    def _get_coords_screen_frame(self):
+    # region Frame points
+    def _get_pts_frame_screen(self):
         xx, yy = np.meshgrid(np.linspace(0, 1, Camera.FRAME_W),
                              np.linspace(0, 1, Camera.FRAME_H))
         return np.array([xx.ravel(), yy.ravel()], dtype=np.float32).T
 
     @cached_property
-    def coords_spherical_frame(self):
-        coords_screen_frame = self._get_coords_screen_frame()
-        return self._screen2spherical(coords_screen_frame)
+    def pts_frame_spherical(self):
+        pts_screen_frame = self._get_pts_frame_screen()
+        return self._screen2spherical(pts_screen_frame)
     # endregion
 
-    # region Coords Corners
-    def _get_coords_screen_corners(self):
+    # region Corner points
+    def _get_pts_corners_screen(self):
         return np.array([
             [0, 0],
             [0, 1],
@@ -96,27 +100,19 @@ class SphericalCamera(Camera):
         ], dtype=np.float32)
 
     @cached_property
-    def coords_spherical_corners(self):
-        coords_screen_frame = self._get_coords_screen_corners()
-        return self._screen2spherical(coords_screen_frame)
+    def pts_corners_spherical(self):
+        pts_screen_frame = self._get_pts_corners_screen()
+        return self._screen2spherical(pts_screen_frame)
 
-    @property
-    def coords_screen_corners(self):
-        coords_spherical_fov = self.coords_spherical_corners * \
-            (self.fov_rad / 2 / self.limits)
-
-        coords_spherical_fov = self._gnomonic(coords_spherical_fov)
-        return self._spherical2screen(coords_spherical_fov)
-
-    def get_corner_pts(self, correct_rotation):
-        return self.coords_spherical2screen_fov(
-            self.coords_spherical_corners,
+    def get_pts_corners(self, correct_rotation):
+        return self.spherical2screen_fov(
+            self.pts_corners_spherical,
             correct_rotation
         )
     # endregion
 
-    # region Coords Corners
-    def _get_coords_screen_borders(self):
+    # region Border points
+    def _get_pts_borders_screen(self):
         w = Camera.FRAME_W // SphericalCamera.DRAWING_STEP
         h = Camera.FRAME_H // SphericalCamera.DRAWING_STEP
         pts_w = np.linspace(0, 1, w)
@@ -142,43 +138,35 @@ class SphericalCamera(Camera):
         return np.concatenate([top, right, bottom, left])
 
     @cached_property
-    def coords_spherical_borders(self):
-        coords_screen_frame = self._get_coords_screen_borders()
-        return self._screen2spherical(coords_screen_frame)
+    def pts_borders_spherical(self):
+        pts_borders_screen = self._get_pts_borders_screen()
+        return self._screen2spherical(pts_borders_screen)
 
-    def get_pts_screen_borders(self):
-        return self.coords_spherical2screen_fov(
-            self.coords_spherical_borders
+    @property
+    def pts_borders_screen_fov(self):
+        return self.spherical2screen_fov(
+            self.pts_borders_spherical
         )
     # endregion
 
-    def roi2original(self, coords_screen_roi):
-        frame_size = np.array([Camera.FRAME_W, Camera.FRAME_H], dtype=np.int16)
-        coords_screen = coords_screen_roi / frame_size
+    def roi2original(self, pts_roi_screen):
+        pts_screen = pts_roi_screen / self.frame_roi_size
+        pts_spherical = self._screen2spherical(pts_screen)
 
-        if Config.autocam["correct_rotation"]:
-            _, coords_screen = self.correct_rotation(
-                coords_screen,
-                center=np.array([0.5, 0.5], dtype=np.float32)
-            )
-
-        coords_spherical_roi = self._screen2spherical(coords_screen)
-        coords_spherical_roi = coords_spherical_roi * \
-            (self.fov_rad / 2 / self.limits)
-        coords_spherical_roi = self._gnomonic(coords_spherical_roi)
-        coords_screen = self._spherical2screen(coords_spherical_roi)
-
-        coords_screen = (coords_screen * self.frame_orig_size).astype(np.int16)
-        return coords_screen
+        return self.spherical2screen_fov(
+            pts_spherical,
+            normalized=False,
+            gnomonic_center=(0.5, 0.5)
+        )
 
     def get_frame(self, frame_orig):
-        coords_screen_fov = self.coords_spherical2screen_fov(
-            self.coords_spherical_frame,
+        pts_fov_screen = self.spherical2screen_fov(
+            self.pts_frame_spherical,
             normalized=True
         )
-        return self._remap(frame_orig, coords_screen_fov)
+        return self._remap(frame_orig, pts_fov_screen)
 
-    def _remap(self, frame_orig, pts):
+    def _remap(self, frame_orig, pts_screen):
         """ Creates a new frame by mapping from frame_orig based on pts.
 
         Args:
@@ -191,12 +179,11 @@ class SphericalCamera(Camera):
                 Range: [0, frame_size]
         """
         frame_orig_h, frame_orig_w, _ = frame_orig.shape
-        frame_size = [Camera.FRAME_H, Camera.FRAME_W]
 
-        map_x = pts[:, 0] * frame_orig_w
-        map_y = pts[:, 1] * frame_orig_h
-        map_x = np.reshape(map_x, frame_size)
-        map_y = np.reshape(map_y, frame_size)
+        map_x = pts_screen[:, 0] * frame_orig_w
+        map_y = pts_screen[:, 1] * frame_orig_h
+        map_x = np.reshape(map_x, self.frame_roi_size[::-1])
+        map_y = np.reshape(map_y, self.frame_roi_size[::-1])
 
         return cv2.remap(frame_orig, map_x, map_y, interpolation=INTERPOLATION_TYPE)
 
@@ -215,8 +202,8 @@ class SphericalCamera(Camera):
             x, y coordinates
                 Range: [-FoV_lens/2, FoV_lens/2]
         """
-        lambda_rad = coord_spherical.T[0]
-        phi_rad = coord_spherical.T[1]
+        lambda_rad = coord_spherical.T[0]  # pan
+        phi_rad = coord_spherical.T[1]  # tilt
 
         if center is None:
             center = -np.deg2rad([self.pan_deg, self.tilt_deg])
@@ -268,17 +255,17 @@ class SphericalCamera(Camera):
 
     def draw_roi_(self, frame_orig, color=Color.VIOLET, drawing_mode=DrawingMode.LINES):
         if drawing_mode == DrawingMode.LINES:
-            pts = self.get_pts_screen_borders()
+            pts = self.pts_borders_screen_fov
             cv2.polylines(frame_orig, [pts], True, color, thickness=5)
         elif drawing_mode == DrawingMode.CIRCLES:
-            pts = self.get_pts_screen_borders()
+            pts = self.pts_borders_screen_fov
             for x, y in pts:
                 cv2.circle(frame_orig, [x, y], radius=5,
                            color=color, thickness=-1)
 
     def draw_frame_mask(self, frame_orig):
         mask = np.zeros(frame_orig.shape[:2], dtype=np.uint8)
-        pts = self.get_pts_screen_borders()
+        pts = self.pts_borders_screen_fov
         cv2.fillPoly(mask, [pts], 255)
         return cv2.bitwise_and(frame_orig, frame_orig, mask=mask)
 
