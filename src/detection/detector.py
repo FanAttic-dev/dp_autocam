@@ -1,7 +1,6 @@
 from pathlib import Path
 import cv2
 import numpy as np
-import tqdm
 import torch
 from ultralytics import YOLO
 from utils.config import Config
@@ -35,7 +34,7 @@ class Detector:
         while i < len(bbs["boxes"]):
             bb_inner = bbs["boxes"][i]
             for bb_outer in self.detection_blacklist:
-                if utils.box_lies_in_box(bb_inner, bb_outer):
+                if utils.is_box_in_box(bb_inner, bb_outer):
                     utils.remove_item_in_dict_lists_(bbs, i)
                     i -= 1
                     break
@@ -165,71 +164,3 @@ class YoloPlayerDetector(YoloDetector):
     def detect(self, img):
         res = self.model.predict(img, **YoloPlayerDetector.args)
         return self.res2bbs(res), self.plot(res)
-
-
-class BgDetector(Detector):
-    MORPH_CLOSE_ITERATIONS = 10
-
-    class BackgroundSubtractor:
-        def __init__(self):
-            self.model = cv2.createBackgroundSubtractorKNN(history=1)
-
-        def init(self, cap, iterations=10):
-            cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-
-            for _ in tqdm(range(iterations)):
-                ret, frame = cap.read()
-                if not ret:
-                    return
-                self.apply(frame)
-
-                cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-
-        def apply(self, img):
-            return self.model.apply(img)
-
-    def __init__(self, frame_orig, top_down, config):
-        super().__init__(frame_orig, top_down, config)
-        self.bgSubtractor = BgDetector.BackgroundSubtractor()
-
-    def preprocess(self, img):
-        img = self.image_preprocessor.draw_mask(img)
-        img = cv2.GaussianBlur(img, (3, 3), 1)
-        return img
-
-    def draw_bounding_boxes(self, img, bbs):
-        for bb in bbs:
-            x, y, w, h = bb
-            cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 255), 2)
-
-    def get_bounding_boxes(self, mask):
-        contours, _ = cv2.findContours(
-            mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-
-        bbs = [cv2.boundingRect(contour) for contour in contours]
-        return self.bbs2pts(bbs)
-
-    def bbs2pts(self, bbs):
-        pts = []
-        for bb in bbs:
-            x, y, w, h = bb
-            pts.append([x, y, x+w, y+h])
-        pts = np.array(pts, np.float32)
-        return pts
-
-    def detect(self, img):
-        img = self.preprocess(img)
-        mask = self.bgSubtractor.apply(img)
-
-        se = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-        mask = cv2.morphologyEx(
-            mask,
-            cv2.MORPH_CLOSE,
-            se,
-            iterations=BgDetector.MORPH_CLOSE_ITERATIONS
-        )
-
-        bbs = self.get_bounding_boxes(mask)
-        plotted = img.copy()
-        self.draw_bounding_boxes(plotted, bbs)
-        return bbs, plotted

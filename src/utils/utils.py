@@ -3,30 +3,6 @@ import numpy as np
 import yaml
 
 
-def iou(bb1, bb2):
-    bb1_x1, bb1_y1, bb1_x2, bb1_y2 = bb1
-    bb2_x1, bb2_y1, bb2_x2, bb2_y2 = bb2
-
-    bb1_w = bb1_x2 - bb1_x1 + 1
-    bb1_h = bb1_y2 - bb1_y1 + 1
-
-    bb2_w = bb2_x2 - bb2_x1 + 1
-    bb2_h = bb2_y2 - bb2_y1 + 1
-
-    bb1_area = bb1_w * bb1_h
-    bb2_area = bb2_w * bb2_h
-
-    inner_x1 = max(bb1_x1, bb2_x1)
-    inner_y1 = max(bb1_y1, bb2_y1)
-    inner_x2 = min(bb1_x2, bb2_x2)
-    inner_y2 = min(bb1_y2, bb2_y2)
-
-    intersection = max(0, inner_x2 - inner_x1 + 1) * \
-        max(0, inner_y2 - inner_y1 + 1)
-
-    return intersection / float(bb1_area + bb2_area - intersection)
-
-
 def load_yaml(file_name):
     with open(file_name, 'r') as f:
         return yaml.safe_load(f)
@@ -40,27 +16,8 @@ def apply_homography(H, x, y):
     return x, y
 
 
-def merge_bbs(bbs1, bbs2):
-    return {
-        "boxes": bbs1["boxes"] + bbs2["boxes"],
-        "cls": bbs1["cls"] + bbs2["cls"]
-    }
-
-
-def add_bb_(bbs, bb, cls):
-    if not bb:
-        return
-
-    bbs["boxes"].append(bb)
-    bbs["cls"].append(cls)
-
-
-def add_bb_ball_(bbs, bb_ball):
-    add_bb_(bbs, bb_ball, 0)
-
-
 def pts_average(pts, weights=None):
-    return np.average(np.array(pts), axis=0, weights=weights)
+    return np.average(pts, axis=0, weights=weights)
 
 
 def pts_variance(pts, mu=None, weights=None):
@@ -69,6 +26,11 @@ def pts_variance(pts, mu=None, weights=None):
 
 
 def discard_extreme_tdpts_(tdpts):
+    """Discard extreme top-down points along x-axis.
+
+    Removes one point with the highest and one point with the lowerst x value.
+    If the input array contains less than 3 items, no item is removed.
+    """
     if len(tdpts["pts"]) < 3:
         return
 
@@ -80,6 +42,11 @@ def discard_extreme_tdpts_(tdpts):
 
 
 def discard_extreme_bbs_(bbs):
+    """Discard extreme bounding boxes along x-axis.
+
+    Removes one bb with the highest and one bb with the lowerst x value.
+    If the input array contains less than 3 bbs, no bb is removed.
+    """
     if len(bbs["boxes"]) < 3:
         return
 
@@ -90,36 +57,27 @@ def discard_extreme_bbs_(bbs):
     remove_item_in_dict_lists_(bbs, mini)
 
 
-def remove_item_in_dict_lists_(dict, idx):
+def remove_item_in_dict_lists_(dict: dict, idx) -> None:
+    """Remove item in dictionary based on index.
+
+    The dictionary has arrays as values. An item at the given index
+    is removed from each array.
+
+    Args:
+        dict: A dictionary with lists as values. For example:
+            dict = {
+                "boxes": [[...], [...], [...]],
+                "cls": [0, 3, 2],
+                "ids": []
+            }
+    """
     for k in dict.keys():
         if len(dict[k]) <= idx:
             continue
         dict[k] = np.delete(dict[k], idx, axis=0)
 
 
-def boxes_overlap(b1, b2):
-    b1_x1, b1_y1, b1_x2, b1_y2 = b1
-    b2_x1, b2_y1, b2_x2, b2_y2 = b2
-
-    if b1_x1 > b2_x2 or b2_x1 > b1_x2:
-        return False
-
-    if b1_y2 > b2_y1 or b2_y2 > b1_y1:
-        return False
-
-    return True
-
-
-def pt_lies_in_box(pt, box):
-    start_pt, end_pt = box
-    start_x, start_y = start_pt
-    end_x, end_y = end_pt
-    pt_x, pt_y = pt
-    return start_x <= pt_x and start_y <= pt_y \
-        and pt_x <= end_x and pt_y <= end_y
-
-
-def box_lies_in_box(inner, outer):
+def is_box_in_box(inner, outer) -> bool:
     def check_bounds(u, u_min, u_max):
         return u >= u_min and u <= u_max
     inner_x1, inner_y1, inner_x2, inner_y2 = inner
@@ -131,7 +89,7 @@ def box_lies_in_box(inner, outer):
         check_bounds(inner_y2, outer_y1, outer_y2)
 
 
-def polygon_lies_in_box(inner_poly, outer_box):
+def is_polygon_in_box(inner_poly, outer_box):
     def check_bounds(pt: np.ndarray, pt_min: np.ndarray, pt_max: np.ndarray):
         return (pt >= pt_min).all() and (pt <= pt_max).all()
 
@@ -185,24 +143,6 @@ def get_pitch_rotation_rad(pts):
     u /= np.linalg.norm(u)
     v = np.array([[1, 0]])
     return np.arccos(np.dot(u, v.T))
-
-
-def get_bbs_ball(bbs_joined):
-    bbs_ball = {
-        "boxes": [],
-        "cls": [],
-        "ids": []
-    }
-    bbs_joined_new = {
-        "boxes": [],
-        "cls": [],
-        "ids": []
-    }
-    for bb, cls in zip(bbs_joined["boxes"], bbs_joined["cls"]):
-        target = bbs_ball if cls == 0 else bbs_joined_new
-        target["boxes"].append(bb)
-        target["cls"].append(cls)
-    return bbs_ball, bbs_joined_new
 
 
 def path2str(path):

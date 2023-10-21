@@ -240,7 +240,7 @@ class Camera(ABC, HasStats):
         corner_pts = self.get_pts_corners(Config.autocam["correct_rotation"])
         w, h = self.frame_orig_size
         frame_box = np.array([0, 0, w-1, h-1])
-        return utils.polygon_lies_in_box(corner_pts, frame_box)
+        return utils.is_polygon_in_box(corner_pts, frame_box)
 
     def correct_rotation(self, pts, center=None):
         """Rotate points by the angle between the current frame and the back pitch line.
