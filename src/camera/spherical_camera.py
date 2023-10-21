@@ -33,12 +33,21 @@ class SphericalCamera(ProjectiveCamera):
         ) / 2
         return np.deg2rad(limits)
 
-    def coords_spherical2screen_fov(self, coords_spherical):
+    def coords_spherical2screen_fov(
+        self,
+        coords_spherical,
+        correct_rotation=Config.autocam["correct_rotation"]
+    ):
         coords_spherical_fov = coords_spherical * \
             (self.fov_rad / 2 / self.limits)
 
         coords_spherical_fov = self._gnomonic(coords_spherical_fov)
-        return self._spherical2screen(coords_spherical_fov)
+        coored_screen_fov = self._spherical2screen(coords_spherical_fov)
+
+        if correct_rotation:
+            _, coored_screen_fov = self.correct_rotation(coored_screen_fov)
+
+        return coored_screen_fov
 
     def _screen2spherical(self, coord_screen):
         """ In range: [0, 1], out range: [-FoV_lens/2, FoV_lens/2] """
@@ -105,15 +114,11 @@ class SphericalCamera(ProjectiveCamera):
         return self._spherical2screen(coords_spherical_fov)
 
     def get_corner_pts(self, correct_rotation):
-        coords_screen_fov = self.coords_spherical2screen_fov(
-            self.coords_spherical_corners
+        pts = self.coords_spherical2screen_fov(
+            self.coords_spherical_corners,
+            correct_rotation
         )
-        pts = coords_screen_fov * self.frame_orig_size
-
-        if correct_rotation:
-            _, pts = self.correct_rotation(pts)
-
-        return np.array(pts, dtype=np.int32)
+        return (pts * self.frame_orig_size).astype(np.int32)
     # endregion
 
     # region Coords Corners
@@ -151,10 +156,6 @@ class SphericalCamera(ProjectiveCamera):
         coords_screen_fov = self.coords_spherical2screen_fov(
             self.coords_spherical_borders
         )
-
-        if Config.autocam["correct_rotation"]:
-            _, coords_screen_fov = self.correct_rotation(coords_screen_fov)
-
         return (coords_screen_fov * self.frame_orig_size).astype(np.int32)
     # endregion
 
@@ -181,10 +182,6 @@ class SphericalCamera(ProjectiveCamera):
         coords_screen_fov = self.coords_spherical2screen_fov(
             self.coords_spherical_frame
         )
-
-        if Config.autocam["correct_rotation"]:
-            _, coords_screen_fov = self.correct_rotation(coords_screen_fov)
-
         return self._remap(frame_orig, coords_screen_fov)
 
     def _remap(self, frame_orig, coords):
