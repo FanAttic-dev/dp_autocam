@@ -3,7 +3,7 @@ import numpy as np
 from camera.top_down import TopDown
 from utils.config import Config
 
-from utils.constants import Color
+from utils.constants import DT_INT, Color
 
 
 class ImagePreprocessor:
@@ -24,7 +24,7 @@ class ImagePreprocessor:
         rb += [mr, mb]
 
         pts_top_down = [lb, lt, rt, rb]
-        pts = top_down.tdpts2screen(pts_top_down).astype(np.int32)
+        pts = top_down.tdpts2screen(pts_top_down).astype(DT_INT)
 
         self.mask = np.zeros(frame_orig.shape[:2], dtype=np.uint8)
         cv2.fillPoly(self.mask, pts=[pts], color=Color.WHITE)

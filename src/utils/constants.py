@@ -1,5 +1,6 @@
 from enum import Enum
 import cv2
+import numpy as np
 
 
 class Color:
@@ -32,3 +33,5 @@ class DrawingMode(Enum):
 
 
 INTERPOLATION_TYPE = cv2.INTER_NEAREST
+DT_FLOAT = np.float32
+DT_INT = np.int32

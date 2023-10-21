@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 from camera.camera import Camera
 from utils.config import Config
-from utils.constants import INTERPOLATION_TYPE, Color, DrawingMode
+from utils.constants import DT_INT, INTERPOLATION_TYPE, Color, DrawingMode
 import utils.utils as utils
 
 
@@ -58,7 +58,7 @@ class SphericalCamera(Camera):
         if normalized:
             return pts_screen_fov
 
-        return (pts_screen_fov * self.frame_orig_size).astype(np.int32)
+        return (pts_screen_fov * self.frame_orig_size).astype(DT_INT)
 
     def screen2ptz(self, x, y, f=None):
         pts_screen = np.array(
@@ -76,7 +76,7 @@ class SphericalCamera(Camera):
         )
         pts_spherical = self._gnomonic(pts_spherical, (0, 0))
         pts_screen = self._spherical2screen(pts_spherical)
-        return (pts_screen * self.frame_orig_size).astype(np.int16)
+        return (pts_screen * self.frame_orig_size).astype(DT_INT)
 
     # region Frame points
     def _get_pts_frame_screen(self):
@@ -279,7 +279,7 @@ class SphericalCamera(Camera):
         pts = self._gnomonic(pts)
         pts = self._spherical2screen(pts)
 
-        pts = (pts * self.frame_orig_size).astype(np.int16)
+        pts = (pts * self.frame_orig_size).astype(DT_INT)
 
         for x, y in pts:
             cv2.circle(frame_orig, [x, y], radius=5,

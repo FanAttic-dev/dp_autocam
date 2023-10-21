@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 from camera.PID import PID
 from utils.config import Config
-from utils.constants import Color
+from utils.constants import DT_INT, Color
 from utils.protocols import HasStats
 import utils.utils as utils
 
@@ -23,7 +23,7 @@ class Camera(ABC, HasStats):
         [0, FRAME_H-1],
         [FRAME_W-1, FRAME_H-1],
         [FRAME_W-1, 0]
-    ], dtype=np.int16)
+    ], dtype=DT_INT)
 
     def __init__(
         self,
@@ -32,12 +32,12 @@ class Camera(ABC, HasStats):
         ignore_bounds=Config.autocam["debug"]["ignore_bounds"]
     ):
         h, w, _ = frame_orig.shape
-        self.frame_orig_size = np.array([w, h], dtype=np.int16)
+        self.frame_orig_size = np.array([w, h], dtype=DT_INT)
         self.frame_orig_center_x = w // 2
         self.frame_orig_center_y = h // 2
 
         self.frame_roi_size = np.array(
-            [Camera.FRAME_W, Camera.FRAME_H], dtype=np.int16)
+            [Camera.FRAME_W, Camera.FRAME_H], dtype=DT_INT)
 
         self.config = config
         self.ignore_bounds = ignore_bounds

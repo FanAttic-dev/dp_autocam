@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 from camera.camera import Camera
 from utils.config import Config
-from utils.constants import INTERPOLATION_TYPE, Color
+from utils.constants import DT_INT, INTERPOLATION_TYPE, Color
 import utils.utils as utils
 
 
@@ -137,7 +137,7 @@ class TopDown:
             y = np.clip(y, y_min, y_max)
             x_, y_ = utils.apply_homography(self.H, x, y)
             pts_warped.append((x_, y_))
-        pts_warped = np.array(pts_warped, dtype=np.int32)
+        pts_warped = np.array(pts_warped, dtype=DT_INT)
 
         cv2.polylines(frame, [pts_warped], isClosed=True,
                       color=Color.YELLOW, thickness=5)

@@ -3,6 +3,7 @@ from pathlib import Path
 
 import numpy as np
 from main_args import AutocamArgsNamespace
+from utils.constants import DT_INT
 import utils.utils as utils
 
 
@@ -23,7 +24,7 @@ class Config:
     def load_pitch_corners(pts_dict: dict):
         pts = np.array(
             [[v["x"], v["y"]] for v in pts_dict.values()],
-            dtype=np.int32
+            dtype=DT_INT
         )
         return pts.reshape((-1, 1, 2))
 

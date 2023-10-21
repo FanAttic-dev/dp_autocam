@@ -4,7 +4,7 @@ from camera.top_down import TopDown
 from filters.kalman_filter import KalmanFilterVel
 from filters.particle_filter import ParticleFilter
 from utils.config import Config
-from utils.constants import Color
+from utils.constants import DT_INT, Color
 import utils.utils as utils
 import numpy as np
 import cv2
@@ -195,8 +195,8 @@ class AutocamAlgo(Algo):
 
         u_x, u_y = self.u_last
         mu_x, mu_y = self.ball_mu_last
-        pt1 = np.array([mu_x, mu_y], dtype=np.int32)
-        pt2 = np.array([mu_x + u_x, mu_y + u_y], dtype=np.int32)
+        pt1 = np.array([mu_x, mu_y], dtype=DT_INT)
+        pt2 = np.array([mu_x + u_x, mu_y + u_y], dtype=DT_INT)
         cv2.line(frame_orig, pt1, pt2, color=color, thickness=2)
 
     def draw_ball_prediction_(self, frame_orig, color):
