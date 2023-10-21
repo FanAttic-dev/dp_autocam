@@ -1,8 +1,8 @@
+from functools import cached_property
 from pathlib import Path
 import cv2
 import numpy as np
 from camera.camera import Camera
-from detection.detector import YoloDetector
 from utils.config import Config
 from utils.constants import INTERPOLATION_TYPE, Color
 import utils.utils as utils
@@ -11,26 +11,32 @@ import utils.utils as utils
 class TopDown:
     assets_path = Path('assets')
     pitch_model_path = assets_path / 'pitch_model.png'
-    pitch_coords_path = assets_path / 'coords_pitch_model.yaml'
+    pitch_model_corners_path = assets_path / 'pitch_model_corners.yaml'
 
-    def __init__(self, video_pitch_coords, camera: Camera):
-        self.pitch_model = cv2.imread(str(TopDown.pitch_model_path))
-        self.pitch_model_red = self.get_pitch_model_red()
-        self.pitch_coords = utils.load_yaml(TopDown.pitch_coords_path)
-        self.video_pitch_coords = video_pitch_coords
-        self.H, _ = cv2.findHomography(utils.coords2pts(video_pitch_coords),
-                                       utils.coords2pts(self.pitch_coords))
+    def __init__(self, pitch_orig_corners, camera: Camera):
         self.camera = camera
+        self.pitch_orig_corners = pitch_orig_corners
+        self.pitch_model = cv2.imread(str(TopDown.pitch_model_path))
+        self.pitch_model_red = utils.mask_out_red_channel(self.pitch_model)
 
-    @property
+    @cached_property
+    def pitch_model_corners(self):
+        pitch_model_corners = utils.load_yaml(
+            TopDown.pitch_model_corners_path
+        )
+        return Config.load_pitch_corners(pitch_model_corners)
+
+    @cached_property
+    def H(self):
+        H, _ = cv2.findHomography(
+            self.pitch_orig_corners,
+            self.pitch_model_corners
+        )
+        return H
+
+    @cached_property
     def H_inv(self):
         return np.linalg.inv(self.H)
-
-    def get_pitch_model_red(self):
-        pitch = self.pitch_model.copy()
-        pitch[:, :, 0] = 0
-        pitch[:, :, 1] = 0
-        return pitch
 
     def warp_frame(self, frame, overlay=False):
         frame_warped = cv2.warpPerspective(
@@ -85,7 +91,7 @@ class TopDown:
                 top_down_frame,
                 pt,
                 radius=15,
-                color=YoloDetector.cls2color[cls],
+                color=Color.cls2color[cls],
                 thickness=-1
             )
 
@@ -114,7 +120,7 @@ class TopDown:
     def draw_roi_(self, frame):
         margin = 50
 
-        pitch_pts = utils.coords2pts(self.video_pitch_coords)
+        pitch_pts = self.pitch_orig_corners
         x_min, y_min = np.min(pitch_pts, axis=0)[0] - margin
         x_max, y_max = np.max(pitch_pts, axis=0)[0] + margin
 

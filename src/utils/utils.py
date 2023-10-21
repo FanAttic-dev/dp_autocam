@@ -3,11 +3,6 @@ import numpy as np
 import yaml
 
 
-def coords2pts(coords):
-    pts = np.array([[v["x"], v["y"]] for v in coords.values()], dtype=np.int32)
-    return pts.reshape((-1, 1, 2))
-
-
 def iou(bb1, bb2):
     bb1_x1, bb1_y1, bb1_x2, bb1_y2 = bb1
     bb2_x1, bb2_y1, bb2_x2, bb2_y2 = bb2
@@ -184,11 +179,9 @@ def rotate_pts(pts, angle_rad, center=None):
 
 
 def get_pitch_rotation_rad(pts):
-    if pts is dict:
-        pts = coords2pts(pts)
     left_top = pts[1]
     right_top = pts[2]
-    u = np.array(right_top - left_top, dtype=np.float64)
+    u = np.array(right_top - left_top, dtype=np.float32)
     u /= np.linalg.norm(u)
     v = np.array([[1, 0]])
     return np.arccos(np.dot(u, v.T))
@@ -214,3 +207,10 @@ def get_bbs_ball(bbs_joined):
 
 def path2str(path):
     return str(path.absolute())
+
+
+def mask_out_red_channel(img: np.ndarray):
+    img = img.copy()
+    img[:, :, 0] = 0
+    img[:, :, 1] = 0
+    return img

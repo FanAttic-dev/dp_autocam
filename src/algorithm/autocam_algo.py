@@ -1,5 +1,5 @@
 from algorithm.algo import Algo
-from camera.projective_camera import ProjectiveCamera
+from camera.camera import Camera
 from camera.top_down import TopDown
 from filters.kalman_filter import KalmanFilterVel
 from filters.particle_filter import ParticleFilter
@@ -11,7 +11,7 @@ import cv2
 
 
 class AutocamAlgo(Algo):
-    def __init__(self, camera: ProjectiveCamera, top_down: TopDown, config: Config):
+    def __init__(self, camera: Camera, top_down: TopDown, config: Config):
         self.camera = camera
         self.top_down = top_down
 

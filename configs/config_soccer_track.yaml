@@ -24,7 +24,7 @@ frame_splitter_params:
 - pan_deg: 40
   tilt_deg: 9
   zoom_f: 220
-pitch_coords:
+pitch_corners:
   left bottom:
     x: 109
     y: 885

@@ -3,7 +3,6 @@ from pathlib import Path
 import cv2
 from algorithm.autocam_algo import AutocamAlgo
 from camera.camera import Camera
-from camera.projective_camera import ProjectiveCamera
 from detection.detector import Detector
 from utils.config import Config
 from utils.constants import Color
@@ -27,7 +26,13 @@ class VideoRecorder:
         "thickness": 1
     }
 
-    def __init__(self, video_player: VideoPlayer, camera: ProjectiveCamera, detector: Detector, algo: AutocamAlgo):
+    def __init__(
+        self,
+        video_player: VideoPlayer,
+        camera: Camera,
+        detector: Detector,
+        algo: AutocamAlgo
+    ):
         self.camera = camera
         self.video_player = video_player
         self.detector = detector

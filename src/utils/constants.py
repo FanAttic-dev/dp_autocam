@@ -18,6 +18,13 @@ class Color:
     BLUE = hex2bgr("#456de6")
     GREEN = hex2bgr("#45e645")
 
+    cls2color = {
+        0: WHITE,  # ball
+        1: TEAL,  # player
+        2: YELLOW,  # referee
+        3: ORANGE,  # goalkeeper
+    }
+
 
 class DrawingMode(Enum):
     LINES = 1

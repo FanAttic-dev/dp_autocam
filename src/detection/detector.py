@@ -52,12 +52,6 @@ class YoloDetector(Detector):
         'iou': 0.5,
         'verbose': False
     }
-    cls2color = {
-        0: Color.WHITE,  # ball
-        1: Color.TEAL,  # player
-        2: Color.YELLOW,  # referee
-        3: Color.ORANGE,  # goalkeeper
-    }
 
     def __init__(self, frame_orig, top_down, config):
         super().__init__(frame_orig, top_down, config)
@@ -90,7 +84,7 @@ class YoloDetector(Detector):
     def draw_bbs_(self, img, bbs, color=None):
         for i, (bb, cls) in enumerate(zip(bbs["boxes"], bbs["cls"])):
             x1, y1, x2, y2 = bb
-            bb_color = YoloDetector.cls2color[cls] if color is None else color
+            bb_color = Color.cls2color[cls] if color is None else color
             cv2.rectangle(img, (x1, y1), (x2, y2), bb_color, 2)
 
             if i >= len(bbs["ids"]):

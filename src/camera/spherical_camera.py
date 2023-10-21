@@ -2,24 +2,15 @@ from functools import cached_property
 import cv2
 import numpy as np
 from camera.camera import Camera
-from camera.projective_camera import ProjectiveCamera
 from utils.config import Config
 from utils.constants import INTERPOLATION_TYPE, Color, DrawingMode
 import utils.utils as utils
 
 
-class SphericalCamera(ProjectiveCamera):
+class SphericalCamera(Camera):
     SENSOR_DX = 10
     FOV_DX = 5
     DRAWING_STEP = 50
-
-    def __init__(
-        self,
-        frame_orig,
-        config: Config,
-        ignore_bounds=Config.autocam["debug"]["ignore_bounds"]
-    ):
-        super().__init__(frame_orig, config, ignore_bounds)
 
     @property  # could use @cached_property for optimization
     def lens_fov_vert_deg(self):
@@ -224,7 +215,6 @@ class SphericalCamera(ProjectiveCamera):
             x, y coordinates
                 Range: [-FoV_lens/2, FoV_lens/2]
         """
-
         lambda_rad = coord_spherical.T[0]
         phi_rad = coord_spherical.T[1]
 
@@ -254,7 +244,6 @@ class SphericalCamera(ProjectiveCamera):
                 Out range: [-FoV_lens/2, FoV_lens/2]
             center: Center of projection.
         """
-
         x = coord_spherical.T[0]
         y = coord_spherical.T[1]
 
@@ -324,7 +313,7 @@ class SphericalCamera(ProjectiveCamera):
         cv2.rectangle(frame_orig, (x1, y1), (x2, y2),
                       color=Color.ORANGE, thickness=5)
 
-    def process_input(self, key, mouseX, mouseY):
+    def process_input(self, key, mouse_pos):
         is_alive = True
         if key == ord('8'):
             self.sensor_w += SphericalCamera.SENSOR_DX
@@ -335,7 +324,7 @@ class SphericalCamera(ProjectiveCamera):
         elif key == ord('4'):
             self.lens_fov_horiz_deg -= SphericalCamera.FOV_DX
         else:
-            is_alive = super().process_input(key, mouseX, mouseY)
+            is_alive = super().process_input(key, mouse_pos)
         return is_alive
 
     def get_stats(self):

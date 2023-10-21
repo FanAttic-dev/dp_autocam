@@ -10,7 +10,15 @@ class VideoPlayer:
     def __init__(self, video_path: Path):
         self.video_path = video_path
         self.cap = cv2.VideoCapture(str(video_path.absolute()))
+        self._mouse_pos = {
+            "x": 0,
+            "y": 0
+        }
         print(f"Video player initialized: {self.video_path.absolute()}")
+
+    @property
+    def mouse_pos(self):
+        return self._mouse_pos["x"], self._mouse_pos["y"]
 
     @cached_property
     def fps(self):
@@ -43,6 +51,15 @@ class VideoPlayer:
 
     def create_window(self, window_name):
         cv2.namedWindow(window_name, VideoPlayer.WINDOW_FLAGS)
+
+    def initMouse(self, window_name):
+        def mouse_callback(event, x, y, flags, param):
+            if event == cv2.EVENT_LBUTTONDOWN:
+                self._mouse_pos["x"] = x
+                self._mouse_pos["y"] = y
+
+        self.create_window(window_name)
+        cv2.setMouseCallback("Original", mouse_callback)
 
     def show_frame(self, frame, window_name=WINDOW_NAME):
         self.create_window(window_name)

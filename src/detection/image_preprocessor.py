@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+from camera.top_down import TopDown
 from utils.config import Config
 
 from utils.constants import Color
@@ -7,13 +8,13 @@ import utils.utils as utils
 
 
 class ImagePreprocessor:
-    def __init__(self, frame_orig, top_down, config: Config):
-        pitch_coords = config.pitch_coords
+    def __init__(self, frame_orig, top_down: TopDown, config: Config):
+        pitch_corners = config.pitch_corners
         margins = config.dataset["mask_margins"]
-        self.init_mask(frame_orig, top_down, pitch_coords, margins)
+        self.init_mask(frame_orig, top_down, pitch_corners, margins)
 
-    def init_mask(self, frame_orig, top_down, pitch_coords, margins):
-        pts = utils.coords2pts(pitch_coords).squeeze()
+    def init_mask(self, frame_orig, top_down: TopDown, pitch_corners, margins):
+        pts = pitch_corners.squeeze()
         pts_top_down = top_down.pts2top_down_points(pts)
 
         lb, lt, rt, rb = pts_top_down

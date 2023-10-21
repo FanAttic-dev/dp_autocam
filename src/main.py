@@ -1,7 +1,7 @@
 import cv2
-import argparse
 from algorithm.autocam_algo import AutocamAlgo
 from camera.spherical_camera import SphericalCamera
+from main_args import parse_args
 from utils.config import Config
 from detection.detector import YoloPlayerDetector
 from detection.frame_splitter import FrameSplitter
@@ -10,34 +10,6 @@ from camera.top_down import TopDown
 from video_tools.video_player import VideoPlayer
 from video_tools.video_recorder import VideoRecorder
 from utils.constants import Color
-
-mousePos = {
-    "x": 0,
-    "y": 0
-}
-
-
-def mouse_callback(event, x, y, flags, param):
-    if event == cv2.EVENT_LBUTTONDOWN:
-        mousePos["x"] = x
-        mousePos["y"] = y
-
-
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-r', "--record", action='store_true',
-                        help="Export output as video.")
-    parser.add_argument('-m', "--mouse", action='store_true',
-                        help="Debug mode for moving the camera with mouse.")
-    parser.add_argument('-v', "--video-name", action='store', required=False)
-    parser.add_argument("--config-path", action='store', required=False)
-    parser.add_argument("--hide-windows", action='store_true', default=False,
-                        help="Hide all windows while running.")
-    parser.add_argument("--export-frames", action='store_true', default=False,
-                        help="Export frames every X seconds (used for evaluation).")
-    parser.add_argument("--no-debug", action='store_true', default=False,
-                        help="Do not generate debug frame.")
-    return parser.parse_args()
 
 
 """ Init """
@@ -53,13 +25,12 @@ delay = player.get_delay(args.record)
 is_alive, frame_orig = player.get_next_frame()
 camera = SphericalCamera(frame_orig, config)
 frame_splitter = FrameSplitter(frame_orig, config)
-top_down = TopDown(config.pitch_coords, camera)
+top_down = TopDown(config.pitch_corners, camera)
 detector = YoloPlayerDetector(frame_orig, top_down, config)
 algo = AutocamAlgo(camera, top_down, config)
 
 if args.mouse:
-    player.create_window("Original")
-    cv2.setMouseCallback("Original", mouse_callback)
+    player.initMouse("Original")
 
 recorder = VideoRecorder(player, camera, detector, algo)
 if args.record:
@@ -197,7 +168,7 @@ while is_alive:
     """ Input """
     key = cv2.waitKey(delay)
     is_alive = is_alive and camera.process_input(
-        key, mousePos["x"], mousePos["y"]
+        key, player.mouse_pos
     )
 
 
