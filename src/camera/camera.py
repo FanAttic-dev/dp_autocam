@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 from camera.PID import PID
 from utils.config import Config
-from utils.constants import DT_INT, Color
+from utils.constants import DT_FLOAT, DT_INT, Color
 from utils.protocols import HasStats
 import utils.utils as utils
 
@@ -194,7 +194,7 @@ class Camera(ABC, HasStats):
     def fov_rad(self):
         return np.deg2rad(
             np.array([self.fov_horiz_deg, self.fov_vert_deg]),
-            dtype=np.float32
+            dtype=DT_FLOAT
         )
 
     def fov2f(self, fov_deg):
@@ -256,7 +256,7 @@ class Camera(ABC, HasStats):
         H, _ = cv2.findHomography(corner_pts, Camera.FRAME_CORNERS)
 
         # Map pitch corners from original frame space to the output frame space.
-        pitch_corners_orig = self.config.pitch_corners.astype(np.float32)
+        pitch_corners_orig = self.config.pitch_corners.astype(DT_FLOAT)
         pitch_corners_frame = cv2.perspectiveTransform(
             pitch_corners_orig, H
         )

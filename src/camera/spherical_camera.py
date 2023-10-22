@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 from camera.camera import Camera
 from utils.config import Config
-from utils.constants import DT_INT, INTERPOLATION_TYPE, Color, DrawingMode
+from utils.constants import DT_FLOAT, DT_INT, INTERPOLATION_TYPE, Color, DrawingMode
 import utils.utils as utils
 
 
@@ -20,7 +20,7 @@ class SphericalCamera(Camera):
     def limits(self):
         limits = np.array(
             [self.lens_fov_horiz_deg, self.lens_fov_vert_deg],
-            dtype=np.float32
+            dtype=DT_FLOAT
         ) / 2
         return np.deg2rad(limits)
 
@@ -34,7 +34,7 @@ class SphericalCamera(Camera):
         horiz_limit, vert_limit = self.limits
         x = (x / horiz_limit + 1.) * 0.5
         y = (y / vert_limit + 1.) * 0.5
-        return np.array([x, y], dtype=np.float32).T
+        return np.array([x, y], dtype=DT_FLOAT).T
 
     def spherical2screen_fov(
         self,
@@ -62,7 +62,7 @@ class SphericalCamera(Camera):
 
     def screen2ptz(self, x, y, f=None):
         pts_screen = np.array(
-            [x, y], dtype=np.float32) / self.frame_orig_size
+            [x, y], dtype=DT_FLOAT) / self.frame_orig_size
         pts_spherical = self._screen2spherical(pts_screen)
         pan_deg, tilt_deg = np.rad2deg(
             self._gnomonic_inverse(pts_spherical, (0, 0))
@@ -72,7 +72,7 @@ class SphericalCamera(Camera):
 
     def ptz2screen(self, pan_deg, tilt_deg, f=None):
         pts_spherical = np.deg2rad(
-            np.array([pan_deg, tilt_deg], dtype=np.float32)
+            np.array([pan_deg, tilt_deg], dtype=DT_FLOAT)
         )
         pts_spherical = self._gnomonic(pts_spherical, (0, 0))
         pts_screen = self._spherical2screen(pts_spherical)
@@ -82,7 +82,7 @@ class SphericalCamera(Camera):
     def _get_pts_frame_screen(self):
         xx, yy = np.meshgrid(np.linspace(0, 1, Camera.FRAME_W),
                              np.linspace(0, 1, Camera.FRAME_H))
-        return np.array([xx.ravel(), yy.ravel()], dtype=np.float32).T
+        return np.array([xx.ravel(), yy.ravel()], dtype=DT_FLOAT).T
 
     @cached_property
     def pts_frame_spherical(self):
@@ -97,7 +97,7 @@ class SphericalCamera(Camera):
             [0, 1],
             [1, 1],
             [1, 0]
-        ], dtype=np.float32)
+        ], dtype=DT_FLOAT)
 
     @cached_property
     def pts_corners_spherical(self):
@@ -273,7 +273,7 @@ class SphericalCamera(Camera):
         frame_orig_w, frame_orig_h = self.frame_orig_size
         xx, yy = np.meshgrid(np.linspace(0, 1, frame_orig_w // SphericalCamera.DRAWING_STEP),
                              np.linspace(0, 1, frame_orig_h // SphericalCamera.DRAWING_STEP))
-        pts = np.array([xx.ravel(), yy.ravel()], dtype=np.float32).T
+        pts = np.array([xx.ravel(), yy.ravel()], dtype=DT_FLOAT).T
 
         pts = self._screen2spherical(pts)
         pts = self._gnomonic(pts)

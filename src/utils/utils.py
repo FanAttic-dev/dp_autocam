@@ -2,13 +2,15 @@ import math
 import numpy as np
 import yaml
 
+from utils.constants import DT_FLOAT
+
 
 def load_yaml(file_name):
     with open(file_name, 'r') as f:
         return yaml.safe_load(f)
 
 
-def apply_homography(H, x, y):
+def apply_homography(H: np.ndarray, x, y):
     v = np.array([x, y, 1])
     v = H.dot(v)
     x = v[0] / v[2]
@@ -80,6 +82,7 @@ def remove_item_in_dict_lists_(dict: dict, idx) -> None:
 def is_box_in_box(inner, outer) -> bool:
     def check_bounds(u, u_min, u_max):
         return u >= u_min and u <= u_max
+
     inner_x1, inner_y1, inner_x2, inner_y2 = inner
     outer_x1, outer_y1, outer_x2, outer_y2 = outer
 
@@ -89,7 +92,7 @@ def is_box_in_box(inner, outer) -> bool:
         check_bounds(inner_y2, outer_y1, outer_y2)
 
 
-def is_polygon_in_box(inner_poly, outer_box):
+def is_polygon_in_box(inner_poly: np.ndarray, outer_box: np.ndarray):
     def check_bounds(pt: np.ndarray, pt_min: np.ndarray, pt_max: np.ndarray):
         return (pt >= pt_min).all() and (pt <= pt_max).all()
 
@@ -132,7 +135,7 @@ def rotate_pts(pts, angle_rad, center=None):
 def get_pitch_rotation_rad(pts):
     left_top = pts[1]
     right_top = pts[2]
-    u = np.array(right_top - left_top, dtype=np.float32)
+    u = np.array(right_top - left_top, dtype=DT_FLOAT)
     u /= np.linalg.norm(u)
     v = np.array([[1, 0]])
     return np.arccos(np.dot(u, v.T))

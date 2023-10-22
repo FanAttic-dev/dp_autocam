@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 from camera.camera import Camera
 from utils.config import Config
-from utils.constants import DT_INT, INTERPOLATION_TYPE, Color
+from utils.constants import DT_FLOAT, DT_INT, INTERPOLATION_TYPE, Color
 import utils.utils as utils
 
 
@@ -108,7 +108,7 @@ class TopDown:
 
         pt_x, pt_y = pt
         pt = np.array(
-            [[[np.array(pt_x).item(), np.array(pt_y).item()]]], np.float32)
+            [[[np.array(pt_x).item(), np.array(pt_y).item()]]], DT_FLOAT)
         pt_top_down_coord = cv2.perspectiveTransform(pt, self.H)[0][0]
         self.draw_pts_(
             top_down_frame, [pt_top_down_coord], color, radius)
