@@ -2,16 +2,17 @@
 # -----------------------------------------------------------------------------
 # Debug
 debug:
-  show_split_frames: false
-  show_top_down_window: false
-  show_warped_frame: false
-  draw_grid: false
-  draw_detections: true
-  draw_roi: true
-  draw_players_bb: true
-  print_camera_stats: false
-  ignore_bounds: false
-  show_frame_mask: false
+  show_split_frames: false # Show the FrameSplitter frames with detections.
+  show_top_down_window: false # Show the top-down pitch model with marked players.
+  show_warped_frame: false # Show the original pitch in top-down view. 
+  draw_grid: false # Visualize the point grid of the used projection scheme.
+  draw_detections: true # Draw player and ball bounding boxes.
+  draw_roi: true # Draw the regions-of-interest of cameras.
+  draw_players_bb: true # Draw the players' bounding box.
+  print_camera_stats: false # Print the camera state (PTZ, PID, FoV).
+  ignore_bounds: false # Ignore the PTZ limits defined in the dataset config file.
+  show_frame_mask: false # Mask out everything outside of the pitch.
+  mouse_use_pid: false # Use PID in mouse mode. Otherwise uses free camera.
 
 print_profiler_stats: true
 show_original: true
@@ -28,16 +29,19 @@ correct_rotation: true
 # -----------------------------------------------------------------------------
 # Evaluation
 eval:
-  export_every_x_seconds: 10
-  pitch_overlay: false
+  export_every_x_seconds: 10 # Time interval to export a warped frame.
+  pitch_overlay: false # Overlay the pitch model scheme on the exported frame.
 
 # -----------------------------------------------------------------------------
 # Detection
 detector:
   enabled: true
-  filter_detections: true
+  
+  # Filter detections based on `detection_blacklist` in dataset config file.
+  filter_detections: true 
+  
   ball_confidence: 0.35
-  ball_max_det: 1
+  ball_max_det: 1 # Maximum number of detections for the ball.
   players_confidence: 0.20
 
 # -----------------------------------------------------------------------------
@@ -75,6 +79,7 @@ u_control: # PF control input
     # Variance threshold at which the camera starts 
     # moving towards the players’ center.
     var_th: 5000
+    
   velocity:
     # Weight of panning the camera with the mean players' velocity vector.
     alpha: 2

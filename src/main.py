@@ -81,7 +81,8 @@ while is_alive:
 
     """ ROI """
     if is_debug and args.mouse:
-        # algo.try_update_camera(player.mouse_pos)
+        if config.autocam["debug"]["mouse_use_pid"]:
+            algo.try_update_camera(player.mouse_pos)
         camera.draw_center_(frame_orig_debug)
     else:
         profiler.start("Update by BBS")
