@@ -97,17 +97,10 @@ def is_polygon_in_box(inner_poly, outer_box):
     return np.array([check_bounds(pt, pt_min, pt_max) for pt in inner_poly]).all()
 
 
-def get_bounding_box(bbs):
-    x_min, x_max = np.inf, -np.inf
-    y_min, y_max = np.inf, -np.inf
-
-    for bb in bbs["boxes"]:
-        x1, y1, x2, y2 = bb
-        x_min = min(x_min, x1)
-        y_min = min(y_min, y1)
-        x_max = max(x_max, x2)
-        y_max = max(y_max, y2)
-
+def get_bbs_bounding_box(bbs):
+    """Returns the bounding box of all input bounding boxes."""
+    x_min, y_min, _, _ = bbs["boxes"].min(axis=0)
+    _, _, x_max, y_max = bbs["boxes"].max(axis=0)
     return x_min, y_min, x_max, y_max
 
 

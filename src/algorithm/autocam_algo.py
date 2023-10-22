@@ -115,7 +115,7 @@ class AutocamAlgo(Algo):
         """Calculate the focal length based on the players' bounding box."""
         margin_px = Config.autocam["zoom"]["bb"]["margin_px"]
 
-        bb_x_min, _, bb_x_max, _ = utils.get_bounding_box(bbs)
+        bb_x_min, _, bb_x_max, _ = utils.get_bbs_bounding_box(bbs)
         bb_x_min -= margin_px
         bb_x_max += margin_px
         bb_width = bb_x_max - bb_x_min
@@ -209,7 +209,7 @@ class AutocamAlgo(Algo):
             return
 
         margin_px = Config.autocam["zoom"]["bb"]["margin_px"]
-        x1, y1, x2, y2 = utils.get_bounding_box(bbs)
+        x1, y1, x2, y2 = utils.get_bbs_bounding_box(bbs)
         x1 -= margin_px
         x2 += margin_px
         cv2.rectangle(frame_orig, (x1, y1), (x2, y2),
