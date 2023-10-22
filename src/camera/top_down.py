@@ -142,7 +142,7 @@ class TopDown:
         cv2.polylines(frame, [pts_warped], isClosed=True,
                       color=Color.YELLOW, thickness=5)
 
-    def get_frame(self, bbs, players_center):
+    def get_frame(self, bbs, players_center=None):
         top_down_frame = self.pitch_model.copy()
         self.draw_roi_(top_down_frame)
 

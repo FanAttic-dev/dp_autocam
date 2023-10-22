@@ -2,20 +2,28 @@
 # -----------------------------------------------------------------------------
 # Debug
 debug:
+  # Frame splitter
   show_split_frames: false # Show the FrameSplitter frames with detections.
-  show_top_down_window: false # Show the top-down pitch model with marked players.
-  show_warped_frame: false # Show the original pitch in top-down view. 
+  show_frame_mask: false # Mask out everything outside of the pitch.
+
+  # Camera
   draw_grid: false # Visualize the point grid of the used projection scheme.
-  draw_detections: true # Draw player and ball bounding boxes.
   draw_roi: true # Draw the regions-of-interest of cameras.
-  draw_players_bb: true # Draw the players' bounding box.
   print_camera_stats: false # Print the camera state (PTZ, PID, FoV).
   ignore_bounds: false # Ignore the PTZ limits defined in the dataset config file.
-  show_frame_mask: false # Mask out everything outside of the pitch.
   mouse_use_pid: false # Use PID in mouse mode. Otherwise uses free camera.
+  
+  # Detection
+  draw_detections: true # Draw player and ball bounding boxes.
+  draw_players_bb: true # Draw the players' bounding box.
+  
+  # Top Down
+  show_warped_frame: false # Show the original pitch in top-down view. 
+  draw_top_down_players_center: true
 
 print_profiler_stats: true
 show_original: true
+show_top_down_window: true # Show the top-down pitch model with marked players.
 
 # -----------------------------------------------------------------------------
 # Dataset

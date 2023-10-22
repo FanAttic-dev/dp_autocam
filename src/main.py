@@ -119,8 +119,12 @@ while is_alive:
             frame_orig_debug if is_debug else frame_orig, "Original")
 
     """ Top-down """
-    top_down_frame = top_down.get_frame(bbs_joined, algo.players_filter.pos)
-    if not args.hide_windows and is_debug and Config.autocam["debug"]["show_top_down_window"]:
+    draw_players_center = is_debug and Config.autocam["debug"]["draw_top_down_players_center"]
+    players_center = algo.players_filter.pos if draw_players_center else None
+
+    top_down_frame = top_down.get_frame(bbs_joined, players_center)
+
+    if not args.hide_windows and Config.autocam["show_top_down_window"]:
         player.show_frame(top_down_frame, "top down")
 
     """ Recorder """
