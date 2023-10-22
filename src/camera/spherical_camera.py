@@ -285,21 +285,6 @@ class SphericalCamera(Camera):
             cv2.circle(frame_orig, [x, y], radius=5,
                        color=color, thickness=-1)
 
-    def draw_zoom_target_(self, frame_orig):
-        target_w = 1000
-        target_h = 200
-
-        # w, h = self.frame_orig_size
-        # w / self.lens_fov_horiz_deg
-
-        x1 = self.frame_orig_center_x - target_w // 2
-        y1 = self.frame_orig_center_y - target_h // 2
-        x2 = self.frame_orig_center_x + target_w // 2
-        y2 = self.frame_orig_center_y + target_h // 2
-
-        cv2.rectangle(frame_orig, (x1, y1), (x2, y2),
-                      color=Color.ORANGE, thickness=5)
-
     def process_input(self, key, mouse_pos):
         is_alive = True
         if key == ord('8'):

@@ -88,7 +88,6 @@ while is_alive:
         algo.update_by_bbs(bbs_joined)
         profiler.stop("Update by BBS")
 
-    # camera.draw_zoom_target_(frame_orig)
     profiler.start("Get frame")
     frame = camera.get_frame(frame_orig)
     profiler.stop("Get frame")
