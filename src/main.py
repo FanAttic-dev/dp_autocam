@@ -105,9 +105,6 @@ while is_alive:
     if is_debug:
         frame_debug = camera.get_frame(frame_orig_debug)
 
-    if is_debug and Config.autocam["dead_zone"]["enabled"]:
-        camera.draw_dead_zone_(frame_debug)
-
     if is_debug and Config.autocam["debug"]["print_camera_stats"]:
         camera.print()
 

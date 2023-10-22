@@ -102,11 +102,3 @@ zoom:
   # Zoom based on the players' bounding box.
   bb:
     margin_px: 350 # Margin around the player's bounding box.
-
-# -----------------------------------------------------------------------------
-# Dead zone
-dead_zone:
-  enabled: false
-  size:
-  - 80
-  - 300

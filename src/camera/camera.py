@@ -279,11 +279,6 @@ class Camera(ABC, HasStats):
     def draw_center_(self, frame_orig, color=Color.RED):
         cv2.circle(frame_orig, self.center,
                    radius=5, color=color, thickness=5)
-
-    def draw_dead_zone_(self, frame):
-        start, end = self.dead_zone
-        cv2.rectangle(frame, start, end,
-                      color=Color.RED, thickness=5)
     # endregion
 
     def process_input(self, key, mouse_pos):
