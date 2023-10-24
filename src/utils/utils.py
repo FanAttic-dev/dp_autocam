@@ -150,3 +150,11 @@ def mask_out_red_channel(img: np.ndarray):
     img[:, :, 0] = 0
     img[:, :, 1] = 0
     return img
+
+
+def join_bbs(bbs1, bbs2):
+    return {
+        "boxes": bbs1["boxes"] + bbs2["boxes"],
+        "cls": bbs1["cls"] + bbs2["cls"],
+        "ids": bbs1["ids"] + bbs2["ids"]
+    }

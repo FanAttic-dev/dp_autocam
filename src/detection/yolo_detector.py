@@ -1,23 +1,15 @@
+from abc import ABC
 from pathlib import Path
 import cv2
 import torch
 from ultralytics import YOLO
+import utils.utils as utils
 from utils.constants import Color
 from utils.config import Config
 from detection.detector import Detector
 
 
-class YoloDetector(Detector):
-    args = {
-        'device': torch.cuda.current_device(),
-        'imgsz': 960,
-        'classes': [0, 1, 2, 3],  # [0] for ball only, None for all
-        'conf': Config.autocam["detector"]["players_confidence"],
-        'max_det': 50,
-        'iou': 0.5,
-        'verbose': False
-    }
-
+class YoloDetector(Detector, ABC):
     def __init__(self, frame_orig, top_down, config):
         super().__init__(frame_orig, top_down, config)
         self.model = YOLO(self.__class__.model_path)
@@ -66,10 +58,26 @@ class YoloDetector(Detector):
                 thickness=5
             )
 
+    def detect(self, img):
+        res = self.model.predict(img, **self.__class__.args)
+        return self.res2bbs(res), self.plot(res)
+
     def plot(self, res):
         for i in range(len(res)):
             res[i] = res[i].plot()
         return res
+
+    def filter_detections_(self, bbs):
+        """Discard detections that have their bounding boxes inside a blacklisted bounding box."""
+        i = 0
+        while i < len(bbs["boxes"]):
+            bb_inner = bbs["boxes"][i]
+            for bb_outer in self.detection_blacklist:
+                if utils.is_box_in_box(bb_inner, bb_outer):
+                    utils.remove_item_in_dict_lists_(bbs, i)
+                    i -= 1
+                    break
+            i += 1
 
     def get_stats(self):
         return {
@@ -88,26 +96,24 @@ class YoloBallDetector(YoloDetector):
         'classes': None,  # [0] for ball only, None for all
         'conf': Config.autocam["detector"]["ball_confidence"],
         'max_det': Config.autocam["detector"]["ball_max_det"],
-        'iou': 0.5
+        'iou': 0.5,
+        'verbose': False
     }
 
     model_path = Path(
-        f"./assets/weights/yolov8_{YoloDetector.args['imgsz']}_ball.pt")
-
-    def __init__(self, frame_orig, top_down, config, ball_filter):
-        super().__init__(frame_orig, top_down, config)
-        self.ball_filter = ball_filter
-
-    def detect(self, img):
-        res = self.model.predict(
-            img, **YoloBallDetector.args, tracker="bytetrack.yaml")
-        return self.res2bbs(res), self.plot(res)
+        f"./assets/weights/yolov8_{args['imgsz']}_ball.pt")
 
 
 class YoloPlayerDetector(YoloDetector):
-    model_path = Path(
-        f"./assets/weights/yolov8_{YoloDetector.args['imgsz']}.pt")
+    args = {
+        'device': torch.cuda.current_device(),
+        'imgsz': 960,
+        'classes': [1, 2, 3],  # [0] for ball only, None for all
+        'conf': Config.autocam["detector"]["players_confidence"],
+        'max_det': 50,
+        'iou': 0.5,
+        'verbose': False
+    }
 
-    def detect(self, img):
-        res = self.model.predict(img, **YoloPlayerDetector.args)
-        return self.res2bbs(res), self.plot(res)
+    model_path = Path(
+        f"./assets/weights/yolov8_{args['imgsz']}.pt")

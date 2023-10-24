@@ -3,13 +3,14 @@ from algorithm.autocam_algo import AutocamAlgo
 from camera.spherical_camera import SphericalCamera
 from utils.argparse import parse_args
 from utils.config import Config
-from detection.yolo_detector import YoloPlayerDetector
+from detection.yolo_detector import YoloBallDetector, YoloDetector, YoloPlayerDetector
 from detection.frame_splitter import FrameSplitter
 from utils.profiler import Profiler
 from camera.top_down import TopDown
 from video_tools.video_player import VideoPlayer
 from video_tools.video_recorder import VideoRecorder
 from utils.constants import Color
+import utils.utils as utils
 
 
 """ Init """
@@ -26,6 +27,7 @@ is_alive, frame_orig = player.get_next_frame()
 camera = SphericalCamera(frame_orig, config)
 frame_splitter = FrameSplitter(frame_orig, config)
 top_down = TopDown(config.pitch_corners, camera)
+ball_detector = YoloBallDetector(frame_orig, top_down, config)
 detector = YoloPlayerDetector(frame_orig, top_down, config)
 algo = AutocamAlgo(camera, top_down, config)
 
@@ -66,11 +68,17 @@ while is_alive:
         profiler.stop("Split")
         # Detect
         profiler.start("Detect")
-        bbs, bbs_frames = detector.detect(frames)
+        bbs_player, bbs_frames = detector.detect(frames)
+        bbs_ball, _ = ball_detector.detect(frames)
+        print(bbs_ball)
         profiler.stop("Detect")
         # Join
         profiler.start("Join")
-        bbs_joined = frame_splitter.join_bbs(bbs)
+        bbs_player = frame_splitter.flatten_bbs(bbs_player)
+        bbs_ball = frame_splitter.flatten_bbs(bbs_ball)
+        print(bbs_ball)
+        bbs_joined = utils.join_bbs(bbs_player, bbs_ball)
+
         if Config.autocam["detector"]["filter_detections"]:
             detector.filter_detections_(bbs_joined)
         profiler.stop("Join")
