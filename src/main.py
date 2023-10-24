@@ -70,13 +70,11 @@ while is_alive:
         profiler.start("Detect")
         bbs_player, bbs_frames = detector.detect(frames)
         bbs_ball, _ = ball_detector.detect(frames)
-        print(bbs_ball)
         profiler.stop("Detect")
         # Join
         profiler.start("Join")
         bbs_player = frame_splitter.flatten_bbs(bbs_player)
         bbs_ball = frame_splitter.flatten_bbs(bbs_ball)
-        print(bbs_ball)
         bbs_joined = utils.join_bbs(bbs_player, bbs_ball)
 
         if Config.autocam["detector"]["filter_detections"]:
