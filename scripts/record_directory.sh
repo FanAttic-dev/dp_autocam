@@ -4,5 +4,9 @@ DIR_PATH='../../datasets/TrnavaZilina/main/clips'
 for clip_path in $DIR_PATH/*.mp4
 do
     video_name=${clip_path##*/}
-    python src/main.py --video-name $video_name --config-path $CONFIG_PATH --record --hide-windows --export-frames
+    echo "Running $video_name in parallel"
+    python src/main.py --video-name $video_name --config-path $CONFIG_PATH --record --hide-windows --export-frames &
 done
+
+wait
+echo "All done"
