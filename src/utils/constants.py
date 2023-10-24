@@ -1,5 +1,6 @@
 from enum import Enum
 import cv2
+import numpy as np
 
 
 class Color:
@@ -18,6 +19,13 @@ class Color:
     BLUE = hex2bgr("#456de6")
     GREEN = hex2bgr("#45e645")
 
+    cls2color = {
+        0: WHITE,  # ball
+        1: TEAL,  # player
+        2: YELLOW,  # referee
+        3: ORANGE,  # goalkeeper
+    }
+
 
 class DrawingMode(Enum):
     LINES = 1
@@ -25,3 +33,5 @@ class DrawingMode(Enum):
 
 
 INTERPOLATION_TYPE = cv2.INTER_NEAREST
+DT_FLOAT = np.float32
+DT_INT = np.int32

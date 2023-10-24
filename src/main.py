@@ -1,43 +1,16 @@
 import cv2
-import argparse
 from algorithm.autocam_algo import AutocamAlgo
 from camera.spherical_camera import SphericalCamera
+from utils.argparse import parse_args
 from utils.config import Config
-from detection.detector import YoloPlayerDetector
+from detection.yolo_detector import YoloBallDetector, YoloDetector, YoloPlayerDetector
 from detection.frame_splitter import FrameSplitter
 from utils.profiler import Profiler
 from camera.top_down import TopDown
 from video_tools.video_player import VideoPlayer
 from video_tools.video_recorder import VideoRecorder
 from utils.constants import Color
-
-mousePos = {
-    "x": 0,
-    "y": 0
-}
-
-
-def mouse_callback(event, x, y, flags, param):
-    if event == cv2.EVENT_LBUTTONDOWN:
-        mousePos["x"] = x
-        mousePos["y"] = y
-
-
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-r', "--record", action='store_true',
-                        help="Export output as video.")
-    parser.add_argument('-m', "--mouse", action='store_true',
-                        help="Debug mode for moving the camera with mouse.")
-    parser.add_argument('-v', "--video-name", action='store', required=False)
-    parser.add_argument("--config-path", action='store', required=False)
-    parser.add_argument("--hide-windows", action='store_true', default=False,
-                        help="Hide all windows while running.")
-    parser.add_argument("--export-frames", action='store_true', default=False,
-                        help="Export frames every X seconds (used for evaluation).")
-    parser.add_argument("--no-debug", action='store_true', default=False,
-                        help="Do not generate debug frame.")
-    return parser.parse_args()
+import utils.utils as utils
 
 
 """ Init """
@@ -53,13 +26,13 @@ delay = player.get_delay(args.record)
 is_alive, frame_orig = player.get_next_frame()
 camera = SphericalCamera(frame_orig, config)
 frame_splitter = FrameSplitter(frame_orig, config)
-top_down = TopDown(config.pitch_coords, camera)
+top_down = TopDown(config.pitch_corners, camera)
+ball_detector = YoloBallDetector(frame_orig, top_down, config)
 detector = YoloPlayerDetector(frame_orig, top_down, config)
 algo = AutocamAlgo(camera, top_down, config)
 
 if args.mouse:
-    player.create_window("Original")
-    cv2.setMouseCallback("Original", mouse_callback)
+    player.init_mouse("Original")
 
 recorder = VideoRecorder(player, camera, detector, algo)
 if args.record:
@@ -95,11 +68,17 @@ while is_alive:
         profiler.stop("Split")
         # Detect
         profiler.start("Detect")
-        bbs, bbs_frames = detector.detect(frames)
+        bbs_player, bbs_frames = detector.detect(frames)
+        bbs_ball, _ = ball_detector.detect(frames)
+        print(bbs_ball)
         profiler.stop("Detect")
         # Join
         profiler.start("Join")
-        bbs_joined = frame_splitter.join_bbs(bbs)
+        bbs_player = frame_splitter.flatten_bbs(bbs_player)
+        bbs_ball = frame_splitter.flatten_bbs(bbs_ball)
+        print(bbs_ball)
+        bbs_joined = utils.join_bbs(bbs_player, bbs_ball)
+
         if Config.autocam["detector"]["filter_detections"]:
             detector.filter_detections_(bbs_joined)
         profiler.stop("Join")
@@ -110,14 +89,14 @@ while is_alive:
 
     """ ROI """
     if is_debug and args.mouse:
-        # algo.try_update_camera((mousePos["x"], mousePos["y"]))
+        if config.autocam["debug"]["mouse_use_pid"]:
+            algo.try_update_camera(player.mouse_pos)
         camera.draw_center_(frame_orig_debug)
     else:
         profiler.start("Update by BBS")
         algo.update_by_bbs(bbs_joined)
         profiler.stop("Update by BBS")
 
-    # camera.draw_zoom_target_(frame_orig)
     profiler.start("Get frame")
     frame = camera.get_frame(frame_orig)
     profiler.stop("Get frame")
@@ -134,9 +113,6 @@ while is_alive:
     if is_debug:
         frame_debug = camera.get_frame(frame_orig_debug)
 
-    if is_debug and Config.autocam["dead_zone"]["enabled"]:
-        camera.draw_dead_zone_(frame_debug)
-
     if is_debug and Config.autocam["debug"]["print_camera_stats"]:
         camera.print()
 
@@ -151,8 +127,12 @@ while is_alive:
             frame_orig_debug if is_debug else frame_orig, "Original")
 
     """ Top-down """
-    top_down_frame = top_down.get_frame(bbs_joined, algo.players_filter.pos)
-    if not args.hide_windows and is_debug and Config.autocam["debug"]["show_top_down_window"]:
+    draw_players_center = is_debug and Config.autocam["debug"]["draw_top_down_players_center"]
+    players_center = algo.players_filter.pos if draw_players_center else None
+
+    top_down_frame = top_down.get_frame(bbs_joined, players_center)
+
+    if not args.hide_windows and Config.autocam["show_top_down_window"]:
         player.show_frame(top_down_frame, "top down")
 
     """ Recorder """
@@ -197,7 +177,7 @@ while is_alive:
     """ Input """
     key = cv2.waitKey(delay)
     is_alive = is_alive and camera.process_input(
-        key, mousePos["x"], mousePos["y"]
+        key, player.mouse_pos
     )
 
 

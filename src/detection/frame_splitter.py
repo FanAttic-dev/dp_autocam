@@ -16,13 +16,21 @@ class FrameSplitter:
         ]
 
     def split(self, frame):
-        frames = [
-            camera.get_frame(frame) for camera in self.cameras
-        ]
-        return frames
+        return [camera.get_frame(frame) for camera in self.cameras]
 
-    def join_bbs(self, bbs):
-        bbs_joined = {
+    def flatten_bbs(self, bbs):
+        """Take the detections of each camera and join them into one list of detections.
+
+        Args:
+            bbs (list): A list of detections for each camera separately.
+                        The length must be equal to the number of cameras.
+
+        Returns:
+            A dictionary of detections, their classes and track ids.
+        """
+        assert len(bbs) == len(self.cameras)
+
+        bbs_flattened = {
             "boxes": [],
             "cls": [],
             "ids": []
@@ -32,18 +40,15 @@ class FrameSplitter:
                 bb = bb.reshape((2, 2))
                 bb_inv = camera.roi2original(bb)
                 bb_inv = bb_inv.ravel()
-                bbs_joined["boxes"].append(bb_inv)
-                bbs_joined["cls"].append(cls)
+
+                bbs_flattened["boxes"].append(bb_inv)
+                bbs_flattened["cls"].append(cls)
+
                 if len(frame_bbs["ids"]) > 0:
                     id = frame_bbs["ids"][i]
-                    bbs_joined["ids"].append(id)
-
-        return bbs_joined
-
-    def nms(self, bbs):
-        # TODO: remove overlapping bbs
-        ...
+                    bbs_flattened["ids"].append(id)
+        return bbs_flattened
 
     def draw_roi_(self, frame):
-        for i, camera in enumerate(self.cameras):
+        for camera in self.cameras:
             camera.draw_roi_(frame, Color.GREEN)

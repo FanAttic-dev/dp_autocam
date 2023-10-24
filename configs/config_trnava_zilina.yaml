@@ -28,8 +28,8 @@ frame_splitter_params:
   tilt_deg: 1.1
   zoom_f: 84.5
 
-pitch_coords:
-  p0:
+pitch_corners:
+  p0: # first period
     left bottom:
       x: 406
       y: 1117
@@ -42,7 +42,7 @@ pitch_coords:
     right bottom:
       x: 3710
       y: 1508
-  p1:
+  p1: # second period
     left bottom:
       x: 404
       y: 1114
