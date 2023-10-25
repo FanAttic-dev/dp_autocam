@@ -40,8 +40,7 @@ class SphericalCamera(Camera):
         self,
         pts_spherical,
         correct_rotation=Config.autocam["correct_rotation"],
-        normalized=False,
-        gnomonic_center=None
+        normalized=False
     ):
         pts_spherical_fov = pts_spherical * \
             (self.fov_rad / 2 / self.limits)
@@ -50,6 +49,7 @@ class SphericalCamera(Camera):
         pts_screen_fov = self._spherical2screen(pts_spherical_fov)
 
         if correct_rotation:
+            gnomonic_center = self.center / self.frame_orig_size
             _, pts_screen_fov = self.correct_rotation(
                 pts_screen_fov,
                 gnomonic_center
@@ -155,8 +155,7 @@ class SphericalCamera(Camera):
 
         return self.spherical2screen_fov(
             pts_spherical,
-            normalized=False,
-            gnomonic_center=(0.5, 0.5)
+            normalized=False
         )
 
     def get_frame(self, frame_orig):
