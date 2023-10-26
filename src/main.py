@@ -1,6 +1,6 @@
 import cv2
 from algorithm.autocam_algo import AutocamAlgo
-from camera.spherical_camera import SphericalCamera
+from camera.rectilinear_camera import RectilinearCamera
 from utils.argparse import parse_args
 from utils.config import Config
 from detection.yolo_detector import YoloBallDetector, YoloDetector, YoloPlayerDetector
@@ -24,7 +24,7 @@ player = VideoPlayer(config.video_path)
 delay = player.get_delay(args.record)
 
 is_alive, frame_orig = player.get_next_frame()
-camera = SphericalCamera(frame_orig, config)
+camera = RectilinearCamera(frame_orig, config)
 frame_splitter = FrameSplitter(frame_orig, config)
 top_down = TopDown(config.pitch_corners, camera)
 ball_detector = YoloBallDetector(frame_orig, top_down, config)

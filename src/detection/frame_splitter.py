@@ -1,5 +1,5 @@
 import numpy as np
-from camera.spherical_camera import SphericalCamera
+from camera.rectilinear_camera import RectilinearCamera
 from utils.constants import Color
 from utils.config import Config
 
@@ -7,7 +7,7 @@ from utils.config import Config
 class FrameSplitter:
     def __init__(self, frame, config: Config):
         self.cameras = [
-            SphericalCamera(frame, config, ignore_bounds=True).set_ptz(
+            RectilinearCamera(frame, config, ignore_bounds=True).set_ptz(
                 pan_deg=camera_params["pan_deg"],
                 tilt_deg=camera_params["tilt_deg"],
                 zoom_f=camera_params["zoom_f"]

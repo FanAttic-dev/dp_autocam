@@ -7,7 +7,7 @@ from utils.constants import DT_FLOAT, DT_INT, INTERPOLATION_TYPE, Color, Drawing
 import utils.utils as utils
 
 
-class SphericalCamera(Camera):
+class RectilinearCamera(Camera):
     SENSOR_DX = 10
     FOV_DX = 5
     DRAWING_STEP = 50
@@ -113,8 +113,8 @@ class SphericalCamera(Camera):
 
     # region Border points
     def _get_pts_borders_screen(self):
-        w = Camera.FRAME_W // SphericalCamera.DRAWING_STEP
-        h = Camera.FRAME_H // SphericalCamera.DRAWING_STEP
+        w = Camera.FRAME_W // RectilinearCamera.DRAWING_STEP
+        h = Camera.FRAME_H // RectilinearCamera.DRAWING_STEP
         pts_w = np.linspace(0, 1, w)
         pts_h = np.linspace(0, 1, h)
 
@@ -270,8 +270,8 @@ class SphericalCamera(Camera):
 
     def draw_grid_(self, frame_orig, color=Color.BLUE):
         frame_orig_w, frame_orig_h = self.frame_orig_size
-        xx, yy = np.meshgrid(np.linspace(0, 1, frame_orig_w // SphericalCamera.DRAWING_STEP),
-                             np.linspace(0, 1, frame_orig_h // SphericalCamera.DRAWING_STEP))
+        xx, yy = np.meshgrid(np.linspace(0, 1, frame_orig_w // RectilinearCamera.DRAWING_STEP),
+                             np.linspace(0, 1, frame_orig_h // RectilinearCamera.DRAWING_STEP))
         pts = np.array([xx.ravel(), yy.ravel()], dtype=DT_FLOAT).T
 
         pts = self._screen2spherical(pts)
@@ -287,20 +287,20 @@ class SphericalCamera(Camera):
     def process_input(self, key, mouse_pos):
         is_alive = True
         if key == ord('8'):
-            self.sensor_w += SphericalCamera.SENSOR_DX
+            self.sensor_w += RectilinearCamera.SENSOR_DX
         elif key == ord('2'):
-            self.sensor_w -= SphericalCamera.SENSOR_DX
+            self.sensor_w -= RectilinearCamera.SENSOR_DX
         elif key == ord('6'):
-            self.lens_fov_horiz_deg += SphericalCamera.FOV_DX
+            self.lens_fov_horiz_deg += RectilinearCamera.FOV_DX
         elif key == ord('4'):
-            self.lens_fov_horiz_deg -= SphericalCamera.FOV_DX
+            self.lens_fov_horiz_deg -= RectilinearCamera.FOV_DX
         else:
             is_alive = super().process_input(key, mouse_pos)
         return is_alive
 
     def get_stats(self):
         stats = {
-            "Name": SphericalCamera.__name__,
+            "Name": RectilinearCamera.__name__,
             "f": f"{self.zoom_f:.2f}",
             "sensor_w": self.sensor_w,
             "lens_fov_horiz_deg": self.lens_fov_horiz_deg,
