@@ -1,4 +1,3 @@
-from abc import ABC
 from pathlib import Path
 import cv2
 import torch
@@ -9,7 +8,19 @@ from utils.config import Config
 from detection.detector import Detector
 
 
-class YoloDetector(Detector, ABC):
+class YoloDetector(Detector):
+    args = {
+        'device': torch.cuda.current_device(),
+        'imgsz': 960,
+        'classes': [1, 2, 3] if Config.autocam["detector"]["ball"]["enabled"] else None,
+        'conf': Config.autocam["detector"]["conf"],
+        'max_det': 50,
+        'iou': 0.5,
+        'verbose': False
+    }
+
+    model_path = Path(f"./assets/weights/yolov8_{args['imgsz']}.pt")
+
     def __init__(self, frame_orig, top_down, config):
         super().__init__(frame_orig, top_down, config)
         self.model = YOLO(self.__class__.model_path)
@@ -94,26 +105,11 @@ class YoloBallDetector(YoloDetector):
         'device': torch.cuda.current_device(),
         'imgsz': 960,
         'classes': None,  # [0] for ball only, None for all
-        'conf': Config.autocam["detector"]["ball_confidence"],
-        'max_det': Config.autocam["detector"]["ball_max_det"],
+        'conf': Config.autocam["detector"]["ball"]["conf"],
+        'max_det': Config.autocam["detector"]["ball"]["max_det"],
         'iou': 0.5,
         'verbose': False
     }
 
     model_path = Path(
         f"./assets/weights/yolov8_{args['imgsz']}_ball.pt")
-
-
-class YoloPlayerDetector(YoloDetector):
-    args = {
-        'device': torch.cuda.current_device(),
-        'imgsz': 960,
-        'classes': [1, 2, 3],  # [0] for ball only, None for all
-        'conf': Config.autocam["detector"]["players_confidence"],
-        'max_det': 50,
-        'iou': 0.5,
-        'verbose': False
-    }
-
-    model_path = Path(
-        f"./assets/weights/yolov8_{args['imgsz']}.pt")

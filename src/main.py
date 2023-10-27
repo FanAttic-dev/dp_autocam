@@ -3,7 +3,7 @@ from algorithm.autocam_algo import AutocamAlgo
 from camera.rectilinear_camera import RectilinearCamera
 from utils.argparse import parse_args
 from utils.config import Config
-from detection.yolo_detector import YoloBallDetector, YoloDetector, YoloPlayerDetector
+from detection.yolo_detector import YoloBallDetector, YoloDetector
 from detection.frame_splitter import FrameSplitter
 from utils.profiler import Profiler
 from camera.top_down import TopDown
@@ -27,9 +27,11 @@ is_alive, frame_orig = player.get_next_frame()
 camera = RectilinearCamera(frame_orig, config)
 frame_splitter = FrameSplitter(frame_orig, config)
 top_down = TopDown(config.pitch_corners, camera)
-ball_detector = YoloBallDetector(frame_orig, top_down, config)
-detector = YoloPlayerDetector(frame_orig, top_down, config)
+detector = YoloDetector(frame_orig, top_down, config)
 algo = AutocamAlgo(camera, top_down, config)
+
+if Config.autocam["detector"]["ball"]["enabled"]:
+    ball_detector = YoloBallDetector(frame_orig, top_down, config)
 
 if args.mouse:
     player.init_mouse("Original")
@@ -68,14 +70,16 @@ while is_alive:
         profiler.stop("Split")
         # Detect
         profiler.start("Detect")
-        bbs_player, bbs_frames = detector.detect(frames)
-        bbs_ball, _ = ball_detector.detect(frames)
+        bbs, bbs_frames = detector.detect(frames)
+        if Config.autocam["detector"]["ball"]["enabled"]:
+            bbs_ball, _ = ball_detector.detect(frames)
         profiler.stop("Detect")
         # Join
         profiler.start("Join")
-        bbs_player = frame_splitter.flatten_bbs(bbs_player)
-        bbs_ball = frame_splitter.flatten_bbs(bbs_ball)
-        bbs_joined = utils.join_bbs(bbs_player, bbs_ball)
+        bbs_joined = frame_splitter.flatten_bbs(bbs)
+        if Config.autocam["detector"]["ball"]["enabled"]:
+            bbs_ball = frame_splitter.flatten_bbs(bbs_ball)
+            bbs_joined = utils.join_bbs(bbs_joined, bbs_ball)
 
         if Config.autocam["detector"]["filter_detections"]:
             detector.filter_detections_(bbs_joined)
@@ -87,7 +91,7 @@ while is_alive:
 
     """ ROI """
     if is_debug and args.mouse:
-        if config.autocam["debug"]["mouse_use_pid"]:
+        if Config.autocam["debug"]["mouse_use_pid"]:
             algo.try_update_camera(player.mouse_pos)
         camera.draw_center_(frame_orig_debug)
     else:

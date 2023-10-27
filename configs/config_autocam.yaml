@@ -48,9 +48,14 @@ detector:
   # Filter detections based on `detection_blacklist` in dataset config file.
   filter_detections: true 
   
-  ball_confidence: 0.35
-  ball_max_det: 10 # Maximum number of detections for the ball.
-  players_confidence: 0.2
+  # Parameters for the general detector
+  conf: 0.2 # confidence threshold
+  
+  # Parameters for the ball detector
+  ball:
+    enabled: false # Whether to use a separate ball detector.
+    conf: 0.35
+    max_det: 10 # Maximum number of detections for the ball.
 
 # -----------------------------------------------------------------------------
 # Filters
