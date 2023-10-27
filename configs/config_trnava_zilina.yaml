@@ -5,28 +5,28 @@ path: "../../datasets/TrnavaZilina/main"
 camera_params:
   lens_fov_horiz_deg: 115
   pan_deg:
-    default: 0.3
-    min: -27
-    max: 32
+    default: 1.7
+    min: -24.3
+    max: 29.7
   tilt_deg:
-    default: -1.8
+    default: -0.6
     min: -2
-    max: 4
+    max: 5
   zoom_f:
     default: 40
     min: 40
-    max: 80
+    max: 70
 
 frame_splitter_params:
-- pan_deg: -20.8
-  tilt_deg: -1.8
-  zoom_f: 93.5
+- pan_deg: -24.7
+  tilt_deg: -2.9
+  zoom_f: 82
 - pan_deg: 1.7
-  tilt_deg: -0.39
-  zoom_f: 84
-- pan_deg: 25.2
-  tilt_deg: 1.1
-  zoom_f: 84.5
+  tilt_deg: -0.79
+  zoom_f: 69
+- pan_deg: 29.3
+  tilt_deg: 1.7
+  zoom_f: 71.5
 
 pitch_corners:
   p0: # first period
