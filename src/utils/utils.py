@@ -158,3 +158,9 @@ def join_bbs(bbs1, bbs2):
         "cls": bbs1["cls"] + bbs2["cls"],
         "ids": bbs1["ids"] + bbs2["ids"]
     }
+
+
+def hFoV2vFoV(hFoV_deg, aspect_ratio):
+    hFoV_rad = np.deg2rad(hFoV_deg)
+    vFoV_rad = 2 * np.arctan(np.tan(hFoV_rad / 2) / aspect_ratio)
+    return np.rad2deg(vFoV_rad)

@@ -10,9 +10,9 @@ import utils.utils as utils
 
 
 class Camera(ABC, HasStats):
-    PAN_DX = .1
-    TILT_DY = .1
-    ZOOM_DZ = .5
+    PAN_DX = 1
+    TILT_DY = 1
+    ZOOM_DZ = 1
 
     SENSOR_W = 36  # FX sensor width [mm]
     FRAME_W = 1920
@@ -188,7 +188,11 @@ class Camera(ABC, HasStats):
 
     @property
     def fov_vert_deg(self):
-        return self.fov_horiz_deg / Camera.FRAME_ASPECT_RATIO
+        return utils.hFoV2vFoV(self.fov_horiz_deg, Camera.FRAME_ASPECT_RATIO)
+
+    @property  # could use @cached_property for optimization
+    def lens_fov_vert_deg(self):
+        return utils.hFoV2vFoV(self.lens_fov_horiz_deg, Camera.FRAME_ASPECT_RATIO)
 
     @property
     def fov_rad(self):

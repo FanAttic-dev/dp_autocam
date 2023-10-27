@@ -13,10 +13,6 @@ class RectilinearCamera(Camera):
     DRAWING_STEP = 50
 
     @property  # could use @cached_property for optimization
-    def lens_fov_vert_deg(self):
-        return self.lens_fov_horiz_deg / Camera.FRAME_ASPECT_RATIO  # 99
-
-    @property  # could use @cached_property for optimization
     def limits(self):
         limits = np.array(
             [self.lens_fov_horiz_deg, self.lens_fov_vert_deg],

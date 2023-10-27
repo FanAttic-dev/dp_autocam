@@ -15,10 +15,10 @@ import utils.utils as utils
 
 """ Init """
 args = parse_args()
-config = Config(args)
-is_debug = not args.no_debug
 # args.record = True
 # args.mouse = True
+config = Config(args)
+is_debug = not args.no_debug or args.mouse
 
 player = VideoPlayer(config.video_path)
 delay = player.get_delay(args.record)
@@ -61,7 +61,7 @@ while is_alive:
         "ids": []
     }
 
-    if Config.autocam["detector"]["enabled"]:
+    if not args.mouse and Config.autocam["detector"]["enabled"]:
         # Split
         profiler.start("Split")
         frames = frame_splitter.split(frame_orig_masked)

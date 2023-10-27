@@ -3,14 +3,14 @@
 # Debug
 debug:
   # Frame splitter
-  show_split_frames: false # Show the FrameSplitter frames with detections.
+  show_split_frames: true # Show the FrameSplitter frames with detections.
   show_frame_mask: false # Mask out everything outside of the pitch.
 
   # Camera
   draw_grid: false # Visualize the point grid of the used projection scheme.
   draw_roi: true # Draw the regions-of-interest of cameras.
   print_camera_stats: false # Print the camera state (PTZ, PID, FoV).
-  ignore_bounds: false # Ignore the PTZ limits defined in the dataset config file.
+  ignore_bounds: true # Ignore the PTZ limits defined in the dataset config file.
   mouse_use_pid: false # Use PID in mouse mode. Otherwise uses free camera.
   
   # Detection
