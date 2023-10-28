@@ -113,6 +113,9 @@ class AutocamAlgo(Algo):
 
     def measure_zoom_bb(self, bbs):
         """Calculate the focal length based on the players' bounding box."""
+        if not bbs or len(bbs["boxes"]) == 0:
+            return self.camera.zoom_f
+
         margin_px = Config.autocam["zoom"]["bb"]["margin_px"]
 
         bb_x_min, _, bb_x_max, _ = utils.get_bbs_bounding_box(bbs)

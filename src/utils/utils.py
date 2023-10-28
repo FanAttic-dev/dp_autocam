@@ -102,8 +102,9 @@ def is_polygon_in_box(inner_poly: np.ndarray, outer_box: np.ndarray):
 
 def get_bbs_bounding_box(bbs):
     """Returns the bounding box of all input bounding boxes."""
-    x_min, y_min, _, _ = bbs["boxes"].min(axis=0)
-    _, _, x_max, y_max = bbs["boxes"].max(axis=0)
+    boxes = np.array(bbs["boxes"])
+    x_min, y_min, _, _ = boxes.min(axis=0)
+    _, _, x_max, y_max = boxes.max(axis=0)
     return x_min, y_min, x_max, y_max
 
 
