@@ -120,3 +120,12 @@ zoom:
   # Zoom based on the players' bounding box.
   bb:
     margin_px: 350 # Margin around the player's bounding box.
+
+
+# -----------------------------------------------------------------------------
+# Evaluation
+evaluation:
+  image_size:
+    - 1280
+    - 720
+  

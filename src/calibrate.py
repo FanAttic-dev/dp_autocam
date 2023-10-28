@@ -1,10 +1,15 @@
-import matplotlib.pyplot as plt
-from tvcalib_wrapper import TVCalibWrapper
 from pathlib import Path
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-images_path = Path("../../datasets/TrnavaZilina/VAR/full")
+from utils import utils
+from utils.config import Config
+from evaluation.tvcalib_wrapper import TVCalibWrapper
+
+
+dataset_config = utils.load_yaml(Config.autocam["dataset"]["config"])
+images_path = Path(dataset_config["reference_path"]) / "full"
 output_dir = Path("tmp")
 
 tvcalib_wrapper = TVCalibWrapper(images_path, output_dir)

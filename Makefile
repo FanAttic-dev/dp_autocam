@@ -12,3 +12,9 @@ record:
 
 export_var_frames:
 	python src/export_var_frames.py
+
+calibrate:
+	python src/evaluation/calibrate.py
+
+evaluate:
+	python src/evaluation/evaluate.py
