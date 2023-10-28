@@ -1,0 +1,3 @@
+[submodule "src/evaluation/tvcalib"]
+	path = src/evaluation/tvcalib
+	url = https://github.com/FanAttic-dev/tvcalib.git

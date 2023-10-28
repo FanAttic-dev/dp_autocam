@@ -1,7 +1,7 @@
 import cv2
 from algorithm.autocam_algo import AutocamAlgo
 from camera.rectilinear_camera import RectilinearCamera
-from utils.argparse import parse_args
+from utils.argparse import AutocamArgsNamespace
 from utils.config import Config
 from detection.yolo_detector import YoloBallDetector, YoloDetector
 from detection.frame_splitter import FrameSplitter
@@ -14,7 +14,7 @@ import utils.utils as utils
 
 
 """ Init """
-args = parse_args()
+args = AutocamArgsNamespace.parse_args()
 # args.record = True
 # args.mouse = True
 config = Config(args)

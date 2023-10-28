@@ -161,3 +161,4 @@ cython_debug/
 
 /recordings
 .VSCodeCounter/
+/assets/segment_localization
