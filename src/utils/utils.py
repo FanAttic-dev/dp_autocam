@@ -12,7 +12,12 @@ def load_yaml(file_name):
 
 def save_yaml(path, file):
     with open(path, 'w') as f:
-        yaml.safe_dump(file)
+        yaml.safe_dump(file, f, default_flow_style=False)
+
+
+def save_txt(path, text):
+    with open(path, 'w') as f:
+        f.write(text)
 
 
 def apply_homography(H: np.ndarray, x, y):

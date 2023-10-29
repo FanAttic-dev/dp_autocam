@@ -1,7 +1,7 @@
 import cv2
 from algorithm.autocam_algo import AutocamAlgo
 from camera.rectilinear_camera import RectilinearCamera
-from utils.argparse import parse_args
+from utils.argparse import AutocamArgsNamespace, parse_args
 from utils.config import Config
 from detection.yolo_detector import YoloBallDetector, YoloDetector
 from detection.frame_splitter import FrameSplitter
@@ -13,176 +13,205 @@ from utils.constants import Color
 import utils.utils as utils
 
 
-""" Init """
-args = parse_args()
-# args.record = True
-# args.mouse = True
-config = Config(args)
-is_debug = not args.no_debug or args.mouse
+class Autocam:
+    def __init__(self, args: AutocamArgsNamespace, config: Config):
+        self.args = args
+        self.config = config
+        self.is_debug = not self.args.no_debug or self.args.mouse
 
-player = VideoPlayer(config.video_path)
-delay = player.get_delay(args.record)
+        self.player = VideoPlayer(self.config.video_path)
+        self.delay = self.player.get_delay(self.args.record)
 
-is_alive, frame_orig = player.get_next_frame()
-camera = RectilinearCamera(frame_orig, config)
-frame_splitter = FrameSplitter(frame_orig, config)
-top_down = TopDown(config.pitch_corners, camera)
-detector = YoloDetector(frame_orig, top_down, config)
-algo = AutocamAlgo(camera, top_down, config)
+        _, frame_orig = self.player.get_next_frame()
+        self.player.restart()
+        self.camera = RectilinearCamera(frame_orig, self.config)
+        self.frame_splitter = FrameSplitter(frame_orig, self.config)
+        self.top_down = TopDown(self.config.pitch_corners, self.camera)
+        self.detector = YoloDetector(
+            frame_orig, self.top_down, self.config)
+        self.algo = AutocamAlgo(self.camera, self.top_down, self.config)
 
-if Config.autocam["detector"]["ball"]["enabled"]:
-    ball_detector = YoloBallDetector(frame_orig, top_down, config)
-
-if args.mouse:
-    player.init_mouse("Original")
-
-recorder = VideoRecorder(config, player, camera, detector, algo)
-if args.record:
-    recorder.init_writer()
-if args.record and is_debug:
-    recorder.init_debug_writer()
-
-frame_id = 0
-export_interval_sec = Config.autocam["eval"]["export_every_x_seconds"]
-while is_alive:
-    profiler = Profiler(frame_id)
-    profiler.start("Total")
-
-    profiler.start("Preprocess")
-    frame_orig_masked = detector.preprocess(frame_orig)
-    if is_debug and Config.autocam["debug"]["show_frame_mask"]:
-        frame_orig = frame_orig_masked
-    if is_debug:
-        frame_orig_debug = frame_orig.copy()
-    profiler.stop("Preprocess")
-
-    """ Detection """
-    bbs_joined = {
-        "boxes": [],
-        "cls": [],
-        "ids": []
-    }
-
-    if not args.mouse and Config.autocam["detector"]["enabled"]:
-        # Split
-        profiler.start("Split")
-        frames = frame_splitter.split(frame_orig_masked)
-        profiler.stop("Split")
-        # Detect
-        profiler.start("Detect")
-        bbs, bbs_frames = detector.detect(frames)
         if Config.autocam["detector"]["ball"]["enabled"]:
-            bbs_ball, _ = ball_detector.detect(frames)
-        profiler.stop("Detect")
-        # Join
-        profiler.start("Join")
-        bbs_joined = frame_splitter.flatten_bbs(bbs)
-        if Config.autocam["detector"]["ball"]["enabled"]:
-            bbs_ball = frame_splitter.flatten_bbs(bbs_ball)
-            bbs_joined = utils.join_bbs(bbs_joined, bbs_ball)
+            self.ball_detector = YoloBallDetector(
+                frame_orig, self.top_down, self.config)
 
-        if Config.autocam["detector"]["filter_detections"]:
-            detector.filter_detections_(bbs_joined)
-        profiler.stop("Join")
+        if self.args.mouse:
+            self.player.init_mouse("Original")
 
-        if is_debug and not args.hide_windows and Config.autocam["debug"]["show_split_frames"]:
-            for i, bbs_frame in enumerate(bbs_frames):
-                player.show_frame(bbs_frame, f"bbs_frame {i}")
+        self.recorder = VideoRecorder(
+            self.config, self.player, self.camera, self.detector, self.algo)
+        if self.args.record:
+            self.recorder.init_writer()
+        if self.args.record and self.is_debug:
+            self.recorder.init_debug_writer()
 
-    """ ROI """
-    if is_debug and args.mouse:
-        if Config.autocam["debug"]["mouse_use_pid"]:
-            algo.try_update_camera(player.mouse_pos)
-        camera.draw_center_(frame_orig_debug)
-    else:
-        profiler.start("Update by BBS")
-        algo.update_by_bbs(bbs_joined)
-        profiler.stop("Update by BBS")
+    def run(self):
+        is_alive, frame_orig = self.player.get_next_frame()
+        frame_id = 0
+        while is_alive:
+            self.process_frame(frame_orig, frame_id)
 
-    profiler.start("Get frame")
-    frame = camera.get_frame(frame_orig)
-    profiler.stop("Get frame")
+            """ Next frame """
+            is_alive, frame_orig = self.player.get_next_frame()
+            frame_id += 1
 
-    profiler.start("Other")
-    if not args.mouse and is_debug and Config.autocam["detector"]["enabled"]:
-        if Config.autocam["debug"]["draw_detections"]:
-            detector.draw_bbs_(frame_orig_debug, bbs_joined)
-            algo.draw_ball_prediction_(frame_orig_debug, Color.RED)
-            algo.draw_ball_u_(frame_orig_debug, Color.ORANGE)
-            algo.ball_filter.draw_particles_(frame_orig_debug)
-        if Config.autocam["debug"]["draw_players_bb"]:
-            algo.draw_players_bb_(frame_orig_debug, bbs_joined)
-    if is_debug:
-        frame_debug = camera.get_frame(frame_orig_debug)
+            """ Input """
+            key = cv2.waitKey(self.delay)
+            is_alive = is_alive and self.camera.process_input(
+                key, self.player.mouse_pos
+            )
 
-    if is_debug and Config.autocam["debug"]["print_camera_stats"]:
-        camera.print()
+    def process_frame(self, frame_orig, frame_id: int):
+        profiler = Profiler(frame_id)
+        profiler.start("Total")
 
-    """ Original frame """
-    if is_debug and Config.autocam["debug"]["draw_roi"]:
-        frame_splitter.draw_roi_(frame_orig_debug)
-        camera.draw_roi_(frame_orig_debug)
-    if is_debug and Config.autocam["debug"]["draw_grid"]:
-        camera.draw_grid_(frame_orig_debug)
-    if not args.hide_windows and Config.autocam["show_original"]:
-        player.show_frame(
-            frame_orig_debug if is_debug else frame_orig, "Original")
+        profiler.start("Preprocess")
+        frame_orig_masked = self.detector.preprocess(frame_orig)
+        if self.is_debug and Config.autocam["debug"]["show_frame_mask"]:
+            frame_orig = frame_orig_masked
+        if self.is_debug:
+            frame_orig_debug = frame_orig.copy()
+        profiler.stop("Preprocess")
 
-    """ Top-down """
-    draw_players_center = is_debug and Config.autocam["debug"]["draw_top_down_players_center"]
-    players_center = algo.players_filter.pos if draw_players_center else None
+        """ Detection """
+        bbs_joined = {
+            "boxes": [],
+            "cls": [],
+            "ids": []
+        }
 
-    top_down_frame = top_down.get_frame(bbs_joined, players_center)
+        if not self.args.mouse and Config.autocam["detector"]["enabled"]:
+            # Split
+            profiler.start("Split")
+            frames = self.frame_splitter.split(frame_orig_masked)
+            profiler.stop("Split")
+            # Detect
+            profiler.start("Detect")
+            bbs, bbs_frames = self.detector.detect(frames)
+            if Config.autocam["detector"]["ball"]["enabled"]:
+                bbs_ball, _ = self.ball_detector.detect(frames)
+            profiler.stop("Detect")
+            # Join
+            profiler.start("Join")
+            bbs_joined = self.frame_splitter.flatten_bbs(bbs)
+            if Config.autocam["detector"]["ball"]["enabled"]:
+                bbs_ball = self.frame_splitter.flatten_bbs(bbs_ball)
+                bbs_joined = utils.join_bbs(bbs_joined, bbs_ball)
 
-    if not args.hide_windows and Config.autocam["show_top_down_window"]:
-        player.show_frame(top_down_frame, "top down")
+            if Config.autocam["detector"]["filter_detections"]:
+                self.detector.filter_detections_(bbs_joined)
+            profiler.stop("Join")
 
-    """ Recorder """
-    if is_debug:
-        frame_debug = recorder.decorate_frame(frame_debug, top_down_frame)
+            if self.is_debug and not self.args.hide_windows and Config.autocam["debug"]["show_split_frames"]:
+                for i, bbs_frame in enumerate(bbs_frames):
+                    self.player.show_frame(bbs_frame, f"bbs_frame {i}")
 
-    if not args.hide_windows:
-        player.show_frame(frame_debug if is_debug else frame, "ROI")
+        """ ROI """
+        if self.is_debug and self.args.mouse:
+            if Config.autocam["debug"]["mouse_use_pid"]:
+                self.algo.try_update_camera(self.player.mouse_pos)
+            self.camera.draw_center_(frame_orig_debug)
+        else:
+            profiler.start("Update by BBS")
+            self.algo.update_by_bbs(bbs_joined)
+            profiler.stop("Update by BBS")
 
-    if args.record:
-        recorder.write(frame)
-        if is_debug:
-            recorder.write_debug(frame_debug)
+        profiler.start("Get frame")
+        frame = self.camera.get_frame(frame_orig)
+        profiler.stop("Get frame")
 
-    """ Warp frame """
-    frame_orig_masked = camera.draw_frame_mask(frame_orig)
-    frame_warped = top_down.warp_frame(
-        frame_orig_masked,
-        overlay=Config.autocam["eval"]["pitch_overlay"]
-    )
+        profiler.start("Other")
+        if not self.args.mouse and self.is_debug and Config.autocam["detector"]["enabled"]:
+            if Config.autocam["debug"]["draw_detections"]:
+                self.detector.draw_bbs_(frame_orig_debug, bbs_joined)
+                self.algo.draw_ball_prediction_(
+                    frame_orig_debug, Color.RED)
+                self.algo.draw_ball_u_(frame_orig_debug, Color.ORANGE)
+                self.algo.ball_filter.draw_particles_(frame_orig_debug)
+            if Config.autocam["debug"]["draw_players_bb"]:
+                self.algo.draw_players_bb_(frame_orig_debug, bbs_joined)
+        if self.is_debug:
+            frame_debug = self.camera.get_frame(frame_orig_debug)
 
-    frame_sec = frame_id / int(player.fps)
-    if args.record and args.export_frames and \
-            frame_sec % export_interval_sec == 0:
-        frame_img_id = int(frame_sec // export_interval_sec)
-        recorder.save_frame(frame, frame_img_id)
-        recorder.save_frame(frame_warped, frame_img_id, "warped")
+        if self.is_debug and Config.autocam["debug"]["print_camera_stats"]:
+            self.camera.print()
 
-    if not args.hide_windows and is_debug and Config.autocam["debug"]["show_warped_frame"]:
-        player.show_frame(frame_warped, "warped")
+        """ Original frame """
+        if self.is_debug and Config.autocam["debug"]["draw_roi"]:
+            self.frame_splitter.draw_roi_(frame_orig_debug)
+            self.camera.draw_roi_(frame_orig_debug)
+        if self.is_debug and Config.autocam["debug"]["draw_grid"]:
+            self.camera.draw_grid_(frame_orig_debug)
+        if not self.args.hide_windows and Config.autocam["show_original"]:
+            self.player.show_frame(
+                frame_orig_debug if self.is_debug else frame_orig, "Original")
 
-    """ Profiler """
-    profiler.stop("Other")
-    profiler.stop("Total")
-    if Config.autocam["print_profiler_stats"]:
-        profiler.print_summary()
+        """ Top-down """
+        draw_players_center = self.is_debug and Config.autocam[
+            "debug"]["draw_top_down_players_center"]
+        players_center = self.algo.players_filter.pos if draw_players_center else None
 
-    """ Next frame """
-    is_alive, frame_orig = player.get_next_frame()
-    frame_id += 1
+        top_down_frame = self.top_down.get_frame(
+            bbs_joined, players_center)
 
-    """ Input """
-    key = cv2.waitKey(delay)
-    is_alive = is_alive and camera.process_input(
-        key, player.mouse_pos
-    )
+        if not self.args.hide_windows and Config.autocam["show_top_down_window"]:
+            self.player.show_frame(top_down_frame, "top down")
+
+        """ Recorder """
+        if self.is_debug:
+            frame_debug = self.recorder.decorate_frame(
+                frame_debug, top_down_frame)
+
+        if not self.args.hide_windows:
+            self.player.show_frame(
+                frame_debug if self.is_debug else frame, "ROI")
+
+        if self.args.record:
+            self.recorder.write(frame)
+            if self.is_debug:
+                self.recorder.write_debug(frame_debug)
+
+        """ Warp frame """
+        frame_orig_masked = self.camera.draw_frame_mask(frame_orig)
+        frame_warped = self.top_down.warp_frame(
+            frame_orig_masked,
+            overlay=Config.autocam["eval"]["pitch_overlay"]
+        )
+
+        frame_sec = frame_id / int(self.player.fps)
+        if self.args.record and self.args.export_interval_sec > -1 and \
+                frame_sec % self.args.export_interval_sec == 0:
+            frame_img_id = int(frame_sec // self.args.export_interval_sec)
+            self.recorder.save_frame(frame, frame_img_id)
+            self.recorder.save_frame(frame_warped, frame_img_id, "warped")
+
+        if not self.args.hide_windows and self.is_debug and Config.autocam["debug"]["show_warped_frame"]:
+            self.player.show_frame(frame_warped, "warped")
+
+        """ Profiler """
+        profiler.stop("Other")
+        profiler.stop("Total")
+        if Config.autocam["print_profiler_stats"]:
+            profiler.print_summary()
+
+    def finish(self):
+        print(f"Video: {self.config.video_path}")
+        self.recorder.release()
+        self.player.release()
 
 
-print(f"Video: {config.video_path}")
-recorder.release()
-player.release()
+if __name__ == "__main__":
+    args = parse_args()
+    # args.record = True
+    # args.mouse = True
+    config = Config(args)
+
+    try:
+        autocam = Autocam(args, config)
+        autocam.run()
+        autocam.finish()
+    except Exception as e:
+        utils.save_txt(
+            config.output_dir / f"{config.output_file_path.stem}_err_log.txt",
+            str(e))
+        raise e

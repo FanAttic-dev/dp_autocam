@@ -20,7 +20,6 @@ recording:
 # -----------------------------------------------------------------------------
 # Evaluation
 eval:
-  export_every_x_seconds: 1 # Time interval to export a warped frame.
   pitch_overlay: false # Overlay the pitch model scheme on the exported frame.
 
 # -----------------------------------------------------------------------------

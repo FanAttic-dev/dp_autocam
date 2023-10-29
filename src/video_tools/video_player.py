@@ -9,7 +9,8 @@ class VideoPlayer:
 
     def __init__(self, video_path: Path):
         self.video_path = video_path
-        self.cap = cv2.VideoCapture(str(video_path.absolute()))
+        self.video_path_str = str(video_path.absolute())
+        self.cap = cv2.VideoCapture(self.video_path_str)
         self._mouse_pos = {
             "x": 0,
             "y": 0
@@ -23,6 +24,9 @@ class VideoPlayer:
     @cached_property
     def fps(self):
         return self.cap.get(cv2.CAP_PROP_FPS)
+
+    def restart(self):
+        return self.cap.open(self.video_path_str)
 
     @property
     def frame_size(self):

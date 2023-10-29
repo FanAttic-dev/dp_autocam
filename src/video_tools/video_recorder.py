@@ -4,7 +4,6 @@ import cv2
 from algorithm.autocam_algo import AutocamAlgo
 from camera.camera import Camera
 from detection.detector import Detector
-from utils.argparse import AutocamArgsNamespace
 from utils.config import Config
 from utils.constants import Color
 from utils.protocols import HasStats
@@ -14,7 +13,6 @@ from video_tools.video_player import VideoPlayer
 
 class VideoRecorder:
     FOURCC = cv2.VideoWriter_fourcc(*'mp4v')
-    VIDEO_SUFFIX = ".mp4"
     IMG_SUFFIX = ".jpg"
     IS_COLOR = True
     STATS_WIDTH = 500
@@ -38,7 +36,7 @@ class VideoRecorder:
         self.video_player = video_player
         self.detector = detector
         self.algo = algo
-        self.file_path = self.get_file_path(video_player, config.output_dir)
+        self.file_path = config.output_file_path
         self.writer = None
         self.writer_debug = None
 
@@ -66,20 +64,6 @@ class VideoRecorder:
 
         print(
             f"Video debug recorder initialized: {utils.path2str(self.file_path_debug)}")
-
-    def get_file_path(self, video_player: VideoPlayer, output_dir: str) -> Path:
-        output_dir.mkdir(exist_ok=True, parents=True)
-
-        video_path = video_player.video_path.stem
-        file_path = output_dir / video_path
-        file_path = file_path.with_suffix(VideoRecorder.VIDEO_SUFFIX)
-
-        idx = 1
-        while file_path.exists():
-            file_path = file_path.with_stem(f"{video_path}_{idx:02}")
-            idx += 1
-
-        return file_path
 
     @staticmethod
     def get_text_height():

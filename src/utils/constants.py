@@ -35,3 +35,4 @@ class DrawingMode(Enum):
 INTERPOLATION_TYPE = cv2.INTER_NEAREST
 DT_FLOAT = np.float32
 DT_INT = np.int32
+VIDEO_SUFFIX = ".mp4"
