@@ -29,8 +29,8 @@ show_top_down_window: false # Show the top-down pitch model with marked players.
 # Dataset
 dataset:
   config: "./configs/config_trnava_zilina.yaml"
-  # video: "p1_goal1.mp4"
-  video: "main_p0.mp4"
+  video: "p0_shot1.mp4"
+  # video: "main_p0.mp4"
 
 correct_rotation: true
 
@@ -53,7 +53,7 @@ detector:
   
   # Parameters for the ball detector
   ball:
-    enabled: false # Whether to use a separate ball detector.
+    enabled: true # Whether to use a separate ball detector.
     conf: 0.3
     max_det: 10 # Maximum number of detections for the ball.
 
