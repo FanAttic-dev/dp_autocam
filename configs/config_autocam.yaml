@@ -37,7 +37,7 @@ correct_rotation: true
 # -----------------------------------------------------------------------------
 # Evaluation
 eval:
-  export_every_x_seconds: 10 # Time interval to export a warped frame.
+  export_every_x_seconds: 1 # Time interval to export a warped frame.
   pitch_overlay: false # Overlay the pitch model scheme on the exported frame.
 
 # -----------------------------------------------------------------------------
