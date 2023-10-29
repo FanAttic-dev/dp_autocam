@@ -10,6 +10,11 @@ def load_yaml(file_name):
         return yaml.safe_load(f)
 
 
+def save_yaml(path, file):
+    with open(path, 'w') as f:
+        yaml.safe_dump(file)
+
+
 def apply_homography(H: np.ndarray, x, y):
     v = np.array([x, y, 1])
     v = H.dot(v)

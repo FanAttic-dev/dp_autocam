@@ -8,17 +8,23 @@ import utils.utils as utils
 
 
 class Config:
-    autocam = utils.load_yaml("./configs/config_autocam.yaml")
+    config_autocam_path = "./configs/config_autocam.yaml"
+    autocam = utils.load_yaml(config_autocam_path)
 
     def __init__(self, args: AutocamArgsNamespace):
-        self.dataset = Config.load_dataset_config(args)
+        self.dataset = utils.load_yaml(Config.autocam["dataset"]["config"])
         self.video_path = Config.get_video_path(self.dataset, args)
+        self.output_dir = \
+            Path(Config.autocam["recording"]["rec_folder"]) / \
+            Config.autocam["recording"]["name"] / \
+            args.output_sub_dir
 
-    @staticmethod
-    def load_dataset_config(args: AutocamArgsNamespace):
-        if args.config_path:
-            return utils.load_yaml(args.config_path)
-        return utils.load_yaml(Config.autocam["dataset"]["config"])
+        if args.record:
+            self.save_autocam_config()
+
+    def save_autocam_config(self):
+        file_path = self.output_dir / "config_autocam.yaml"
+        utils.save_yaml(file_path, Config.autocam)
 
     @staticmethod
     def load_pitch_corners(pts_dict: dict):

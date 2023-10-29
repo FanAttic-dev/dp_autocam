@@ -4,6 +4,8 @@ import cv2
 from algorithm.autocam_algo import AutocamAlgo
 from camera.camera import Camera
 from detection.detector import Detector
+from utils.argparse import AutocamArgsNamespace
+from utils.config import Config
 from utils.constants import Color
 from utils.protocols import HasStats
 import utils.utils as utils
@@ -11,7 +13,6 @@ from video_tools.video_player import VideoPlayer
 
 
 class VideoRecorder:
-    RECORDINGS_FOLDER = Path("./recordings")
     FOURCC = cv2.VideoWriter_fourcc(*'mp4v')
     VIDEO_SUFFIX = ".mp4"
     IMG_SUFFIX = ".jpg"
@@ -27,6 +28,7 @@ class VideoRecorder:
 
     def __init__(
         self,
+        config: Config,
         video_player: VideoPlayer,
         camera: Camera,
         detector: Detector,
@@ -36,7 +38,7 @@ class VideoRecorder:
         self.video_player = video_player
         self.detector = detector
         self.algo = algo
-        self.file_path = VideoRecorder.get_file_path(video_player)
+        self.file_path = self.get_file_path(video_player, config.output_dir)
         self.writer = None
         self.writer_debug = None
 
@@ -65,12 +67,11 @@ class VideoRecorder:
         print(
             f"Video debug recorder initialized: {utils.path2str(self.file_path_debug)}")
 
-    @staticmethod
-    def get_file_path(video_player: VideoPlayer) -> Path:
-        VideoRecorder.RECORDINGS_FOLDER.mkdir(exist_ok=True)
+    def get_file_path(self, video_player: VideoPlayer, output_dir: str) -> Path:
+        output_dir.mkdir(exist_ok=True, parents=True)
 
         video_path = video_player.video_path.stem
-        file_path = VideoRecorder.RECORDINGS_FOLDER / video_path
+        file_path = output_dir / video_path
         file_path = file_path.with_suffix(VideoRecorder.VIDEO_SUFFIX)
 
         idx = 1

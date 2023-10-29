@@ -36,11 +36,11 @@ if Config.autocam["detector"]["ball"]["enabled"]:
 if args.mouse:
     player.init_mouse("Original")
 
-recorder = VideoRecorder(player, camera, detector, algo)
+recorder = VideoRecorder(config, player, camera, detector, algo)
 if args.record:
     recorder.init_writer()
-    if is_debug:
-        recorder.init_debug_writer()
+if args.record and is_debug:
+    recorder.init_debug_writer()
 
 frame_id = 0
 export_interval_sec = Config.autocam["eval"]["export_every_x_seconds"]
