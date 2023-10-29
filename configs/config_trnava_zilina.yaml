@@ -58,9 +58,9 @@ pitch_corners:
 
 mask_margins:
   top: -10
-  right: 40
+  right: 30
   bottom: -30
-  left: -40
+  left: -25
 
 detection_blacklist:
   - - 1778 # x1 # lens flare
