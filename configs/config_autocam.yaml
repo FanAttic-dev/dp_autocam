@@ -53,7 +53,7 @@ detector:
   
   # Parameters for the ball detector
   ball:
-    enabled: true # Whether to use a separate ball detector.
+    enabled: false # Whether to use a separate ball detector.
     conf: 0.3
     max_det: 10 # Maximum number of detections for the ball.
 
