@@ -10,6 +10,7 @@ dependencies:
   - c-ares=1.19.1=h5eee18b_0
   - ca-certificates=2023.7.22=hbcca054_0
   - cairo=1.16.0=hb05425b_5
+  - certifi=2023.7.22=pyhd8ed1ab_0
   - cycler=0.11.0=pyhd8ed1ab_0
   - cyrus-sasl=2.1.28=h9c0eb46_1
   - dbus=1.13.18=hb2f20db_0
@@ -70,11 +71,10 @@ dependencies:
   - libxml2=2.10.4=hcbfbd50_0
   - libxslt=1.1.37=h2085143_0
   - lz4-c=1.9.4=h6a678d5_0
-  - matplotlib-base=3.4.3=py310h23f4a51_2
   - mysql=5.7.24=he378463_2
   - ncurses=6.4=h6a678d5_0
   - nettle=3.6=he412f7d_0
-  - numpy=1.22.3=py310h4ef5377_2
+  - openblas=0.3.20=pthreads_h320a7e8_0
   - opencv=4.6.0=py310ha16400d_5
   - openh264=2.1.1=h4ff587b_0
   - openjpeg=2.4.0=h3ad879b_0
@@ -103,11 +103,11 @@ dependencies:
   - zlib=1.2.13=h5eee18b_0
   - zstd=1.5.5=hc292b87_0
   - pip:
-      - certifi==2023.7.22
       - charset-normalizer==3.2.0
       - cmake==3.27.4.1
       - contourpy==1.1.0
       - cython==3.0.2
+      - filelock==3.13.0
       - fonttools==4.42.1
       - idna==3.4
       - jinja2==3.1.2
@@ -118,6 +118,7 @@ dependencies:
       - matplotlib==3.7.3
       - mpmath==1.3.0
       - networkx==3.1
+      - numpy==1.26.1
       - nvidia-cublas-cu11==11.10.3.66
       - nvidia-cuda-cupti-cu11==11.7.101
       - nvidia-cuda-nvrtc-cu11==11.7.99
@@ -131,6 +132,7 @@ dependencies:
       - nvidia-nvtx-cu11==11.7.91
       - opencv-python==4.8.0.76
       - packaging==23.1
+      - pandas==2.1.2
       - pillow==10.0.0
       - psutil==5.9.5
       - py-cpuinfo==9.0.0
@@ -142,6 +144,7 @@ dependencies:
       - torch==2.0.1
       - torchaudio==2.0.2
       - torchvision==0.15.2
+      - tqdm==4.66.1
       - triton==2.0.0
       - typing-extensions==4.7.1
       - ultralytics==8.0.178
