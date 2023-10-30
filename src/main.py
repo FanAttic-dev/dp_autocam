@@ -57,9 +57,15 @@ class Autocam:
 
             """ Input """
             key = cv2.waitKey(self.delay)
-            is_alive = is_alive and self.camera.process_input(
-                key, self.player.mouse_pos
-            )
+            is_alive = is_alive and self.process_input(key)
+
+    def process_input(self, key) -> bool:
+        if key == ord('m'):
+            self.args.mouse = True
+
+        return self.camera.process_input(
+            key, self.player.mouse_pos
+        )
 
     def process_frame(self, frame_orig, frame_id: int):
         profiler = Profiler(frame_id)
@@ -203,7 +209,7 @@ class Autocam:
 if __name__ == "__main__":
     args = parse_args()
     # args.record = True
-    # args.mouse = True
+    args.mouse = True
     config = Config(args)
 
     try:
