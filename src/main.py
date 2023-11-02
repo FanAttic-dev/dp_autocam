@@ -122,9 +122,9 @@ class Autocam:
             self.algo.update_by_bbs(bbs_joined)
             profiler.stop("Update by BBS")
 
-        profiler.start("Get frame")
-        frame = self.camera.get_frame(frame_orig)
-        profiler.stop("Get frame")
+        profiler.start("Get ROI")
+        frame_roi = self.camera.get_frame_roi(frame_orig)
+        profiler.stop("Get ROI")
 
         profiler.start("Other")
         if not self.args.mouse and self.is_debug and Config.autocam["detector"]["enabled"]:
@@ -137,7 +137,7 @@ class Autocam:
             if Config.autocam["debug"]["draw_players_bb"]:
                 self.algo.draw_players_bb_(frame_orig_debug, bbs_joined)
         if self.is_debug:
-            frame_debug = self.camera.get_frame(frame_orig_debug)
+            frame_roi_debug = self.camera.get_frame_roi(frame_orig_debug)
 
         if self.is_debug and Config.autocam["debug"]["print_camera_stats"]:
             self.camera.print()
@@ -153,33 +153,36 @@ class Autocam:
                 frame_orig_debug if self.is_debug else frame_orig, "Original")
 
         """ Top-down """
-        draw_players_center = self.is_debug and Config.autocam[
-            "debug"]["draw_top_down_players_center"]
+        draw_players_center = self.is_debug and \
+            Config.autocam["debug"]["draw_top_down_players_center"]
         players_center = self.algo.players_filter.pos if draw_players_center else None
 
-        top_down_frame = self.top_down.get_frame(
-            bbs_joined, players_center)
+        frame_top_down = self.top_down.get_frame(
+            bbs_joined, players_center
+        )
 
         if not self.args.hide_windows and Config.autocam["show_top_down_window"]:
-            self.player.show_frame(top_down_frame, "top down")
+            self.player.show_frame(frame_top_down, "top down")
 
         """ Recorder """
         if self.is_debug:
-            frame_debug = self.recorder.decorate_frame(
-                frame_debug, top_down_frame)
+            frame_roi_debug = self.recorder.decorate_frame(
+                frame_roi_debug, frame_top_down
+            )
 
         if not self.args.hide_windows:
             self.player.show_frame(
-                frame_debug if self.is_debug else frame, "ROI")
+                frame_roi_debug if self.is_debug else frame_roi, "ROI"
+            )
 
         if self.args.record:
-            self.recorder.write(frame)
+            self.recorder.write(frame_roi)
             if self.is_debug:
-                self.recorder.write_debug(frame_debug)
+                self.recorder.write_debug(frame_roi_debug)
 
         """ Warp frame """
         frame_orig_masked = self.camera.draw_frame_mask(frame_orig)
-        frame_warped = self.top_down.warp_frame(
+        frame_orig_warped = self.top_down.warp_frame(
             frame_orig_masked,
             overlay=Config.autocam["eval"]["pitch_overlay"]
         )
@@ -188,11 +191,11 @@ class Autocam:
         if self.args.record and self.args.export_interval_sec > -1 and \
                 frame_sec % self.args.export_interval_sec == 0:
             frame_img_id = int(frame_sec // self.args.export_interval_sec)
-            self.recorder.save_frame(frame, frame_img_id)
-            self.recorder.save_frame(frame_warped, frame_img_id, "warped")
+            self.recorder.save_frame(frame_roi, frame_img_id)
+            self.recorder.save_frame(frame_orig_warped, frame_img_id, "warped")
 
         if not self.args.hide_windows and self.is_debug and Config.autocam["debug"]["show_warped_frame"]:
-            self.player.show_frame(frame_warped, "warped")
+            self.player.show_frame(frame_orig_warped, "warped")
 
         """ Profiler """
         profiler.stop("Other")

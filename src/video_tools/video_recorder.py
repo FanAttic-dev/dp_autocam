@@ -87,21 +87,21 @@ class VideoRecorder:
     def spacing(self):
         return VideoRecorder.get_text_height() + VideoRecorder.TEXT_MARGIN
 
-    def add_stats_bar(self, frame):
-        def add_border(frame):
+    def add_stats_bar(self, frame_roi):
+        def add_border(frame_roi):
             return cv2.copyMakeBorder(
-                frame,
+                frame_roi,
                 0, 0, 0, VideoRecorder.STATS_WIDTH,
                 borderType=cv2.BORDER_CONSTANT,
                 value=0
             )
 
-        def put_dict_items_(frame, dict):
+        def put_dict_items_(frame_roi, dict):
             nonlocal text_y
             for key, value in dict.items():
                 text = value if key == "Name" else f"{key}: {value}"
-                frame = cv2.putText(
-                    img=frame,
+                frame_roi = cv2.putText(
+                    img=frame_roi,
                     text=text,
                     org=(self.text_x, text_y),
                     color=Color.WHITE,
@@ -117,35 +117,35 @@ class VideoRecorder:
 
         text_y = self.spacing
 
-        frame = add_border(frame)
+        frame_roi = add_border(frame_roi)
 
         # put_dict_items_(frame, get_stats(self.detector, "Detector"))
-        put_dict_items_(frame, get_stats(self.camera, "Camera"))
+        put_dict_items_(frame_roi, get_stats(self.camera, "Camera"))
         # put_dict_items_(frame, get_stats(self.camera.pid_x, "PID_X"))
         # put_dict_items_(frame, get_stats(self.camera.pid_y, "PID_Y"))
-        put_dict_items_(frame, get_stats(self.camera.pid_f, "PID_F"))
-        put_dict_items_(frame, get_stats(self.algo, "Algo"))
-        put_dict_items_(frame, get_stats(self.algo.ball_filter, "Ball"))
+        put_dict_items_(frame_roi, get_stats(self.camera.pid_f, "PID_F"))
+        put_dict_items_(frame_roi, get_stats(self.algo, "Algo"))
+        put_dict_items_(frame_roi, get_stats(self.algo.ball_filter, "Ball"))
 
-        return frame
+        return frame_roi
 
-    def add_top_down(self, frame, top_down_frame):
-        top_down_h, top_down_w, _ = top_down_frame.shape
+    def add_top_down(self, frame_roi, frame_top_down):
+        top_down_h, top_down_w, _ = frame_top_down.shape
 
         top_down_h = int(
             top_down_h * (VideoRecorder.TOP_DOWN_WIDTH / top_down_w))
         top_down_w = VideoRecorder.TOP_DOWN_WIDTH
 
-        top_down_frame_res = cv2.resize(
-            top_down_frame, (top_down_w, top_down_h))
-        frame = frame.copy()
-        frame[0:top_down_h, -top_down_w-1:-1] = top_down_frame_res
-        return frame
+        frame_top_down_res = cv2.resize(
+            frame_top_down, (top_down_w, top_down_h))
+        frame_roi = frame_roi.copy()
+        frame_roi[0:top_down_h, -top_down_w-1:-1] = frame_top_down_res
+        return frame_roi
 
-    def decorate_frame(self, frame, top_down_frame):
-        frame = self.add_top_down(frame, top_down_frame)
-        frame = self.add_stats_bar(frame)
-        return frame
+    def decorate_frame(self, frame_roi, frame_top_down):
+        frame_roi = self.add_top_down(frame_roi, frame_top_down)
+        frame_roi = self.add_stats_bar(frame_roi)
+        return frame_roi
 
     def write(self, frame):
         assert self.writer is not None

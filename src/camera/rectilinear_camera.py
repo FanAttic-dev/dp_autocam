@@ -185,7 +185,7 @@ class RectilinearCamera(Camera):
             normalized=False
         )
 
-    def get_frame(self, frame_orig):
+    def get_frame_roi(self, frame_orig):
         pts_fov_screen = self._spherical2screen_fov(
             self._pts_frame_spherical,
             normalized=True

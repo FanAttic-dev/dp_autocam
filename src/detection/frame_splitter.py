@@ -15,8 +15,8 @@ class FrameSplitter:
             for camera_params in config.dataset["frame_splitter_params"]
         ]
 
-    def split(self, frame):
-        return [camera.get_frame(frame) for camera in self.cameras]
+    def split(self, frame_orig):
+        return [camera.get_frame_roi(frame_orig) for camera in self.cameras]
 
     def flatten_bbs(self, bbs):
         """Take the detections of each camera and join them into one list of detections.

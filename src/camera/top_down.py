@@ -84,7 +84,7 @@ class TopDown:
         h, w, _ = self.pitch_model.shape
         return x >= 0 and x < w and y >= 0 and y < h
 
-    def draw_bbs_(self, top_down_frame, bbs, discard_extremes=False):
+    def draw_bbs_(self, frame_top_down, bbs, discard_extremes=False):
         if len(bbs) == 0 or len(bbs["boxes"]) == 0:
             return
 
@@ -95,14 +95,14 @@ class TopDown:
 
         for pt, cls in zip(tdpts["pts"], tdpts["cls"]):
             cv2.circle(
-                top_down_frame,
+                frame_top_down,
                 pt,
                 radius=15,
                 color=Color.cls2color[cls],
                 thickness=-1
             )
 
-    def draw_screen_pt_(self, top_down_frame, pt, color=Color.VIOLET, radius=30):
+    def draw_screen_pt_(self, frame_top_down, pt, color=Color.VIOLET, radius=30):
         if pt is None:
             return
 
@@ -111,13 +111,13 @@ class TopDown:
             [[[np.array(pt_x).item(), np.array(pt_y).item()]]], DT_FLOAT)
         pt_top_down_coord = cv2.perspectiveTransform(pt, self.H)[0][0]
         self.draw_pts_(
-            top_down_frame, [pt_top_down_coord], color, radius)
+            frame_top_down, [pt_top_down_coord], color, radius)
 
-    def draw_pts_(self, top_down_frame, pts, color, radius=10):
+    def draw_pts_(self, frame_top_down, pts, color, radius=10):
         for pt in pts:
             x, y = pt
             cv2.circle(
-                top_down_frame,
+                frame_top_down,
                 (int(x), int(y)),
                 radius=radius,
                 color=color,
@@ -143,13 +143,13 @@ class TopDown:
                       color=Color.YELLOW, thickness=5)
 
     def get_frame(self, bbs, players_center=None):
-        top_down_frame = self.pitch_model.copy()
-        self.draw_roi_(top_down_frame)
+        frame_top_down = self.pitch_model.copy()
+        self.draw_roi_(frame_top_down)
 
-        self.draw_bbs_(top_down_frame, bbs, discard_extremes=True)
+        self.draw_bbs_(frame_top_down, bbs, discard_extremes=True)
         self.draw_screen_pt_(
-            top_down_frame,
+            frame_top_down,
             players_center
         )
 
-        return top_down_frame
+        return frame_top_down

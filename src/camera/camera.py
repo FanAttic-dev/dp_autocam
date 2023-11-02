@@ -43,8 +43,8 @@ class Camera(ABC, HasStats):
         self.ignore_bounds = ignore_bounds
         self.sensor_w = Camera.SENSOR_W
 
-        self.init_ptz(config)
-        self.init_pid(config, *self.center, self.zoom_f)
+        self._init_ptz(config)
+        self._init_pid(config, *self.center, self.zoom_f)
 
     # region PTZ
     @property
@@ -85,7 +85,7 @@ class Camera(ABC, HasStats):
         f = self.zoom_f + dz
         self.try_set_ptz(self.pan_deg, self.tilt_deg, f)
 
-    def init_ptz(self, config: Config):
+    def _init_ptz(self, config: Config):
         camera_config = config.dataset["camera_params"]
 
         self.pan_deg_min = camera_config["pan_deg"]["min"]
@@ -151,7 +151,7 @@ class Camera(ABC, HasStats):
     def pid_signal(self):
         return self.pid_x.signal, self.pid_y.signal, self.pid_f.signal
 
-    def init_pid(self, config: Config, x, y, f):
+    def _init_pid(self, config: Config, x, y, f):
         pid_config = config.autocam["pid"]
 
         self.pid_x = PID(
@@ -202,6 +202,10 @@ class Camera(ABC, HasStats):
     def roi2original(self, pts_roi_screen):
         """Convert coordinates from ROI space to frame space."""
         ...
+
+    @abstractmethod
+    def get_frame_roi(self):
+        ...
     # endregion
 
     # region Center
@@ -240,11 +244,11 @@ class Camera(ABC, HasStats):
         """
 
         # Find homography that maps corner points
-        # from original frame space to the output frame space.
+        # from original frame space to ROI space.
         corner_pts = self.get_pts_corners(correct_rotation=False)
         H, _ = cv2.findHomography(corner_pts, Camera.FRAME_CORNERS)
 
-        # Map pitch corners from original frame space to the output frame space.
+        # Map pitch corners from original frame space to ROI space.
         pitch_corners_orig = self.config.pitch_corners.astype(DT_FLOAT)
         pitch_corners_frame = cv2.perspectiveTransform(
             pitch_corners_orig, H
