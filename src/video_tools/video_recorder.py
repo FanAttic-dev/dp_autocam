@@ -1,8 +1,10 @@
 from functools import cached_property
 from pathlib import Path
+
 import cv2
-from algorithm.autocam_algo import AutocamAlgo
+
 from camera.camera import Camera
+from cameraman.autocam_cameraman import AutocamCameraman
 from detection.detector import Detector
 from utils.config import Config
 from utils.constants import Color
@@ -30,12 +32,12 @@ class VideoRecorder:
         video_player: VideoPlayer,
         camera: Camera,
         detector: Detector,
-        algo: AutocamAlgo
+        cameraman: AutocamCameraman
     ):
         self.camera = camera
         self.video_player = video_player
         self.detector = detector
-        self.algo = algo
+        self.cameraman = cameraman
         self.file_path = config.output_file_path
         self.writer = None
         self.writer_debug = None
@@ -124,8 +126,10 @@ class VideoRecorder:
         # put_dict_items_(frame, get_stats(self.camera.pid_x, "PID_X"))
         # put_dict_items_(frame, get_stats(self.camera.pid_y, "PID_Y"))
         put_dict_items_(frame_roi, get_stats(self.camera.pid_f, "PID_F"))
-        put_dict_items_(frame_roi, get_stats(self.algo, "Algo"))
-        put_dict_items_(frame_roi, get_stats(self.algo.ball_filter, "Ball"))
+        put_dict_items_(frame_roi, get_stats(self.cameraman, "Cameraman"))
+        put_dict_items_(frame_roi, get_stats(
+            self.cameraman.ball_filter, "Ball")
+        )
 
         return frame_roi
 

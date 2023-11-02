@@ -1,16 +1,17 @@
-from algorithm.algo import Algo
+import numpy as np
+import cv2
+
 from camera.camera import Camera
 from camera.top_down import TopDown
+from cameraman.cameraman import Cameraman
 from filters.kalman_filter import KalmanFilterVel
 from filters.particle_filter import ParticleFilter
 from utils.config import Config
 from utils.constants import DT_INT, Color
 import utils.utils as utils
-import numpy as np
-import cv2
 
 
-class AutocamAlgo(Algo):
+class AutocamCameraman(Cameraman):
     def __init__(self, camera: Camera, top_down: TopDown, config: Config):
         self.camera = camera
         self.top_down = top_down
@@ -236,7 +237,7 @@ class AutocamAlgo(Algo):
 
     def get_stats(self):
         stats = {
-            "Name": AutocamAlgo.__name__,
+            "Name": AutocamCameraman.__name__,
             "players_vel": self.players_filter.vel.squeeze(1),
             "players_std": np.sqrt(self.players_var) if self.players_var is not None else "",
         }

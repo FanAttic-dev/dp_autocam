@@ -1,7 +1,9 @@
 from pathlib import Path
+
 import cv2
 import torch
 from ultralytics import YOLO
+
 import utils.utils as utils
 from utils.constants import Color
 from utils.config import Config

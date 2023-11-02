@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import cv2
-
 import numpy as np
+
 from camera.PID import PID
 from utils.config import Config
 from utils.constants import DT_FLOAT, DT_INT, Color
