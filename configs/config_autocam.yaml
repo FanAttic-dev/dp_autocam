@@ -12,7 +12,7 @@ correct_rotation: true
 # Recording
 recording:
   rec_folder: "./recordings"
-  name: "2023-10-30_16-9" # The name of the current recording.
+  name: "2023-11-02" # The name of the current recording.
 
   # The final recording path is given by `rec_folder / name / (args.output_dir)?`.
   
@@ -61,8 +61,8 @@ detector:
   
   # Parameters for the ball detector
   ball:
-    enabled: false # Whether to use a separate ball detector.
-    conf: 0.3
+    enabled: true # Whether to use a separate ball detector.
+    conf: 0.2
     max_det: 10 # Maximum number of detections for the ball.
 
 # -----------------------------------------------------------------------------
