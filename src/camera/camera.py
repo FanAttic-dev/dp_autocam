@@ -204,14 +204,14 @@ class Camera(ABC, HasStats):
         )
 
     def fov2f(self, fov_deg):
-        """Calculate focal length based on field of view.
+        """Calculate the focal length based on the field of view.
 
         https://www.edmundoptics.com/knowledge-center/application-notes/imaging/understanding-focal-length-and-field-of-view/
         """
         return self.sensor_w / (2 * np.tan(np.deg2rad(fov_deg) / 2))
 
     def screen_width_px2fov(self, px):
-        """Calculate field of view given by width in screen space [px]."""
+        """Calculate the field of view given by width in screen space [px]."""
         frame_orig_width, _ = self.frame_orig_size
         return self.lens_fov_horiz_deg / frame_orig_width * px
 
