@@ -1,7 +1,11 @@
 ---
+# Dataset Config File
+
 name: SoccerTrack
 path: "../../datasets/SoccerTrack/wide_view/videos"
-camera_params:
+
+# Camera PTZ limits and default values
+camera_params: 
   pan_deg:
     default: 12
     min: -60
@@ -14,6 +18,9 @@ camera_params:
     default: 120
     min: 90
     max: 200
+
+# An array of cameras for frame splitting due to detection.
+# Note: You can also use more than 3 cameras.
 frame_splitter_params:
 - pan_deg: -30
   tilt_deg: 9
@@ -24,6 +31,16 @@ frame_splitter_params:
 - pan_deg: 40
   tilt_deg: 9
   zoom_f: 220
+
+# Coordinates of pitch corners.
+# Note: You can nest it under p0 (1. period) and p1 (2. period) as:
+#  pitch_corners:
+#    p0:
+#      left bottom:
+#      ...
+#     p1:
+#      left bottom:
+#      ...
 pitch_corners:
   left bottom:
     x: 109

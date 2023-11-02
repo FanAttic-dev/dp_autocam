@@ -9,6 +9,3 @@ run_mouse:
 
 record:
 	python src/main.py --record
-
-export_var_frames:
-	python src/export_var_frames.py

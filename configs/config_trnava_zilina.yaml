@@ -1,7 +1,10 @@
 ---
+# Dataset Config File
+
 name: TrnavaZilina
 path: "../../datasets/TrnavaZilina/main"
 
+# Camera PTZ limits and default values
 camera_params:
   lens_fov_horiz_deg: 115
   pan_deg:
@@ -17,6 +20,8 @@ camera_params:
     min: 40
     max: 70
 
+# An array of cameras for frame splitting due to detection.
+# Note: You can also use more than 3 cameras.
 frame_splitter_params:
 - pan_deg: -24.7
   tilt_deg: -2.9
@@ -28,6 +33,15 @@ frame_splitter_params:
   tilt_deg: 1.7
   zoom_f: 71.5
 
+# Coordinates of pitch corners.
+# Note: You can nest it under p0 (1. period) and p1 (2. period) as:
+#  pitch_corners:
+#    p0:
+#      left bottom:
+#      ...
+#     p1:
+#      left bottom:
+#      ...
 pitch_corners:
   p0: # first period
     left bottom:
@@ -56,12 +70,16 @@ pitch_corners:
       x: 3706
       y: 1499
 
+# Margins in pixels of the pitch sides
+# to hide distractions for the detector.
 mask_margins:
   top: -10
   right: 30
   bottom: -30
   left: -25
 
+# A list of bounding boxes.
+# If a detection lies inside of any of them, it gets discarded.
 detection_blacklist:
   - - 1778 # x1 # lens flare
     - 1155 # y1
