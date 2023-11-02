@@ -12,6 +12,28 @@ class RectilinearCamera(Camera):
     FOV_DX = 5
     DRAWING_STEP = 50
 
+    def __init__(
+        self,
+        frame_orig,
+        config: Config,
+        ignore_bounds=Config.autocam["debug"]["ignore_bounds"]
+    ):
+        self.lens_fov_horiz_deg = config.dataset["camera_params"]["lens_fov_horiz_deg"]
+        super().__init__(frame_orig, config, ignore_bounds)
+
+    # region FoV
+    @property  # could use @cached_property for optimization
+    def lens_fov_vert_deg(self):
+        return self.lens_fov_horiz_deg / Camera.FRAME_ASPECT_RATIO
+        # return utils.hFoV2vFoV(self.lens_fov_horiz_deg, Camera.FRAME_ASPECT_RATIO)
+
+    @property
+    def fov_rad(self):
+        return np.deg2rad(
+            np.array([self.fov_horiz_deg, self.fov_vert_deg]),
+            dtype=DT_FLOAT
+        )
+
     @property  # could use @cached_property for optimization
     def limits(self):
         limits = np.array(
@@ -19,6 +41,12 @@ class RectilinearCamera(Camera):
             dtype=DT_FLOAT
         ) / 2
         return np.deg2rad(limits)
+
+    def screen_width_px2fov(self, px):
+        """Calculate the field of view given by width in screen space [px]."""
+        frame_orig_width, _ = self.frame_orig_size
+        return self.lens_fov_horiz_deg / frame_orig_width * px
+    # endregion
 
     def _screen2spherical(self, coord_screen):
         """ In range: [0, 1], out range: [-FoV_lens/2, FoV_lens/2] """
@@ -32,7 +60,25 @@ class RectilinearCamera(Camera):
         y = (y / vert_limit + 1.) * 0.5
         return np.array([x, y], dtype=DT_FLOAT).T
 
-    def spherical2screen_fov(
+    def screen2ptz(self, x, y, f=None):
+        pts_screen = np.array(
+            [x, y], dtype=DT_FLOAT) / self.frame_orig_size
+        pts_spherical = self._screen2spherical(pts_screen)
+        pan_deg, tilt_deg = np.rad2deg(
+            self._gnomonic_inverse(pts_spherical, (0, 0))
+        )
+        f = f if f is not None else self.zoom_f
+        return pan_deg, tilt_deg, f
+
+    def ptz2screen(self, pan_deg, tilt_deg, f=None):
+        pts_spherical = np.deg2rad(
+            np.array([pan_deg, tilt_deg], dtype=DT_FLOAT)
+        )
+        pts_spherical = self._gnomonic(pts_spherical, (0, 0))
+        pts_screen = self._spherical2screen(pts_spherical)
+        return (pts_screen * self.frame_orig_size).astype(DT_INT)
+
+    def _spherical2screen_fov(
         self,
         pts_spherical,
         correct_rotation=Config.autocam["correct_rotation"],
@@ -56,38 +102,22 @@ class RectilinearCamera(Camera):
 
         return (pts_screen_fov * self.frame_orig_size).astype(DT_INT)
 
-    def screen2ptz(self, x, y, f=None):
-        pts_screen = np.array(
-            [x, y], dtype=DT_FLOAT) / self.frame_orig_size
-        pts_spherical = self._screen2spherical(pts_screen)
-        pan_deg, tilt_deg = np.rad2deg(
-            self._gnomonic_inverse(pts_spherical, (0, 0))
-        )
-        f = f if f is not None else self.zoom_f
-        return pan_deg, tilt_deg, f
-
-    def ptz2screen(self, pan_deg, tilt_deg, f=None):
-        pts_spherical = np.deg2rad(
-            np.array([pan_deg, tilt_deg], dtype=DT_FLOAT)
-        )
-        pts_spherical = self._gnomonic(pts_spherical, (0, 0))
-        pts_screen = self._spherical2screen(pts_spherical)
-        return (pts_screen * self.frame_orig_size).astype(DT_INT)
-
     # region Frame points
-    def _get_pts_frame_screen(self):
+    @staticmethod
+    def _get_pts_frame_screen():
         xx, yy = np.meshgrid(np.linspace(0, 1, Camera.FRAME_W),
                              np.linspace(0, 1, Camera.FRAME_H))
         return np.array([xx.ravel(), yy.ravel()], dtype=DT_FLOAT).T
 
     @cached_property
-    def pts_frame_spherical(self):
-        pts_screen_frame = self._get_pts_frame_screen()
+    def _pts_frame_spherical(self):
+        pts_screen_frame = RectilinearCamera._get_pts_frame_screen()
         return self._screen2spherical(pts_screen_frame)
     # endregion
 
     # region Corner points
-    def _get_pts_corners_screen(self):
+    @staticmethod
+    def _get_pts_corners_screen():
         return np.array([
             [0, 0],
             [0, 1],
@@ -96,19 +126,20 @@ class RectilinearCamera(Camera):
         ], dtype=DT_FLOAT)
 
     @cached_property
-    def pts_corners_spherical(self):
-        pts_screen_frame = self._get_pts_corners_screen()
+    def _pts_corners_spherical(self):
+        pts_screen_frame = RectilinearCamera._get_pts_corners_screen()
         return self._screen2spherical(pts_screen_frame)
 
     def get_pts_corners(self, correct_rotation):
-        return self.spherical2screen_fov(
-            self.pts_corners_spherical,
+        return self._spherical2screen_fov(
+            self._pts_corners_spherical,
             correct_rotation
         )
     # endregion
 
     # region Border points
-    def _get_pts_borders_screen(self):
+    @staticmethod
+    def _get_pts_borders_screen():
         w = Camera.FRAME_W // RectilinearCamera.DRAWING_STEP
         h = Camera.FRAME_H // RectilinearCamera.DRAWING_STEP
         pts_w = np.linspace(0, 1, w)
@@ -134,14 +165,14 @@ class RectilinearCamera(Camera):
         return np.concatenate([top, right, bottom, left])
 
     @cached_property
-    def pts_borders_spherical(self):
-        pts_borders_screen = self._get_pts_borders_screen()
+    def _pts_borders_spherical(self):
+        pts_borders_screen = RectilinearCamera._get_pts_borders_screen()
         return self._screen2spherical(pts_borders_screen)
 
-    @property
-    def pts_borders_screen_fov(self):
-        return self.spherical2screen_fov(
-            self.pts_borders_spherical
+    def get_pts_borders(self):
+        """Get points along the border of the current ROI in frame space."""
+        return self._spherical2screen_fov(
+            self._pts_borders_spherical
         )
     # endregion
 
@@ -149,14 +180,14 @@ class RectilinearCamera(Camera):
         pts_screen = pts_roi_screen / self.frame_roi_size
         pts_spherical = self._screen2spherical(pts_screen)
 
-        return self.spherical2screen_fov(
+        return self._spherical2screen_fov(
             pts_spherical,
             normalized=False
         )
 
     def get_frame(self, frame_orig):
-        pts_fov_screen = self.spherical2screen_fov(
-            self.pts_frame_spherical,
+        pts_fov_screen = self._spherical2screen_fov(
+            self._pts_frame_spherical,
             normalized=True
         )
         return self._remap(frame_orig, pts_fov_screen)
@@ -249,18 +280,17 @@ class RectilinearCamera(Camera):
     # Drawing
 
     def draw_roi_(self, frame_orig, color=Color.VIOLET, drawing_mode=DrawingMode.LINES):
+        pts = self.get_pts_borders()
         if drawing_mode == DrawingMode.LINES:
-            pts = self.pts_borders_screen_fov
             cv2.polylines(frame_orig, [pts], True, color, thickness=5)
         elif drawing_mode == DrawingMode.CIRCLES:
-            pts = self.pts_borders_screen_fov
             for x, y in pts:
                 cv2.circle(frame_orig, [x, y], radius=5,
                            color=color, thickness=-1)
 
     def draw_frame_mask(self, frame_orig):
         mask = np.zeros(frame_orig.shape[:2], dtype=np.uint8)
-        pts = self.pts_borders_screen_fov
+        pts = self.get_pts_borders()
         cv2.fillPoly(mask, [pts], 255)
         return cv2.bitwise_and(frame_orig, frame_orig, mask=mask)
 

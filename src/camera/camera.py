@@ -42,7 +42,6 @@ class Camera(ABC, HasStats):
         self.config = config
         self.ignore_bounds = ignore_bounds
         self.sensor_w = Camera.SENSOR_W
-        self.lens_fov_horiz_deg = config.dataset["camera_params"]["lens_fov_horiz_deg"]
 
         self.init_ptz(config)
         self.init_pid(config, *self.center, self.zoom_f)
@@ -191,33 +190,17 @@ class Camera(ABC, HasStats):
         return self.fov_horiz_deg / Camera.FRAME_ASPECT_RATIO
         # return utils.hFoV2vFoV(self.fov_horiz_deg, Camera.FRAME_ASPECT_RATIO)
 
-    @property  # could use @cached_property for optimization
-    def lens_fov_vert_deg(self):
-        return self.lens_fov_horiz_deg / Camera.FRAME_ASPECT_RATIO
-        # return utils.hFoV2vFoV(self.lens_fov_horiz_deg, Camera.FRAME_ASPECT_RATIO)
-
-    @property
-    def fov_rad(self):
-        return np.deg2rad(
-            np.array([self.fov_horiz_deg, self.fov_vert_deg]),
-            dtype=DT_FLOAT
-        )
-
     def fov2f(self, fov_deg):
         """Calculate the focal length based on the field of view.
 
         https://www.edmundoptics.com/knowledge-center/application-notes/imaging/understanding-focal-length-and-field-of-view/
         """
-        return self.sensor_w / (2 * np.tan(np.deg2rad(fov_deg) / 2))
 
-    def screen_width_px2fov(self, px):
-        """Calculate the field of view given by width in screen space [px]."""
-        frame_orig_width, _ = self.frame_orig_size
-        return self.lens_fov_horiz_deg / frame_orig_width * px
+        return self.sensor_w / (2 * np.tan(np.deg2rad(fov_deg) / 2))
 
     @abstractmethod
     def roi2original(self, pts_roi_screen):
-        """Convert coordinates from camera frame space (ROI) to original frame space."""
+        """Convert coordinates from ROI space to frame space."""
         ...
     # endregion
 
@@ -238,7 +221,7 @@ class Camera(ABC, HasStats):
     # region Corner Points
     @abstractmethod
     def get_pts_corners(self, correct_rotation: bool) -> np.ndarray:
-        """Get corner points of current view in the space of the original frame."""
+        """Get corner points of current ROI in frame space."""
         ...
 
     def check_corner_pts(self):
