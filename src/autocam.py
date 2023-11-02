@@ -61,6 +61,8 @@ class Autocam:
             key = cv2.waitKey(self.delay)
             is_alive = is_alive and self.process_input(key)
 
+        self.finish()
+
     def process_input(self, key) -> bool:
         if key == ord('m'):
             self.args.mouse = True

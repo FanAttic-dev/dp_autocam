@@ -8,14 +8,14 @@ if __name__ == "__main__":
     args = parse_args()
     # args.record = True
     # args.mouse = True
+
     config = Config(args)
+    autocam = Autocam(args, config)
 
     try:
-        autocam = Autocam(args, config)
         autocam.run()
-        autocam.finish()
     except Exception as e:
-        utils.save_txt(
-            config.output_dir / f"{config.output_file_path.stem}_err_log.txt",
-            str(e))
+        err_log_path = config.output_dir / \
+            f"{config.output_file_path.stem}_err_log.txt"
+        utils.save_txt(err_log_path, str(e))
         raise e
