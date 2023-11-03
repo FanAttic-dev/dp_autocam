@@ -32,8 +32,8 @@ class AutocamCameraman(Cameraman):
         self.u_last = None  # Used for visualization only.
         self.is_initialized = False
 
-    def update_by_bbs(self, bbs):
-        bbs_ball = self.filter_bbs_ball(bbs)
+    def update_camera(self, bbs):
+        bbs_ball = self._filter_bbs_ball(bbs)
 
         players_detected = len(bbs) > 0 and len(bbs["boxes"]) > 0
         balls_detected = len(bbs_ball) > 0 and len(bbs_ball['boxes']) > 0
@@ -43,7 +43,7 @@ class AutocamCameraman(Cameraman):
         utils.discard_extreme_bbs_(bbs)
 
         # Players center
-        players_center = self.get_players_center(bbs)
+        players_center = self._get_players_center(bbs)
         if not self.is_initialized:
             self.players_filter.set_pos(*players_center)
             self.is_initialized = True
@@ -61,20 +61,20 @@ class AutocamCameraman(Cameraman):
 
         # Get PF estimate
         ball_mu, ball_var = self.ball_filter.estimate
-        f = self.get_zoom_f(ball_var, bbs)
+        f = self._get_zoom_f(ball_var, bbs)
 
         # Set control input
-        u = self.get_u(balls_detected, players_center, ball_var)
+        u = self._get_u(balls_detected, players_center, ball_var)
         self.ball_filter.set_u(u)
 
         # Update camera
-        self.try_update_camera(ball_mu, f)
+        self._try_update_camera(ball_mu, f)
 
         # Update variables
         self.ball_mu_last = ball_mu
         self.u_last = u
 
-    def try_update_camera(self, center, f=None):
+    def _try_update_camera(self, center, f=None):
         """Try to update the camera PID target.
 
         It first converts the points to PTZ,
@@ -100,7 +100,7 @@ class AutocamCameraman(Cameraman):
         self.camera.set_center(*self.camera.pid_signal)
         return is_valid
 
-    def get_players_center(self, bbs):
+    def _get_players_center(self, bbs):
         """Get the players' center point in frame_orig space."""
         tdpts = self.top_down.bbs_screen2tdpts(bbs)
         tdpts_mu = utils.pts_average(tdpts["pts"])
@@ -109,12 +109,12 @@ class AutocamCameraman(Cameraman):
         x, y = utils.apply_homography(self.top_down.H_inv, *tdpts_mu)
         return np.array([x, y])
 
-    def get_zoom_f(self, ball_var, bbs):
-        f_var = self.get_zoom_by_ball_var(ball_var)
-        f_bb = self.get_zoom_by_bbs(bbs)
+    def _get_zoom_f(self, ball_var, bbs):
+        f_var = self._get_zoom_by_ball_var(ball_var)
+        f_bb = self._get_zoom_by_bbs(bbs)
         return max(f_var, f_bb)
 
-    def get_zoom_by_ball_var(self, ball_var):
+    def _get_zoom_by_ball_var(self, ball_var):
         """Map the PF variance to the camera zoom bounds."""
         ball_var = np.mean(ball_var)
         var_min = Config.autocam["zoom"]["var_min"]
@@ -127,7 +127,7 @@ class AutocamCameraman(Cameraman):
         f = self.camera.zoom_f_min + zoom_level * zoom_range
         return f
 
-    def get_zoom_by_bbs(self, bbs):
+    def _get_zoom_by_bbs(self, bbs):
         """Calculate the focal length based on the players' bounding box."""
         if not bbs or len(bbs["boxes"]) == 0:
             return self.camera.zoom_f
@@ -144,11 +144,11 @@ class AutocamCameraman(Cameraman):
         f = np.clip(f, self.camera.zoom_f_min, self.camera.zoom_f_max)
         return f
 
-    def get_u(self,
-              balls_detected: bool,
-              players_center: tuple[int, int],
-              ball_var: tuple[float, float]):
-        def get_center_vector():
+    def _get_u(self,
+               balls_detected: bool,
+               players_center: tuple[int, int],
+               ball_var: tuple[float, float]):
+        def _get_center_vector():
             """Calculate the ball -> players' center vector.
 
             This is to avoid the PF to drift away when no ball detected
@@ -172,7 +172,7 @@ class AutocamCameraman(Cameraman):
                 return alpha * (players_center - self.ball_mu_last)
             return np.array([0., 0.])
 
-        def get_movement_vector():
+        def _get_movement_vector():
             """Get the players' center velocity vector (multiplied by an alpha)."""
             alpha = Config.autocam["u_control"]["velocity"]["alpha"]
 
@@ -182,12 +182,12 @@ class AutocamCameraman(Cameraman):
             return alpha * self.players_filter.vel.T[0]
 
         u = np.array([0., 0.])
-        u += get_center_vector()
-        u += get_movement_vector()
+        u += _get_center_vector()
+        u += _get_movement_vector()
 
         return u
 
-    def filter_bbs_ball(self, bbs):
+    def _filter_bbs_ball(self, bbs):
         """Filters bbs of class ball."""
         bbs_ball = {
             "boxes": [],

@@ -31,7 +31,7 @@ class YoloDetector(Detector):
         img = self.image_preprocessor.draw_mask(img)
         return img
 
-    def res2bbs(self, res):
+    def _res2bbs(self, res):
         bbs_frames = []
         for det_frame in res:
             bbs = {
@@ -73,7 +73,7 @@ class YoloDetector(Detector):
 
     def detect(self, img):
         res = self.model.predict(img, **self.__class__.args)
-        return self.res2bbs(res), self.plot(res)
+        return self._res2bbs(res), self.plot(res)
 
     def plot(self, res):
         for i in range(len(res)):

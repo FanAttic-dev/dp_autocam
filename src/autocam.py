@@ -119,11 +119,11 @@ class Autocam:
         """ ROI """
         if self.is_debug and self.args.mouse:
             if Config.autocam["debug"]["mouse_use_pid"]:
-                self.cameraman.try_update_camera(self.player.mouse_pos)
+                self.cameraman._try_update_camera(self.player.mouse_pos)
             self.camera.draw_center_(frame_orig_debug)
         else:
             profiler.start("Update by BBS")
-            self.cameraman.update_by_bbs(bbs_joined)
+            self.cameraman.update_camera(bbs_joined)
             profiler.stop("Update by BBS")
 
         profiler.start("Get ROI")

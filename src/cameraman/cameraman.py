@@ -5,5 +5,5 @@ from utils.protocols import HasStats
 
 class Cameraman(ABC, HasStats):
     @abstractmethod
-    def update_by_bbs(self, bbs):
+    def update_camera(self, bbs):
         ...

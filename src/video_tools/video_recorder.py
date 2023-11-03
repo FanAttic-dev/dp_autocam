@@ -89,8 +89,8 @@ class VideoRecorder:
     def spacing(self):
         return VideoRecorder.get_text_height() + VideoRecorder.TEXT_MARGIN
 
-    def add_stats_bar(self, frame_roi):
-        def add_border(frame_roi):
+    def _add_stats_bar(self, frame_roi):
+        def _add_border(frame_roi):
             return cv2.copyMakeBorder(
                 frame_roi,
                 0, 0, 0, VideoRecorder.STATS_WIDTH,
@@ -98,7 +98,7 @@ class VideoRecorder:
                 value=0
             )
 
-        def put_dict_items_(frame_roi, dict):
+        def _put_dict_items_(frame_roi, dict):
             nonlocal text_y
             for key, value in dict.items():
                 text = value if key == "Name" else f"{key}: {value}"
@@ -112,28 +112,28 @@ class VideoRecorder:
                 text_y += self.spacing
             text_y += self.spacing
 
-        def get_stats(obj: HasStats, name):
+        def _get_stats(obj: HasStats, name):
             stats = obj.get_stats()
             stats["Name"] = f"{name}: {stats['Name']}"
             return stats
 
         text_y = self.spacing
 
-        frame_roi = add_border(frame_roi)
+        frame_roi = _add_border(frame_roi)
 
         # put_dict_items_(frame, get_stats(self.detector, "Detector"))
-        put_dict_items_(frame_roi, get_stats(self.camera, "Camera"))
+        _put_dict_items_(frame_roi, _get_stats(self.camera, "Camera"))
         # put_dict_items_(frame, get_stats(self.camera.pid_x, "PID_X"))
         # put_dict_items_(frame, get_stats(self.camera.pid_y, "PID_Y"))
-        put_dict_items_(frame_roi, get_stats(self.camera.pid_f, "PID_F"))
-        put_dict_items_(frame_roi, get_stats(self.cameraman, "Cameraman"))
-        put_dict_items_(frame_roi, get_stats(
+        _put_dict_items_(frame_roi, _get_stats(self.camera.pid_f, "PID_F"))
+        _put_dict_items_(frame_roi, _get_stats(self.cameraman, "Cameraman"))
+        _put_dict_items_(frame_roi, _get_stats(
             self.cameraman.ball_filter, "Ball")
         )
 
         return frame_roi
 
-    def add_top_down(self, frame_roi, frame_top_down):
+    def _add_top_down(self, frame_roi, frame_top_down):
         top_down_h, top_down_w, _ = frame_top_down.shape
 
         top_down_h = int(
@@ -147,8 +147,8 @@ class VideoRecorder:
         return frame_roi
 
     def decorate_frame(self, frame_roi, frame_top_down):
-        frame_roi = self.add_top_down(frame_roi, frame_top_down)
-        frame_roi = self.add_stats_bar(frame_roi)
+        frame_roi = self._add_top_down(frame_roi, frame_top_down)
+        frame_roi = self._add_stats_bar(frame_roi)
         return frame_roi
 
     def write(self, frame):
