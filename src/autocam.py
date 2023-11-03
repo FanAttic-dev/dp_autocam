@@ -5,7 +5,7 @@ from cameraman.autocam_cameraman import AutocamCameraman
 from utils.argparse import AutocamArgsNamespace, parse_args
 from utils.config import Config
 from detection.yolo_detector import YoloBallDetector, YoloDetector
-from detection.frame_splitter import FrameSplitter
+from camera.frame_splitter import FrameSplitter
 from utils.profiler import Profiler
 from camera.top_down import TopDown
 from video_tools.video_player import VideoPlayer
