@@ -2,7 +2,9 @@
 
 Autocam is an automatic virtual cameraman. The input is a wide-angle recording of a soccer match containing the full pitch. Autocam automatically finds the interesting region of each frame, crops it so that it emulates pan-tilt-zoom of a camera on a tripod, and finally exports it as a new video.
 
-- [ ] Title image
+![Title main](assets/images/title_main.png)
+
+![Title ROI](assets/images/title_roi.png)
 
 ## Getting started
 
