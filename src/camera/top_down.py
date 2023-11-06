@@ -12,8 +12,8 @@ class TopDown:
     OVERLAY_OPACITY = 0.5
 
     assets_path = Path('assets')
-    pitch_model_path = assets_path / 'pitch_model.png'
-    pitch_model_corners_path = assets_path / 'pitch_model_corners.yaml'
+    pitch_model_path = assets_path / 'pitch' / 'pitch_model.png'
+    pitch_model_corners_path = assets_path / 'pitch' / 'pitch_model_corners.yaml'
 
     def __init__(self, pitch_orig_corners, camera: Camera):
         self.camera = camera

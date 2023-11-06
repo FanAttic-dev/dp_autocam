@@ -50,4 +50,7 @@ Under `/scripts`, you can find shell scripts for:
 ## TODO
 
 - [ ] Try running it on Windows
-- [ ] Check if chmod +x for scripts necessary.
+- [ ] Mention spaces (ROI, Original frame, Top-down)
+- [ ] The application allows for visualization of the current state, including the region of interest (ROI) for each camera, detections
+      predicted camera center, and states for different modules , such as the PTZ or the PID. The presence of a particular visualization is controlled by the user in the configuration file.
+- [ ] Debug mode description
