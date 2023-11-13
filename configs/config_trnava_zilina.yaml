@@ -7,7 +7,7 @@ path: "../../datasets/TrnavaZilina/main"
 # Camera PTZ limits and default values
 camera_params:
   lens_fov_horiz_deg: 115
-  pitch_tilt_deg: 0 # pitch rotation correction
+  pitch_tilt_deg: -15 # pitch rotation correction
   pan_deg:
     default: 24.7
     min: -24.3

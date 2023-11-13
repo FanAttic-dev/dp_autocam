@@ -10,7 +10,7 @@ import utils.utils as utils
 class RectilinearCamera(Camera):
     SENSOR_DX = 10
     FOV_DX = 5
-    DRAWING_STEP = 50
+    DRAWING_STEP = 25
     TILT_DX = 5
 
     def __init__(
@@ -67,7 +67,8 @@ class RectilinearCamera(Camera):
             [x, y], dtype=DT_FLOAT) / self.frame_orig_size
         pts_spherical = self._screen2spherical(pts_screen)
         pan_deg, tilt_deg = np.rad2deg(
-            self._gnomonic_inverse(pts_spherical, use_ptz_center=False)
+            self._gnomonic_inverse(pts_spherical, center_deg=[
+                                   0, 0])
         )
         f = f if f is not None else self.zoom_f
         return pan_deg, tilt_deg, f
@@ -77,7 +78,8 @@ class RectilinearCamera(Camera):
             np.array([pan_deg, tilt_deg], dtype=DT_FLOAT)
         )
 
-        pts_spherical = self._gnomonic(pts_spherical, use_ptz_center=False)
+        pts_spherical = self._gnomonic(pts_spherical, center_deg=[
+                                       0, 0])
         pts_screen = self._spherical2screen(pts_spherical)
         return (pts_screen * self.frame_orig_size).astype(DT_INT)
 
@@ -90,9 +92,9 @@ class RectilinearCamera(Camera):
             (self.fov_rad / 2 / self.limits)
 
         pts_spherical_fov = self._gnomonic_inverse(
-            pts_spherical_fov, use_ptz_center=False)
+            pts_spherical_fov, center_deg=[0, self.pitch_tilt_deg])
         pts_spherical_fov = self._gnomonic(
-            pts_spherical_fov, use_ptz_center=True)
+            pts_spherical_fov, center_deg=[self.pan_deg, self.tilt_deg + self.pitch_tilt_deg])
         pts_screen_fov = self._spherical2screen(pts_spherical_fov)
 
         if normalized:
@@ -158,7 +160,7 @@ class RectilinearCamera(Camera):
         )
     # endregion
 
-    def _gnomonic(self, coord_spherical, use_ptz_center: bool):
+    def _gnomonic(self, coord_spherical, center_deg=None):
         """ Convert latitude (tilt) and longtitude (pan) to x, y coordinates.
 
         The conversion is based on the Gnomonic Projection.
@@ -176,9 +178,9 @@ class RectilinearCamera(Camera):
         lambda_rad = coord_spherical.T[0]  # pan
         phi_rad = coord_spherical.T[1]  # tilt
 
-        center_deg = np.array([0, -self.pitch_tilt_deg])
-        if use_ptz_center:
-            center_deg = center_deg + np.array([self.pan_deg, self.tilt_deg])
+        if center_deg is None:
+            center_deg = np.array(
+                [self.pan_deg, self.tilt_deg + self.pitch_tilt_deg])
         center_pan_rad, center_tilt_rad = -np.deg2rad(center_deg)
 
         sin_phi = np.sin(phi_rad)
@@ -191,7 +193,7 @@ class RectilinearCamera(Camera):
 
         return np.array([x, y]).T
 
-    def _gnomonic_inverse(self, coord_spherical, use_ptz_center: bool):
+    def _gnomonic_inverse(self, coord_spherical, center_deg=None):
         """Convert x, y coordinates to latitude (tilt) and longtitude (pan).
 
         It assumes that the x, y coordinates have been obtained by the Gnomonic Projection.
@@ -206,9 +208,9 @@ class RectilinearCamera(Camera):
         x = coord_spherical.T[0]
         y = coord_spherical.T[1]
 
-        center_deg = np.array([0, -self.pitch_tilt_deg])
-        if use_ptz_center:
-            center_deg = center_deg + np.array([self.pan_deg, self.tilt_deg])
+        if center_deg is None:
+            center_deg = np.array(
+                [self.pan_deg, self.tilt_deg + self.pitch_tilt_deg])
         center_pan_rad, center_tilt_rad = -np.deg2rad(center_deg)
 
         rou = np.sqrt(x ** 2 + y ** 2)
@@ -243,13 +245,13 @@ class RectilinearCamera(Camera):
 
     def draw_grid_(self, frame_orig, color=Color.BLUE):
         frame_orig_w, frame_orig_h = self.frame_orig_size
-        xx, yy = np.meshgrid(np.linspace(0, 1, frame_orig_w // RectilinearCamera.DRAWING_STEP),
-                             np.linspace(0, 1, frame_orig_h // RectilinearCamera.DRAWING_STEP))
+        xx, yy = np.meshgrid(np.linspace(-np.pi, np.pi, frame_orig_w // RectilinearCamera.DRAWING_STEP),
+                             np.linspace(-np.pi/2, np.pi/2, frame_orig_h // RectilinearCamera.DRAWING_STEP))
         pts = np.array([xx.ravel(), yy.ravel()], dtype=DT_FLOAT).T
 
-        pts = self._screen2spherical(pts)
-        pts[:, 1] = pts[:, 1] + np.deg2rad(self.pitch_tilt_deg)
-        pts = self._gnomonic(pts, use_ptz_center=True)
+        # pts = self._screen2spherical(pts)
+        # pts[:, 1] = pts[:, 1] + np.deg2rad(self.pitch_tilt_deg)
+        pts = self._gnomonic(pts)
         pts = self._spherical2screen(pts)
 
         pts = (pts * self.frame_orig_size).astype(DT_INT)
