@@ -65,7 +65,7 @@ class Autocam:
 
     def process_input(self, key) -> bool:
         if key == ord('m'):
-            self.args.mouse = True
+            self.args.mouse = not self.args.mouse
 
         return self.camera.process_input(
             key, self.player.mouse_pos
@@ -125,6 +125,7 @@ class Autocam:
             profiler.start("Update by BBS")
             self.cameraman.update_camera(bbs_joined)
             profiler.stop("Update by BBS")
+            self.camera.draw_center_(frame_orig_debug)
 
         profiler.start("Get ROI")
         frame_roi = self.camera.get_frame_roi(frame_orig)

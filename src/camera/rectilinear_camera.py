@@ -11,6 +11,7 @@ class RectilinearCamera(Camera):
     SENSOR_DX = 10
     FOV_DX = 5
     DRAWING_STEP = 50
+    TILT_DX = 5
 
     def __init__(
         self,
@@ -19,6 +20,7 @@ class RectilinearCamera(Camera):
         ignore_bounds=Config.autocam["debug"]["ignore_bounds"]
     ):
         self.lens_fov_horiz_deg = config.dataset["camera_params"]["lens_fov_horiz_deg"]
+        self.pitch_tilt_deg = config.dataset["camera_params"]["pitch_tilt_deg"]
         super().__init__(frame_orig, config, ignore_bounds)
 
     # region FoV
@@ -65,7 +67,7 @@ class RectilinearCamera(Camera):
             [x, y], dtype=DT_FLOAT) / self.frame_orig_size
         pts_spherical = self._screen2spherical(pts_screen)
         pan_deg, tilt_deg = np.rad2deg(
-            self._gnomonic_inverse(pts_spherical, (0, 0))
+            self._gnomonic_inverse(pts_spherical, use_ptz_center=False)
         )
         f = f if f is not None else self.zoom_f
         return pan_deg, tilt_deg, f
@@ -74,46 +76,29 @@ class RectilinearCamera(Camera):
         pts_spherical = np.deg2rad(
             np.array([pan_deg, tilt_deg], dtype=DT_FLOAT)
         )
-        pts_spherical = self._gnomonic(pts_spherical, (0, 0))
+
+        pts_spherical = self._gnomonic(pts_spherical, use_ptz_center=False)
         pts_screen = self._spherical2screen(pts_spherical)
         return (pts_screen * self.frame_orig_size).astype(DT_INT)
 
     def _spherical2screen_fov(
         self,
         pts_spherical,
-        correct_rotation=Config.autocam["correct_rotation"],
         normalized=False
     ):
         pts_spherical_fov = pts_spherical * \
             (self.fov_rad / 2 / self.limits)
 
-        pts_spherical_fov = self._gnomonic(pts_spherical_fov)
+        pts_spherical_fov = self._gnomonic_inverse(
+            pts_spherical_fov, use_ptz_center=False)
+        pts_spherical_fov = self._gnomonic(
+            pts_spherical_fov, use_ptz_center=True)
         pts_screen_fov = self._spherical2screen(pts_spherical_fov)
-
-        if correct_rotation:
-            gnomonic_center = self.center / self.frame_orig_size
-            _, pts_screen_fov = self.correct_rotation(
-                pts_screen_fov,
-                gnomonic_center
-            )
 
         if normalized:
             return pts_screen_fov
 
         return (pts_screen_fov * self.frame_orig_size).astype(DT_INT)
-
-    # region Frame points
-    @staticmethod
-    def _get_pts_frame_screen():
-        xx, yy = np.meshgrid(np.linspace(0, 1, Camera.FRAME_W),
-                             np.linspace(0, 1, Camera.FRAME_H))
-        return np.array([xx.ravel(), yy.ravel()], dtype=DT_FLOAT).T
-
-    @cached_property
-    def _pts_frame_spherical(self):
-        pts_screen_frame = RectilinearCamera._get_pts_frame_screen()
-        return self._screen2spherical(pts_screen_frame)
-    # endregion
 
     # region Corner points
     @staticmethod
@@ -130,11 +115,8 @@ class RectilinearCamera(Camera):
         pts_screen_frame = RectilinearCamera._get_pts_corners_screen()
         return self._screen2spherical(pts_screen_frame)
 
-    def get_pts_corners(self, correct_rotation):
-        return self._spherical2screen_fov(
-            self._pts_corners_spherical,
-            correct_rotation
-        )
+    def get_pts_corners(self):
+        return self._spherical2screen_fov(self._pts_corners_spherical)
     # endregion
 
     # region Border points
@@ -176,44 +158,7 @@ class RectilinearCamera(Camera):
         )
     # endregion
 
-    def roi2original(self, pts_roi_screen):
-        pts_screen = pts_roi_screen / self.frame_roi_size
-        pts_spherical = self._screen2spherical(pts_screen)
-
-        return self._spherical2screen_fov(
-            pts_spherical,
-            normalized=False
-        )
-
-    def get_frame_roi(self, frame_orig):
-        pts_fov_screen = self._spherical2screen_fov(
-            self._pts_frame_spherical,
-            normalized=True
-        )
-        return self._remap(frame_orig, pts_fov_screen)
-
-    def _remap(self, frame_orig, pts_screen):
-        """ Creates a new frame by mapping from frame_orig based on pts.
-
-        Args:
-            frame_orig: Frame to be sampled from.
-            pts: Mapping scheme.
-                Range: [0, 1]
-
-        Returns:
-            Remapped image
-                Range: [0, frame_size]
-        """
-        frame_orig_h, frame_orig_w, _ = frame_orig.shape
-
-        map_x = pts_screen[:, 0] * frame_orig_w
-        map_y = pts_screen[:, 1] * frame_orig_h
-        map_x = np.reshape(map_x, self.frame_roi_size[::-1])
-        map_y = np.reshape(map_y, self.frame_roi_size[::-1])
-
-        return cv2.remap(frame_orig, map_x, map_y, interpolation=INTERPOLATION_TYPE)
-
-    def _gnomonic(self, coord_spherical, center=None):
+    def _gnomonic(self, coord_spherical, use_ptz_center: bool):
         """ Convert latitude (tilt) and longtitude (pan) to x, y coordinates.
 
         The conversion is based on the Gnomonic Projection.
@@ -231,9 +176,10 @@ class RectilinearCamera(Camera):
         lambda_rad = coord_spherical.T[0]  # pan
         phi_rad = coord_spherical.T[1]  # tilt
 
-        if center is None:
-            center = -np.deg2rad([self.pan_deg, self.tilt_deg])
-        center_pan_rad, center_tilt_rad = center
+        center_deg = np.array([0, -self.pitch_tilt_deg])
+        if use_ptz_center:
+            center_deg = center_deg + np.array([self.pan_deg, self.tilt_deg])
+        center_pan_rad, center_tilt_rad = -np.deg2rad(center_deg)
 
         sin_phi = np.sin(phi_rad)
         cos_phi = np.cos(phi_rad)
@@ -245,7 +191,7 @@ class RectilinearCamera(Camera):
 
         return np.array([x, y]).T
 
-    def _gnomonic_inverse(self, coord_spherical, center=None):
+    def _gnomonic_inverse(self, coord_spherical, use_ptz_center: bool):
         """Convert x, y coordinates to latitude (tilt) and longtitude (pan).
 
         It assumes that the x, y coordinates have been obtained by the Gnomonic Projection.
@@ -260,9 +206,10 @@ class RectilinearCamera(Camera):
         x = coord_spherical.T[0]
         y = coord_spherical.T[1]
 
-        if center is None:
-            center = -np.deg2rad([self.pan_deg, self.tilt_deg])
-        center_pan_rad, center_tilt_rad = center
+        center_deg = np.array([0, -self.pitch_tilt_deg])
+        if use_ptz_center:
+            center_deg = center_deg + np.array([self.pan_deg, self.tilt_deg])
+        center_pan_rad, center_tilt_rad = -np.deg2rad(center_deg)
 
         rou = np.sqrt(x ** 2 + y ** 2)
         c = np.arctan(rou)
@@ -301,7 +248,8 @@ class RectilinearCamera(Camera):
         pts = np.array([xx.ravel(), yy.ravel()], dtype=DT_FLOAT).T
 
         pts = self._screen2spherical(pts)
-        pts = self._gnomonic(pts)
+        pts[:, 1] = pts[:, 1] + np.deg2rad(self.pitch_tilt_deg)
+        pts = self._gnomonic(pts, use_ptz_center=True)
         pts = self._spherical2screen(pts)
 
         pts = (pts * self.frame_orig_size).astype(DT_INT)
@@ -320,6 +268,10 @@ class RectilinearCamera(Camera):
             self.lens_fov_horiz_deg += RectilinearCamera.FOV_DX
         elif key == ord('4'):
             self.lens_fov_horiz_deg -= RectilinearCamera.FOV_DX
+        elif key == ord('9'):
+            self.pitch_tilt_deg += RectilinearCamera.TILT_DX
+        elif key == ord('7'):
+            self.pitch_tilt_deg -= RectilinearCamera.TILT_DX
         else:
             is_alive = super().process_input(key, mouse_pos)
         return is_alive
@@ -336,5 +288,6 @@ class RectilinearCamera(Camera):
             "fov_horiz_deg": self.fov_horiz_deg,
             "fov_vert_deg": self.fov_vert_deg,
             "center": self.center,
+            "pitch_tilt_deg": self.pitch_tilt_deg
         }
         return stats
