@@ -13,7 +13,7 @@ camera_params:
     min: -24.3
     max: 29.7
   tilt_deg:
-    default: -0.6
+    default: 0
     min: -2
     max: 5
   zoom_f:

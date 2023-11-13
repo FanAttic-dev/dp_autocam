@@ -109,6 +109,53 @@ class RectilinearCamera(Camera):
 
         return (pts_screen_fov * self.frame_orig_size).astype(DT_INT)
 
+    # region Frame points
+    @staticmethod
+    def _get_pts_frame_screen():
+        xx, yy = np.meshgrid(np.linspace(0, 1, Camera.FRAME_W),
+                             np.linspace(0, 1, Camera.FRAME_H))
+        return np.array([xx.ravel(), yy.ravel()], dtype=DT_FLOAT).T
+
+    @cached_property
+    def _pts_frame_spherical(self):
+        pts_screen_frame = RectilinearCamera._get_pts_frame_screen()
+        return self._screen2spherical(pts_screen_frame)
+
+    def _get_frame_roi(self, frame_orig):
+        """Get ROI by sampling all pixels from the sphere.
+
+        DEPRECATED: Using homography in self.get_frame_roi instead.
+        """
+        pts_fov_screen = self._spherical2screen_fov(
+            self._pts_frame_spherical,
+            normalized=True
+        )
+        return self._remap(frame_orig, pts_fov_screen)
+
+    def _remap(self, frame_orig, pts_screen):
+        """Creates a new frame by mapping from frame_orig based on pts.
+
+        DEPRECATED: Homography used instead.
+
+        Args:
+            frame_orig: Frame to be sampled from.
+            pts: Mapping scheme.
+                Range: [0, 1]
+
+        Returns:
+            Remapped image
+                Range: [0, frame_size]
+        """
+        frame_orig_h, frame_orig_w, _ = frame_orig.shape
+
+        map_x = pts_screen[:, 0] * frame_orig_w
+        map_y = pts_screen[:, 1] * frame_orig_h
+        map_x = np.reshape(map_x, self.frame_roi_size[::-1])
+        map_y = np.reshape(map_y, self.frame_roi_size[::-1])
+
+        return cv2.remap(frame_orig, map_x, map_y, interpolation=INTERPOLATION_TYPE)
+    # endregion
+
     # region Corner points
     @staticmethod
     def _get_pts_corners_screen():
@@ -187,7 +234,7 @@ class RectilinearCamera(Camera):
 
         if center_deg is None:
             center_deg = np.array(
-                [self.pan_deg, self.tilt_deg + self.pitch_tilt_deg])
+                [self.pan_deg, self.tilt_deg])
         center_pan_rad, center_tilt_rad = -np.deg2rad(center_deg)
 
         sin_phi = np.sin(phi_rad)
@@ -217,7 +264,7 @@ class RectilinearCamera(Camera):
 
         if center_deg is None:
             center_deg = np.array(
-                [self.pan_deg, self.tilt_deg + self.pitch_tilt_deg])
+                [self.pan_deg, self.tilt_deg])
         center_pan_rad, center_tilt_rad = -np.deg2rad(center_deg)
 
         rou = np.sqrt(x ** 2 + y ** 2)
