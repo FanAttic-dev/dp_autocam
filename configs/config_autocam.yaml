@@ -7,7 +7,7 @@ dataset:
   config: "./configs/config_trnava_zilina.yaml"
   video: "p0_shot4.mp4"
   # video: "main_p0.mp4"
-p
+
 # -----------------------------------------------------------------------------
 # Recording
 recording:
@@ -30,7 +30,7 @@ debug:
   show_frame_mask: false # Mask out everything outside of the pitch.
 
   # Camera
-  draw_grid: true # Visualize the point grid of the used projection scheme.
+  draw_grid: false # Visualize the point grid of the used projection scheme.
   draw_roi: true # Draw the regions-of-interest of cameras.
   print_camera_stats: false # Print the camera state (PTZ, PID, FoV).
   ignore_bounds: true # Ignore the PTZ limits defined in the dataset config file.

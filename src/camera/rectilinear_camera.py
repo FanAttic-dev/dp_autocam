@@ -223,7 +223,7 @@ class RectilinearCamera(Camera):
         Args:
             coord_spherical:
                 Range: [-FoV_lens/2, FoV_lens/2]
-            center: Center of projection.
+            center_deg: Center of projection in degrees.
 
         Returns:
             x, y coordinates
@@ -234,7 +234,8 @@ class RectilinearCamera(Camera):
 
         if center_deg is None:
             center_deg = np.array(
-                [self.pan_deg, self.tilt_deg])
+                [self.pan_deg, self.tilt_deg + self.pitch_tilt_deg]
+            )
         center_pan_rad, center_tilt_rad = -np.deg2rad(center_deg)
 
         sin_phi = np.sin(phi_rad)
@@ -257,14 +258,15 @@ class RectilinearCamera(Camera):
             coord_spherical:
                 In range: [-FoV_lens/2, FoV_lens/2]
                 Out range: [-FoV_lens/2, FoV_lens/2]
-            center: Center of projection.
+            center: Center of projection in degrees.
         """
         x = coord_spherical.T[0]
         y = coord_spherical.T[1]
 
         if center_deg is None:
             center_deg = np.array(
-                [self.pan_deg, self.tilt_deg])
+                [self.pan_deg, self.tilt_deg + self.pitch_tilt_deg]
+            )
         center_pan_rad, center_tilt_rad = -np.deg2rad(center_deg)
 
         rou = np.sqrt(x ** 2 + y ** 2)
@@ -303,8 +305,6 @@ class RectilinearCamera(Camera):
                              np.linspace(-np.pi/2, np.pi/2, frame_orig_h // RectilinearCamera.DRAWING_STEP))
         pts = np.array([xx.ravel(), yy.ravel()], dtype=DT_FLOAT).T
 
-        # pts = self._screen2spherical(pts)
-        # pts[:, 1] = pts[:, 1] + np.deg2rad(self.pitch_tilt_deg)
         pts = self._gnomonic(pts)
         pts = self._spherical2screen(pts)
 
