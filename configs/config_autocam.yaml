@@ -12,7 +12,7 @@ dataset:
 # Recording
 recording:
   rec_folder: "./recordings"
-  name: "2023-11-02" # The name of the current recording.
+  name: "2023-11-14" # The name of the current recording.
 
   # The final recording path is given by `rec_folder / name / (args.output_dir)?`.
   
