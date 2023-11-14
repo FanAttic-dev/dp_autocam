@@ -132,7 +132,7 @@ class TopDown:
         x_max, y_max = np.max(pitch_pts, axis=0)[0] + margin
 
         pts_warped = []
-        for x, y in self.camera.get_pts_corners(Config.autocam["correct_rotation"]):
+        for x, y in self.camera.get_pts_corners():
             x = np.clip(x, x_min, x_max)
             y = np.clip(y, y_min, y_max)
             x_, y_ = utils.apply_homography(self.H, x, y)

@@ -8,8 +8,6 @@ dataset:
   video: "p0_shot4.mp4"
   # video: "main_p0.mp4"
 
-correct_rotation: true
-
 # -----------------------------------------------------------------------------
 # Recording
 recording:
@@ -35,7 +33,7 @@ debug:
   draw_grid: false # Visualize the point grid of the used projection scheme.
   draw_roi: true # Draw the regions-of-interest of cameras.
   print_camera_stats: false # Print the camera state (PTZ, PID, FoV).
-  ignore_bounds: false # Ignore the PTZ limits defined in the dataset config file.
+  ignore_bounds: true # Ignore the PTZ limits defined in the dataset config file.
   mouse_use_pid: false # Use PID in mouse mode. Otherwise uses free camera.
   
   # Detection

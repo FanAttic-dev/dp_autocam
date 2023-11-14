@@ -4,7 +4,7 @@ import numpy as np
 
 from camera.PID import PID
 from utils.config import Config
-from utils.constants import DT_FLOAT, DT_INT, Color
+from utils.constants import DT_FLOAT, DT_INT, INTERPOLATION_TYPE, Color
 from utils.protocols import HasStats
 import utils.utils as utils
 
@@ -180,6 +180,39 @@ class Camera(ABC, HasStats):
         self.pid_f.update(pid_f)
     # endregion
 
+    # region ROI
+    def get_frame_roi(self, frame_orig):
+        return cv2.warpPerspective(frame_orig, self.H, self.frame_roi_size, flags=INTERPOLATION_TYPE)
+
+    @abstractmethod
+    def get_pts_corners(self) -> np.ndarray:
+        """Get corner points of current ROI in frame space."""
+        ...
+
+    def check_corner_pts(self):
+        """Check whether the corner points of the current view lie within the original frame."""
+        corner_pts = self.get_pts_corners()
+        w, h = self.frame_orig_size
+        frame_box = np.array([0, 0, w-1, h-1])
+        return utils.is_polygon_in_box(corner_pts, frame_box)
+
+    @property
+    def H(self):
+        """Find homography that maps corner points from original frame space to ROI space."""
+        corner_pts = self.get_pts_corners()
+        H, _ = cv2.findHomography(corner_pts, Camera.FRAME_CORNERS)
+        return H
+
+    @property
+    def H_inv(self):
+        return np.linalg.inv(self.H)
+
+    def roi2original(self, pts_roi_screen):
+        """Convert coordinates from ROI space to frame space."""
+        pts_roi_screen = np.array([pts_roi_screen], dtype=DT_FLOAT)
+        return cv2.perspectiveTransform(pts_roi_screen, self.H_inv)[0].astype(DT_INT)
+    # endregion
+
     # region FOV
     @property
     def fov_horiz_deg(self):
@@ -197,15 +230,6 @@ class Camera(ABC, HasStats):
         """
 
         return self.sensor_w / (2 * np.tan(np.deg2rad(fov_deg) / 2))
-
-    @abstractmethod
-    def roi2original(self, pts_roi_screen):
-        """Convert coordinates from ROI space to frame space."""
-        ...
-
-    @abstractmethod
-    def get_frame_roi(self):
-        ...
     # endregion
 
     # region Center
@@ -220,44 +244,6 @@ class Camera(ABC, HasStats):
     def try_set_center(self, x, y, f=None):
         ptz = self.screen2ptz(x, y, f)
         return self.try_set_ptz(*ptz)
-    # endregion
-
-    # region Corner Points
-    @abstractmethod
-    def get_pts_corners(self, correct_rotation: bool) -> np.ndarray:
-        """Get corner points of current ROI in frame space."""
-        ...
-
-    def check_corner_pts(self):
-        """Check whether the corner points of the current view lie within the original frame."""
-        corner_pts = self.get_pts_corners(Config.autocam["correct_rotation"])
-        w, h = self.frame_orig_size
-        frame_box = np.array([0, 0, w-1, h-1])
-        return utils.is_polygon_in_box(corner_pts, frame_box)
-
-    def correct_rotation(self, pts, center=None):
-        """Rotate points by the angle between the current frame and the back pitch line.
-
-        Returns:
-            H: Homography matrix mapping the current view from original frame space to output frame space.
-            pts: rotated points
-        """
-
-        # Find homography that maps corner points
-        # from original frame space to ROI space.
-        corner_pts = self.get_pts_corners(correct_rotation=False)
-        H, _ = cv2.findHomography(corner_pts, Camera.FRAME_CORNERS)
-
-        # Map pitch corners from original frame space to ROI space.
-        pitch_corners_orig = self.config.pitch_corners.astype(DT_FLOAT)
-        pitch_corners_frame = cv2.perspectiveTransform(
-            pitch_corners_orig, H
-        )
-
-        # Rotate points by the angle between the back line and the (horizontal) x-axis.
-        roll_rad = utils.get_pitch_rotation_rad(pitch_corners_frame)
-        pts = utils.rotate_pts(pts, roll_rad, center)
-        return H, pts
     # endregion
 
     # region Drawing
