@@ -75,9 +75,9 @@ pitch_corners:
 # to hide distractions for the detector.
 mask_margins:
   top: -10
-  right: 30
+  right: 0
   bottom: -30
-  left: -25
+  left: 0
 
 # A list of bounding boxes.
 # If a detection lies inside of any of them, it gets discarded.
