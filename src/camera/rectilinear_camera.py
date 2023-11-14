@@ -69,10 +69,7 @@ class RectilinearCamera(Camera):
 
         pts_spherical = self._screen2spherical(pts_screen)
         pan_deg, tilt_deg = np.rad2deg(
-            self._gnomonic_inverse(
-                pts_spherical,
-                center_deg=[0, 0]
-            )
+            self._gnomonic_inverse(pts_spherical, (0, 0))
         )
         f = f if f is not None else self.zoom_f
         return pan_deg, tilt_deg, f
@@ -82,10 +79,7 @@ class RectilinearCamera(Camera):
             np.array([pan_deg, tilt_deg], dtype=DT_FLOAT)
         )
 
-        pts_spherical = self._gnomonic(
-            pts_spherical,
-            center_deg=[0, 0]
-        )
+        pts_spherical = self._gnomonic(pts_spherical, (0, 0))
         pts_screen = self._spherical2screen(pts_spherical)
         return (pts_screen * self.frame_orig_size).astype(DT_INT)
 
@@ -98,8 +92,7 @@ class RectilinearCamera(Camera):
             (self.fov_rad / 2 / self.limits)
 
         pts_spherical_fov = self._gnomonic_inverse(
-            pts_spherical_fov,
-            center_deg=[0, self.pitch_tilt_deg]
+            pts_spherical_fov, (0, self.pitch_tilt_deg)
         )
         pts_spherical_fov = self._gnomonic(pts_spherical_fov)
         pts_screen_fov = self._spherical2screen(pts_spherical_fov)

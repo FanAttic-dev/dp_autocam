@@ -125,7 +125,6 @@ class Autocam:
             profiler.start("Update by BBS")
             self.cameraman.update_camera(bbs_joined)
             profiler.stop("Update by BBS")
-            self.camera.draw_center_(frame_orig_debug)
 
         profiler.start("Get ROI")
         frame_roi = self.camera.get_frame_roi(frame_orig)

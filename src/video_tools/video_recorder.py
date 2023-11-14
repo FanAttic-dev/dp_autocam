@@ -123,11 +123,13 @@ class VideoRecorder:
 
         # _put_dict_items_(frame_roi, _get_stats(self.detector, "Detector"))
         _put_dict_items_(frame_roi, _get_stats(self.camera, "Camera"))
-        _put_dict_items_(frame_roi, _get_stats(self.camera.pid_x, "PID_X"))
-        _put_dict_items_(frame_roi, _get_stats(self.camera.pid_y, "PID_Y"))
+        # put_dict_items_(frame, get_stats(self.camera.pid_x, "PID_X"))
+        # put_dict_items_(frame, get_stats(self.camera.pid_y, "PID_Y"))
         _put_dict_items_(frame_roi, _get_stats(self.camera.pid_f, "PID_F"))
-        # _put_dict_items_(frame_roi, _get_stats(self.cameraman, "Cameraman"))
-        # _put_dict_items_(frame_roi, _get_stats(self.cameraman.ball_filter, "Ball"))
+        _put_dict_items_(frame_roi, _get_stats(self.cameraman, "Cameraman"))
+        _put_dict_items_(frame_roi, _get_stats(
+            self.cameraman.ball_filter, "Ball")
+        )
 
         return frame_roi
 
