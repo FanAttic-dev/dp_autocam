@@ -175,3 +175,7 @@ def hFoV2vFoV(hFoV_deg, aspect_ratio):
     hFoV_rad = np.deg2rad(hFoV_deg)
     vFoV_rad = 2 * np.arctan(np.tan(hFoV_rad / 2) / aspect_ratio)
     return np.rad2deg(vFoV_rad)
+
+
+def any_detected(bbs) -> bool:
+    return bbs is None or len(bbs) > 0 and len(bbs["boxes"]) > 0

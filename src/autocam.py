@@ -2,7 +2,7 @@ import cv2
 
 from camera.rectilinear_camera import RectilinearCamera
 from cameraman.autocam_cameraman import AutocamCameraman
-from utils.argparse import AutocamArgsNamespace, parse_args
+from utils.argparse import AutocamArgsNamespace
 from utils.config import Config
 from detection.yolo_detector import YoloBallDetector, YoloDetector
 from camera.frame_splitter import FrameSplitter
@@ -111,7 +111,8 @@ class Autocam:
         frame_top_down = self.show_top_down(bbs_joined)
 
         # ROI
-        self.show_roi(frame_roi, frame_roi_debug, frame_top_down)
+        frame_roi_debug = self.decorate_roi(frame_roi_debug, frame_top_down)
+        self.show_roi(frame_roi, frame_roi_debug)
 
         # Record
         self.write_roi(frame_roi, frame_roi_debug)
@@ -232,16 +233,19 @@ class Autocam:
 
         return frame_top_down
 
-    def show_roi(self, frame_roi, frame_roi_debug, frame_top_down):
-        if self.is_debug:
-            frame_roi_debug = self.recorder.decorate_frame(
-                frame_roi_debug, frame_top_down
-            )
+    def decorate_roi(self, frame_roi_debug, frame_top_down):
+        """Add top down preview and stats bar to the ROI frame."""
+        if not self.is_debug:
+            return None
 
-        if not self.args.hide_windows:
-            self.player.show_frame(
-                frame_roi_debug if self.is_debug else frame_roi, "ROI"
-            )
+        return self.recorder.decorate_frame(frame_roi_debug, frame_top_down)
+
+    def show_roi(self, frame_roi, frame_roi_debug):
+        if self.args.hide_windows:
+            return
+
+        frame = frame_roi_debug if self.is_debug else frame_roi
+        self.player.show_frame(frame, "ROI")
 
     def write_roi(self, frame_roi, frame_roi_debug):
         if not self.args.record:

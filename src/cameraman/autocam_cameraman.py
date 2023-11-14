@@ -32,16 +32,11 @@ class AutocamCameraman(Cameraman):
         self.u_last = None  # Used for visualization only.
 
     def init_filters_pos(self, bbs):
-        if bbs is None:
-            return
-
-        bbs_ball = self._filter_bbs_ball(bbs)
-
-        players_detected = len(bbs) > 0 and len(bbs["boxes"]) > 0
-        balls_detected = len(bbs_ball) > 0 and len(bbs_ball['boxes']) > 0
+        players_detected = utils.any_detected(bbs)
         if not players_detected:
             return
 
+        # Discard goalkeepers
         utils.discard_extreme_bbs_(bbs)
 
         players_center = self._get_players_center(bbs)
@@ -49,50 +44,61 @@ class AutocamCameraman(Cameraman):
         self.players_filter.set_pos(*players_center)
         self.ball_filter.init(players_center)
 
-        ball_mu, _ = self.ball_filter.estimate
-        self._try_update_camera(ball_mu)
-
         self.ball_mu_last, self.ball_var_last = self.ball_filter.estimate
+        self._try_update_camera(self.ball_mu_last)
 
     def update_camera(self, bbs):
         bbs_ball = self._filter_bbs_ball(bbs)
 
-        players_detected = bbs is not None and len(
-            bbs) > 0 and len(bbs["boxes"]) > 0
-        balls_detected = len(bbs_ball) > 0 and len(bbs_ball['boxes']) > 0
+        # Discard goalkeepers
+        utils.discard_extreme_bbs_(bbs)
 
+        players_detected = utils.any_detected(bbs)
+        balls_detected = utils.any_detected(bbs_ball)
+
+        # Measure centers
+        players_center, ball_centers = None, None
         if players_detected:
-            utils.discard_extreme_bbs_(bbs)
-
-            # Players center
             players_center = self._get_players_center(bbs)
 
-            # Incorporate measurements into PF
-            if balls_detected:
-                ball_centers = [
-                    utils.get_bb_center(bb_ball) for bb_ball in bbs_ball['boxes']
-                ]
-                self.ball_filter.update(players_center, ball_centers)
-                self.ball_filter.resample()
+        if balls_detected:
+            ball_centers = [
+                utils.get_bb_center(bb_ball) for bb_ball in bbs_ball['boxes']
+            ]
 
-            # Set control input
-            u = self._get_u(balls_detected, players_center)
-            self.ball_filter.set_u(u)
-            self.u_last = u
+        # Control input
+        u = self._get_u(players_detected, balls_detected, players_center)
 
-        # Apply motion model with uncertainty to PF
-        self.ball_filter.predict()
-
-        # Get PF estimate
-        ball_mu, ball_var = self.ball_filter.estimate
-        f = self._get_zoom_f(ball_var, bbs)
+        # Update filters
+        self._update_players_filter(players_center)
+        self._update_ball_filter(players_center, ball_centers, u)
 
         # Update camera
+        ball_mu, ball_var = self.ball_filter.estimate
+        f = self._get_zoom_f(ball_var, bbs)
         self._try_update_camera(ball_mu, f)
 
         # Update variables
         self.ball_mu_last = ball_mu
         self.ball_var_last = ball_var
+        self.u_last = u
+
+    def _update_players_filter(self, players_center):
+        self.players_filter.predict()
+
+        if players_center is not None:
+            self.players_filter.update(*players_center)
+
+    def _update_ball_filter(self, players_center, ball_centers, u):
+        self.ball_filter.set_u(u)
+
+        # Incorporate measurements into PF
+        if players_center is not None and ball_centers is not None:
+            self.ball_filter.update(players_center, ball_centers)
+
+        self.ball_filter.resample()
+        # Apply motion model with uncertainty to PF
+        self.ball_filter.predict()
 
     def _try_update_camera(self, center, f=None):
         """Try to update the camera PID target.
@@ -165,6 +171,7 @@ class AutocamCameraman(Cameraman):
         return f
 
     def _get_u(self,
+               players_detected: bool,
                balls_detected: bool,
                players_center: tuple[int, int]):
         def _get_center_vector():
@@ -187,17 +194,16 @@ class AutocamCameraman(Cameraman):
             alpha = Config.autocam["u_control"]["center"]["alpha"]
             var_th = Config.autocam["u_control"]["center"]["var_th"]
 
-            if not balls_detected and np.mean(self.ball_var_last) > var_th:
+            if players_detected and not balls_detected and np.mean(self.ball_var_last) > var_th:
                 return alpha * (players_center - self.ball_mu_last)
             return np.array([0., 0.])
 
         def _get_movement_vector():
             """Get the players' center velocity vector (multiplied by an alpha)."""
+            if not players_detected:
+                return np.array([0., 0.])
+
             alpha = Config.autocam["u_control"]["velocity"]["alpha"]
-
-            self.players_filter.predict()
-            self.players_filter.update(*players_center)
-
             return alpha * self.players_filter.vel.T[0]
 
         u = np.array([0., 0.])

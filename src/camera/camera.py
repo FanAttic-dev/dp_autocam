@@ -230,6 +230,10 @@ class Camera(ABC, HasStats):
         """
 
         return self.sensor_w / (2 * np.tan(np.deg2rad(fov_deg) / 2))
+
+    @abstractmethod
+    def screen_width_px2fov(self, px):
+        ...
     # endregion
 
     # region Center
