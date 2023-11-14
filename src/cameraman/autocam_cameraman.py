@@ -26,13 +26,15 @@ class AutocamCameraman(Cameraman):
         )
 
         # Used for PF visualization and control input calculation.
-        self.ball_mu_last = self.camera.center
+        self.ball_mu_last, self.ball_var_last = self.ball_filter.estimate
 
         self.players_var = None  # Used for debug info only.
         self.u_last = None  # Used for visualization only.
-        self.is_initialized = False
 
-    def update_camera(self, bbs):
+    def init_filters_pos(self, bbs):
+        if bbs is None:
+            return
+
         bbs_ball = self._filter_bbs_ball(bbs)
 
         players_detected = len(bbs) > 0 and len(bbs["boxes"]) > 0
@@ -42,19 +44,41 @@ class AutocamCameraman(Cameraman):
 
         utils.discard_extreme_bbs_(bbs)
 
-        # Players center
         players_center = self._get_players_center(bbs)
-        if not self.is_initialized:
-            self.players_filter.set_pos(*players_center)
-            self.is_initialized = True
 
-        # Incorporate measurements into PF
-        if balls_detected:
-            ball_centers = [
-                utils.get_bb_center(bb_ball) for bb_ball in bbs_ball['boxes']
-            ]
-            self.ball_filter.update(players_center, ball_centers)
-            self.ball_filter.resample()
+        self.players_filter.set_pos(*players_center)
+        self.ball_filter.init(players_center)
+
+        ball_mu, _ = self.ball_filter.estimate
+        self._try_update_camera(ball_mu)
+
+        self.ball_mu_last, self.ball_var_last = self.ball_filter.estimate
+
+    def update_camera(self, bbs):
+        bbs_ball = self._filter_bbs_ball(bbs)
+
+        players_detected = bbs is not None and len(
+            bbs) > 0 and len(bbs["boxes"]) > 0
+        balls_detected = len(bbs_ball) > 0 and len(bbs_ball['boxes']) > 0
+
+        if players_detected:
+            utils.discard_extreme_bbs_(bbs)
+
+            # Players center
+            players_center = self._get_players_center(bbs)
+
+            # Incorporate measurements into PF
+            if balls_detected:
+                ball_centers = [
+                    utils.get_bb_center(bb_ball) for bb_ball in bbs_ball['boxes']
+                ]
+                self.ball_filter.update(players_center, ball_centers)
+                self.ball_filter.resample()
+
+            # Set control input
+            u = self._get_u(balls_detected, players_center)
+            self.ball_filter.set_u(u)
+            self.u_last = u
 
         # Apply motion model with uncertainty to PF
         self.ball_filter.predict()
@@ -63,16 +87,12 @@ class AutocamCameraman(Cameraman):
         ball_mu, ball_var = self.ball_filter.estimate
         f = self._get_zoom_f(ball_var, bbs)
 
-        # Set control input
-        u = self._get_u(balls_detected, players_center, ball_var)
-        self.ball_filter.set_u(u)
-
         # Update camera
         self._try_update_camera(ball_mu, f)
 
         # Update variables
         self.ball_mu_last = ball_mu
-        self.u_last = u
+        self.ball_var_last = ball_var
 
     def _try_update_camera(self, center, f=None):
         """Try to update the camera PID target.
@@ -129,7 +149,7 @@ class AutocamCameraman(Cameraman):
 
     def _get_zoom_by_bbs(self, bbs):
         """Calculate the focal length based on the players' bounding box."""
-        if not bbs or len(bbs["boxes"]) == 0:
+        if bbs is None or len(bbs["boxes"]) == 0:
             return self.camera.zoom_f
 
         margin_px = Config.autocam["zoom"]["bb"]["margin_px"]
@@ -146,8 +166,7 @@ class AutocamCameraman(Cameraman):
 
     def _get_u(self,
                balls_detected: bool,
-               players_center: tuple[int, int],
-               ball_var: tuple[float, float]):
+               players_center: tuple[int, int]):
         def _get_center_vector():
             """Calculate the ball -> players' center vector.
 
@@ -168,7 +187,7 @@ class AutocamCameraman(Cameraman):
             alpha = Config.autocam["u_control"]["center"]["alpha"]
             var_th = Config.autocam["u_control"]["center"]["var_th"]
 
-            if not balls_detected and np.mean(ball_var) > var_th:
+            if not balls_detected and np.mean(self.ball_var_last) > var_th:
                 return alpha * (players_center - self.ball_mu_last)
             return np.array([0., 0.])
 
@@ -194,6 +213,8 @@ class AutocamCameraman(Cameraman):
             "cls": [],
             "ids": []
         }
+        if bbs is None:
+            return bbs_ball
 
         for i, (bb, cls) in enumerate(zip(bbs["boxes"], bbs["cls"])):
             if cls != 0:
@@ -225,7 +246,7 @@ class AutocamCameraman(Cameraman):
                    radius=4, color=color, thickness=5)
 
     def draw_players_bb_(self, frame_orig, bbs, color=Color.TEAL):
-        if len(bbs["boxes"]) == 0:
+        if bbs is None or len(bbs["boxes"]) == 0:
             return
 
         margin_px = Config.autocam["zoom"]["bb"]["margin_px"]

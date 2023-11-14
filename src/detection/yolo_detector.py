@@ -52,6 +52,9 @@ class YoloDetector(Detector):
         return bbs_frames
 
     def draw_bbs_(self, img, bbs, color=None):
+        if bbs is None:
+            return
+
         for i, (bb, cls) in enumerate(zip(bbs["boxes"], bbs["cls"])):
             x1, y1, x2, y2 = bb
             bb_color = Color.cls2color[cls] if color is None else color

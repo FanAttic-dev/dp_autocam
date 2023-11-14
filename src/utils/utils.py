@@ -59,7 +59,7 @@ def discard_extreme_bbs_(bbs):
     Removes one bb with the highest and one bb with the lowerst x value.
     If the input array contains less than 3 bbs, no bb is removed.
     """
-    if len(bbs["boxes"]) < 3:
+    if bbs is None or len(bbs["boxes"]) < 3:
         return
 
     maxi = np.argmax(bbs["boxes"], axis=0)[2]

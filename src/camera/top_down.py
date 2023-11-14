@@ -69,6 +69,10 @@ class TopDown:
             "pts": [],
             "cls": []
         }
+
+        if bbs is None:
+            return tdpts
+
         for bb, cls in zip(bbs["boxes"], bbs["cls"]):
             x1, y1, x2, y2 = bb
             x1, y1 = utils.apply_homography(self.H, x1, y1)
@@ -85,7 +89,7 @@ class TopDown:
         return x >= 0 and x < w and y >= 0 and y < h
 
     def draw_bbs_(self, frame_top_down, bbs, discard_extremes=False):
-        if len(bbs) == 0 or len(bbs["boxes"]) == 0:
+        if bbs is None or len(bbs) == 0 or len(bbs["boxes"]) == 0:
             return
 
         tdpts = self.bbs_screen2tdpts(bbs)

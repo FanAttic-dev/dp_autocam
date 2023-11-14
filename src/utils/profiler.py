@@ -22,9 +22,11 @@ class Stopwatch:
 
 
 class Profiler:
-    def __init__(self, frame_id):
+    def init(self, frame_id):
+        """Reset the stopwatches and set their FrameID."""
         self.frame_id = frame_id
         self.stopwatches = {}
+        return self
 
     def start(self, name):
         assert (name not in self.stopwatches)
@@ -41,6 +43,7 @@ class Profiler:
                        v in self.stopwatches.items() if v.is_stopped and k != "Total"]
         txt += " | ".join(stopwatches)
 
-        total_elapsed_sec = self.stopwatches["Total"].elapsed_sec
-        txt += f" || Total: {total_elapsed_sec:.2f}s ({1/total_elapsed_sec:.1f}fps)"
+        if "Total" in self.stopwatches:
+            total_elapsed_sec = self.stopwatches["Total"].elapsed_sec
+            txt += f" || Total: {total_elapsed_sec:.2f}s ({1/total_elapsed_sec:.1f}fps)"
         print(txt)
