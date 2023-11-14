@@ -9,30 +9,30 @@ camera_params:
   lens_fov_horiz_deg: 115
   pitch_tilt_deg: -15 # pitch rotation correction
   pan_deg:
-    default: 24.7
+    default: 29.3
     min: -24.3
     max: 29.7
   tilt_deg:
-    default: 0
+    default: 1.7
     min: -2
     max: 5
   zoom_f:
-    default: 67
+    default: 71.5
     min: 40
     max: 70
 
 # An array of cameras for frame splitting due to detection.
 # Note: You can also use more than 3 cameras.
 frame_splitter_params:
-- pan_deg: -24.7
-  tilt_deg: -2.9
-  zoom_f: 82
-- pan_deg: 1.7
-  tilt_deg: -0.79
-  zoom_f: 69
-- pan_deg: 29.3
-  tilt_deg: 1.7
-  zoom_f: 71.5
+- pan_deg: -24.01
+  tilt_deg: -1.88
+  zoom_f: 80.75
+- pan_deg: 1.42
+  tilt_deg: -0.34
+  zoom_f: 77
+- pan_deg: 28.01
+  tilt_deg: 0.6
+  zoom_f: 73.2
 
 # Coordinates of pitch corners.
 # Note: You can nest it under p0 (1. period) and p1 (2. period) as:
