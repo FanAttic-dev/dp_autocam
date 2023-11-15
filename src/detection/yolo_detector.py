@@ -13,7 +13,7 @@ from detection.detector import Detector
 class YoloDetector(Detector):
     args = {
         'device': torch.cuda.current_device(),
-        'imgsz': 960,
+        'imgsz': Config.autocam["detector"]["imgsz"],
         'classes': [1, 2, 3] if Config.autocam["detector"]["ball"]["enabled"] else None,
         'conf': Config.autocam["detector"]["conf"],
         'max_det': 50,
@@ -108,7 +108,7 @@ class YoloDetector(Detector):
 class YoloBallDetector(YoloDetector):
     args = {
         'device': torch.cuda.current_device(),
-        'imgsz': 960,
+        'imgsz': Config.autocam["detector"]["ball"]["imgsz"],
         'classes': None,  # [0] for ball only, None for all
         'conf': Config.autocam["detector"]["ball"]["conf"],
         'max_det': Config.autocam["detector"]["ball"]["max_det"],

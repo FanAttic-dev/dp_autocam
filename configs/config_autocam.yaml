@@ -12,7 +12,7 @@ dataset:
 # Recording
 recording:
   rec_folder: "./recordings"
-  name: "2023-11-15_N-1000" # The name of the current recording.
+  name: "2023-11-15_imgsz-640" # The name of the current recording.
 
   # The final recording path is given by `rec_folder / name / (args.output_dir)?`.
   
@@ -53,6 +53,8 @@ show_top_down_window: false # Show the top-down pitch model with marked players.
 detector:
   enabled: true
   
+  imgsz: 640 # [640, 960]
+
   # Filter detections based on `detection_blacklist` in dataset config file.
   filter_detections: true 
   
@@ -62,6 +64,7 @@ detector:
   # Parameters for the ball detector
   ball:
     enabled: false # Whether to use a separate ball detector.
+    imgsz: 960 # [640, 960]
     conf: 0.2
     max_det: 10 # Maximum number of detections for the ball.
 
@@ -69,7 +72,7 @@ detector:
 # Filters
 ball_pf:
   dt: 0.1
-  N: 1000 # Number of particles
+  N: 500 # Number of particles
 
   # Uncertainty of predictions.
   # - Determines the receptive field of the filter.
