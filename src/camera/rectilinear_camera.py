@@ -87,13 +87,22 @@ class RectilinearCamera(Camera):
         pts_spherical,
         normalized=False
     ):
+        # Scale down the coords to match the current FoV
         pts_spherical_fov = pts_spherical * \
             (self.fov_rad / 2 / self.limits)
 
+        # Map to sphere, compensate pitch tilt
+        # pts_spherical_fov = self._gnomonic_inverse(
+        #     pts_spherical_fov, (0, 0)
+        # )
         pts_spherical_fov = self._gnomonic_inverse(
             pts_spherical_fov, (0, self.pitch_tilt_deg)
         )
+
+        # Project to plane, use target point as gnomonic center
         pts_spherical_fov = self._gnomonic(pts_spherical_fov)
+
+        # Convert to screen coordinates
         pts_screen_fov = self._spherical2screen(pts_spherical_fov)
 
         if normalized:
@@ -293,17 +302,17 @@ class RectilinearCamera(Camera):
         cv2.fillPoly(mask, [pts], 255)
         return cv2.bitwise_and(frame_orig, frame_orig, mask=mask)
 
-    def draw_grid_(self, frame_orig, color=Color.VIOLET, drawing_mode=DrawingMode.CIRCLES):
-        THICKNESS = 5
+    def draw_grid_(self, frame_orig, color=Color.BLUE, drawing_mode=DrawingMode.LINES):
+        THICKNESS = 8
         H_RANGE, V_RANGE = (np.pi/3, np.pi/3) \
             if drawing_mode == DrawingMode.LINES else (np.pi/2, np.pi/2)
-        DRAWING_STEP = 75 if drawing_mode == DrawingMode.LINES else 25
+        DRAWING_STEP = 174 if drawing_mode == DrawingMode.LINES else 25
 
         frame_orig_w, frame_orig_h = self.frame_orig_size
-        w, h = frame_orig_w // DRAWING_STEP, frame_orig_h // DRAWING_STEP
+        steps = frame_orig_w // DRAWING_STEP
 
-        xx, yy = np.meshgrid(np.linspace(-H_RANGE, H_RANGE, w),
-                             np.linspace(-V_RANGE, V_RANGE, h))
+        xx, yy = np.meshgrid(np.linspace(-H_RANGE, H_RANGE, steps),
+                             np.linspace(-V_RANGE, V_RANGE, steps))
         pts = np.array([xx.ravel(), yy.ravel()], dtype=DT_FLOAT).T
 
         pts = self._gnomonic(pts, (0, 0))
@@ -315,14 +324,14 @@ class RectilinearCamera(Camera):
 
         if drawing_mode == DrawingMode.LINES:
             xx, yy = pts.T
-            xx, yy = xx.reshape((h, w)), yy.reshape((h, w))
+            xx, yy = xx.reshape((steps, steps)), yy.reshape((steps, steps))
 
-            for i in range(h):
+            for i in range(steps):
                 pts = np.array([xx[i].ravel(), yy[i].ravel()], dtype=DT_INT).T
                 cv2.polylines(frame_orig, [pts], False,
                               color, thickness=THICKNESS)
 
-            for i in range(w):
+            for i in range(steps):
                 pts = np.array(
                     [xx[:, i].ravel(), yy[:, i].ravel()], dtype=DT_INT).T
                 cv2.polylines(frame_orig, [pts], False,

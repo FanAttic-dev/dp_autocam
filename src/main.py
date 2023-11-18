@@ -7,7 +7,7 @@ import utils.utils as utils
 if __name__ == "__main__":
     args = parse_args()
     # args.record = True
-    # args.mouse = True
+    args.mouse = True
 
     config = Config(args)
     autocam = Autocam(args, config)

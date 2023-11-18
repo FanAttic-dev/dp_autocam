@@ -56,3 +56,4 @@ Under `/scripts`, you can find shell scripts for:
 - [ ] The application allows for visualization of the current state, including the region of interest (ROI) for each camera, detections
       predicted camera center, and states for different modules , such as the PTZ or the PID. The presence of a particular visualization is controlled by the user in the configuration file.
 - [ ] Debug mode description
+- [ ] Our application assumes that the input is a rectilinear image. Thus, before running it on your dataset, make sure that you first undistort the input images.

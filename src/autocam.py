@@ -204,8 +204,10 @@ class Autocam:
         frame_roi_debug = self.camera.get_frame_roi(frame_orig_debug)
 
         if Config.autocam["debug"]["draw_roi"]:
-            self.frame_splitter.draw_roi_(frame_orig_debug)
             self.camera.draw_roi_(frame_orig_debug)
+
+        if Config.autocam["debug"]["draw_frame_splitter_roi"]:
+            self.frame_splitter.draw_roi_(frame_orig_debug)
 
         if Config.autocam["debug"]["draw_grid"]:
             self.camera.draw_grid_(frame_orig_debug)
@@ -235,8 +237,8 @@ class Autocam:
 
     def decorate_roi(self, frame_roi_debug, frame_top_down):
         """Add top down preview and stats bar to the ROI frame."""
-        if not self.is_debug:
-            return None
+        if not self.is_debug or not self.config.autocam["debug"]["decorate_debug_frame"]:
+            return frame_roi_debug
 
         return self.recorder.decorate_frame(frame_roi_debug, frame_top_down)
 

@@ -5,8 +5,8 @@
 # Dataset
 dataset:
   config: "./configs/config_trnava_zilina.yaml"
-  video: "p0_shot4.mp4"
-  # video: "main_p0.mp4"
+  # video: "p0_shot4.mp4"
+  video: "main_p0.mp4"
 
 # -----------------------------------------------------------------------------
 # Recording
@@ -28,21 +28,23 @@ debug:
   # Frame splitter
   show_split_frames: false # Show the FrameSplitter frames with detections.
   show_frame_mask: false # Mask out everything outside of the pitch.
+  draw_frame_splitter_roi: false # Draw the ROIs of frame splitter cameras.
 
   # Camera
-  draw_grid: false # Visualize the point grid of the used projection scheme.
-  draw_roi: true # Draw the regions-of-interest of cameras.
+  draw_grid: true # Visualize the point grid of the used projection scheme.
+  draw_roi: true # Draw the region-of-interest (ROI) of the main camera.
   print_camera_stats: false # Print the camera state (PTZ, PID, FoV).
   ignore_bounds: true # Ignore the PTZ limits defined in the dataset config file.
   mouse_use_pid: false # Use PID in mouse mode. Otherwise uses free camera.
   
   # Detection
-  draw_detections: true # Draw player and ball bounding boxes.
-  draw_players_bb: true # Draw the players' bounding box.
+  draw_detections: false # Draw player and ball bounding boxes.
+  draw_players_bb: false # Draw the players' bounding box.
   
   # Top Down
   show_warped_frame: false # Show the original pitch in top-down view. 
   draw_top_down_players_center: true
+  decorate_debug_frame: false # Add top down view and right stats bar to the debug frame.
 
 print_profiler_stats: true
 show_original: true # Show the original frame.
@@ -51,9 +53,9 @@ show_top_down_window: false # Show the top-down pitch model with marked players.
 # -----------------------------------------------------------------------------
 # Detection
 detector:
-  enabled: true
+  enabled: false
   
-  imgsz: 640 # [640, 960]
+  imgsz: 960 # [640, 960]
 
   # Filter detections based on `detection_blacklist` in dataset config file.
   filter_detections: true 
