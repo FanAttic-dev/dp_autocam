@@ -178,4 +178,4 @@ def hFoV2vFoV(hFoV_deg, aspect_ratio):
 
 
 def any_detected(bbs) -> bool:
-    return bbs is None or len(bbs) > 0 and len(bbs["boxes"]) > 0
+    return bbs is not None and len(bbs) > 0 and len(bbs["boxes"]) > 0

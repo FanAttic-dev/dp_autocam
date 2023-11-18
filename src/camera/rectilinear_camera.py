@@ -10,7 +10,6 @@ import utils.utils as utils
 class RectilinearCamera(Camera):
     SENSOR_DX = 10
     FOV_DX = 5
-    DRAWING_STEP = 25
     TILT_DX = 5
 
     def __init__(
@@ -171,8 +170,10 @@ class RectilinearCamera(Camera):
     # region Border points
     @staticmethod
     def _get_pts_borders_screen():
-        w = Camera.FRAME_W // RectilinearCamera.DRAWING_STEP
-        h = Camera.FRAME_H // RectilinearCamera.DRAWING_STEP
+        DRAWING_STEP = 25
+
+        w = Camera.FRAME_W // DRAWING_STEP
+        h = Camera.FRAME_H // DRAWING_STEP
         pts_w = np.linspace(0, 1, w)
         pts_h = np.linspace(0, 1, h)
 
@@ -280,7 +281,7 @@ class RectilinearCamera(Camera):
     def draw_roi_(self, frame_orig, color=Color.VIOLET, drawing_mode=DrawingMode.LINES):
         pts = self.get_pts_borders()
         if drawing_mode == DrawingMode.LINES:
-            cv2.polylines(frame_orig, [pts], True, color, thickness=5)
+            cv2.polylines(frame_orig, [pts], True, color, thickness=10)
         elif drawing_mode == DrawingMode.CIRCLES:
             for x, y in pts:
                 cv2.circle(frame_orig, [x, y], radius=5,
@@ -292,20 +293,44 @@ class RectilinearCamera(Camera):
         cv2.fillPoly(mask, [pts], 255)
         return cv2.bitwise_and(frame_orig, frame_orig, mask=mask)
 
-    def draw_grid_(self, frame_orig, color=Color.BLUE):
+    def draw_grid_(self, frame_orig, color=Color.VIOLET, drawing_mode=DrawingMode.CIRCLES):
+        THICKNESS = 5
+        H_RANGE, V_RANGE = (np.pi/3, np.pi/3) \
+            if drawing_mode == DrawingMode.LINES else (np.pi/2, np.pi/2)
+        DRAWING_STEP = 75 if drawing_mode == DrawingMode.LINES else 25
+
         frame_orig_w, frame_orig_h = self.frame_orig_size
-        xx, yy = np.meshgrid(np.linspace(-np.pi, np.pi, frame_orig_w // RectilinearCamera.DRAWING_STEP),
-                             np.linspace(-np.pi/2, np.pi/2, frame_orig_h // RectilinearCamera.DRAWING_STEP))
+        w, h = frame_orig_w // DRAWING_STEP, frame_orig_h // DRAWING_STEP
+
+        xx, yy = np.meshgrid(np.linspace(-H_RANGE, H_RANGE, w),
+                             np.linspace(-V_RANGE, V_RANGE, h))
         pts = np.array([xx.ravel(), yy.ravel()], dtype=DT_FLOAT).T
 
+        pts = self._gnomonic(pts, (0, 0))
+        pts = self._gnomonic_inverse(pts, (0, self.pitch_tilt_deg))
         pts = self._gnomonic(pts)
-        pts = self._spherical2screen(pts)
 
+        pts = self._spherical2screen(pts)
         pts = (pts * self.frame_orig_size).astype(DT_INT)
 
-        for x, y in pts:
-            cv2.circle(frame_orig, [x, y], radius=5,
-                       color=color, thickness=-1)
+        if drawing_mode == DrawingMode.LINES:
+            xx, yy = pts.T
+            xx, yy = xx.reshape((h, w)), yy.reshape((h, w))
+
+            for i in range(h):
+                pts = np.array([xx[i].ravel(), yy[i].ravel()], dtype=DT_INT).T
+                cv2.polylines(frame_orig, [pts], False,
+                              color, thickness=THICKNESS)
+
+            for i in range(w):
+                pts = np.array(
+                    [xx[:, i].ravel(), yy[:, i].ravel()], dtype=DT_INT).T
+                cv2.polylines(frame_orig, [pts], False,
+                              color, thickness=THICKNESS)
+        elif drawing_mode == DrawingMode.CIRCLES:
+            for x, y in pts:
+                cv2.circle(frame_orig, [x, y], radius=THICKNESS,
+                           color=color, thickness=-1)
 
     def process_input(self, key, mouse_pos):
         is_alive = True

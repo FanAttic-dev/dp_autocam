@@ -171,15 +171,15 @@ class Autocam:
         return bbs_joined
 
     def update_camera(self, bbs_joined, frame_orig, frame_orig_debug):
-        if self.is_debug and self.args.mouse and Config.autocam["debug"]["mouse_use_pid"]:
-            self.cameraman._try_update_camera(self.player.mouse_pos)
-        else:
+        if not self.is_debug or not self.args.mouse:
             self.profiler.start("Update by BBS")
             self.cameraman.update_camera(bbs_joined)
             self.profiler.stop("Update by BBS")
+        elif Config.autocam["debug"]["mouse_use_pid"]:
+            self.cameraman._try_update_camera(self.player.mouse_pos)
 
-        if self.is_debug and self.args.mouse:
-            self.camera.draw_center_(frame_orig_debug)
+        # if self.is_debug and self.args.mouse:
+        #     self.camera.draw_center_(frame_orig_debug)
 
         self.profiler.start("Get ROI")
         frame_roi = self.camera.get_frame_roi(frame_orig)
@@ -191,7 +191,7 @@ class Autocam:
         if not self.is_debug:
             return None
 
-        if Config.autocam["debug"]["draw_detections"]:
+        if not self.args.mouse and Config.autocam["debug"]["draw_detections"]:
             self.detector.draw_bbs_(frame_orig_debug, bbs_joined)
             self.cameraman.draw_ball_prediction_(
                 frame_orig_debug, Color.RED)

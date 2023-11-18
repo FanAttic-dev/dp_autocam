@@ -21,9 +21,9 @@ class Color:
 
     cls2color = {
         0: WHITE,  # ball
-        1: TEAL,  # player
-        2: YELLOW,  # referee
-        3: ORANGE,  # goalkeeper
+        1: YELLOW,  # player
+        2: ORANGE,  # referee
+        3: TEAL,  # goalkeeper
     }
 
 

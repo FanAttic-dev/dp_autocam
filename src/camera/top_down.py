@@ -144,7 +144,7 @@ class TopDown:
         pts_warped = np.array(pts_warped, dtype=DT_INT)
 
         cv2.polylines(frame, [pts_warped], isClosed=True,
-                      color=Color.YELLOW, thickness=5)
+                      color=Color.VIOLET, thickness=5)
 
     def get_frame(self, bbs, players_center=None):
         frame_top_down = self.pitch_model.copy()
