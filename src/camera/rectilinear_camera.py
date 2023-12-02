@@ -99,7 +99,7 @@ class RectilinearCamera(Camera):
             pts_spherical_fov, (0, self.pitch_tilt_deg)
         )
 
-        # Project to plane, use target point as gnomonic center
+        # # Project to plane, use target point as gnomonic center
         pts_spherical_fov = self._gnomonic(pts_spherical_fov)
 
         # Convert to screen coordinates
@@ -122,7 +122,7 @@ class RectilinearCamera(Camera):
         pts_screen_frame = RectilinearCamera._get_pts_frame_screen()
         return self._screen2spherical(pts_screen_frame)
 
-    def _get_frame_roi(self, frame_orig):
+    def __get_frame_roi(self, frame_orig):
         """Get ROI by sampling all pixels from the sphere.
 
         DEPRECATED: Using homography in self.get_frame_roi instead.
@@ -174,9 +174,11 @@ class RectilinearCamera(Camera):
 
     def get_pts_corners(self):
         return self._spherical2screen_fov(self._pts_corners_spherical)
+
     # endregion
 
     # region Border points
+
     @staticmethod
     def _get_pts_borders_screen():
         DRAWING_STEP = 25
@@ -288,9 +290,13 @@ class RectilinearCamera(Camera):
     # Drawing
 
     def draw_roi_(self, frame_orig, color=Color.VIOLET, drawing_mode=DrawingMode.LINES):
+        THICKNESS_BIG = 40
+        THICKNESS_SMALL = 10
+
         pts = self.get_pts_borders()
         if drawing_mode == DrawingMode.LINES:
-            cv2.polylines(frame_orig, [pts], True, color, thickness=10)
+            cv2.polylines(frame_orig, [pts], True,
+                          color, thickness=THICKNESS_BIG)
         elif drawing_mode == DrawingMode.CIRCLES:
             for x, y in pts:
                 cv2.circle(frame_orig, [x, y], radius=5,
@@ -304,18 +310,18 @@ class RectilinearCamera(Camera):
 
     def draw_grid_(self, frame_orig, color=Color.BLUE, drawing_mode=DrawingMode.LINES):
         THICKNESS = 8
-        H_RANGE, V_RANGE = (np.pi/3, np.pi/3) \
-            if drawing_mode == DrawingMode.LINES else (np.pi/2, np.pi/2)
-        DRAWING_STEP = 174 if drawing_mode == DrawingMode.LINES else 25
+        RANGE = np.pi/2 if drawing_mode == DrawingMode.LINES else np.pi/2
+        STEPS = 20
 
-        frame_orig_w, frame_orig_h = self.frame_orig_size
-        steps = frame_orig_w // DRAWING_STEP
+        pan_rad = np.deg2rad(self.pan_deg)
+        tilt_rad = np.deg2rad(self.tilt_deg)
 
-        xx, yy = np.meshgrid(np.linspace(-H_RANGE, H_RANGE, steps),
-                             np.linspace(-V_RANGE, V_RANGE, steps))
-        pts = np.array([xx.ravel(), yy.ravel()], dtype=DT_FLOAT).T
+        xx, yy = np.meshgrid(np.linspace(-RANGE, RANGE, STEPS),
+                             np.linspace(-RANGE, RANGE, STEPS))
+        pts = np.array([xx.ravel() - pan_rad, yy.ravel() -
+                       tilt_rad], dtype=DT_FLOAT).T
 
-        pts = self._gnomonic(pts, (0, 0))
+        # pts = self._gnomonic(pts, (0, 0))
         pts = self._gnomonic_inverse(pts, (0, self.pitch_tilt_deg))
         pts = self._gnomonic(pts)
 
@@ -324,14 +330,14 @@ class RectilinearCamera(Camera):
 
         if drawing_mode == DrawingMode.LINES:
             xx, yy = pts.T
-            xx, yy = xx.reshape((steps, steps)), yy.reshape((steps, steps))
+            xx, yy = xx.reshape((STEPS, STEPS)), yy.reshape((STEPS, STEPS))
 
-            for i in range(steps):
+            for i in range(STEPS):
                 pts = np.array([xx[i].ravel(), yy[i].ravel()], dtype=DT_INT).T
                 cv2.polylines(frame_orig, [pts], False,
                               color, thickness=THICKNESS)
 
-            for i in range(steps):
+            for i in range(STEPS):
                 pts = np.array(
                     [xx[:, i].ravel(), yy[:, i].ravel()], dtype=DT_INT).T
                 cv2.polylines(frame_orig, [pts], False,

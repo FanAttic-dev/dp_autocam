@@ -31,3 +31,8 @@ class ImagePreprocessor:
 
     def draw_mask(self, img):
         return cv2.bitwise_and(img, img, mask=self.mask)
+
+    @staticmethod
+    def overlay_white(img, alpha):
+        white = (np.ones(img.shape) * 255).astype(np.uint8)
+        return cv2.addWeighted(img, (1-alpha), white, alpha, 0.0)

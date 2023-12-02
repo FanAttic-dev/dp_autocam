@@ -1,7 +1,9 @@
 import cv2
+import numpy as np
 
 from camera.rectilinear_camera import RectilinearCamera
 from cameraman.autocam_cameraman import AutocamCameraman
+from detection.image_preprocessor import ImagePreprocessor
 from utils.argparse import AutocamArgsNamespace
 from utils.config import Config
 from detection.yolo_detector import YoloBallDetector, YoloDetector
@@ -134,8 +136,15 @@ class Autocam:
         frame_orig_masked = self.detector.preprocess(frame_orig)
         if self.is_debug and Config.autocam["debug"]["show_frame_mask"]:
             frame_orig = frame_orig_masked
+
+        frame_orig_debug = None
+        if self.is_debug and Config.autocam["debug"]["overlay_white"]:
+            frame_orig_debug = ImagePreprocessor.overlay_white(frame_orig, 0.8)
+        elif self.is_debug:
+            frame_orig_debug = frame_orig.copy()
+
         self.profiler.stop("Preprocess")
-        return frame_orig, frame_orig_masked, (frame_orig.copy() if self.is_debug else None)
+        return frame_orig, frame_orig_masked, frame_orig_debug
 
     def detect(self, frame_orig_masked):
         if not self.detector_enabled:
@@ -176,7 +185,9 @@ class Autocam:
             self.cameraman.update_camera(bbs_joined)
             self.profiler.stop("Update by BBS")
         elif Config.autocam["debug"]["mouse_use_pid"]:
-            self.cameraman._try_update_camera(self.player.mouse_pos)
+            self.cameraman.try_update_camera(self.player.mouse_pos)
+        elif Config.autocam["debug"]["mouse_draw_camera_center"]:
+            self.camera.draw_center_(frame_orig_debug)
 
         # if self.is_debug and self.args.mouse:
         #     self.camera.draw_center_(frame_orig_debug)
@@ -193,6 +204,8 @@ class Autocam:
 
         if not self.args.mouse and Config.autocam["debug"]["draw_detections"]:
             self.detector.draw_bbs_(frame_orig_debug, bbs_joined)
+
+        if not self.args.mouse and Config.autocam["debug"]["draw_PF"]:
             self.cameraman.draw_ball_prediction_(
                 frame_orig_debug, Color.RED)
             self.cameraman.draw_ball_u_(frame_orig_debug, Color.ORANGE)
@@ -247,6 +260,7 @@ class Autocam:
             return
 
         frame = frame_roi_debug if self.is_debug else frame_roi
+        frame = frame_roi
         self.player.show_frame(frame, "ROI")
 
     def write_roi(self, frame_roi, frame_roi_debug):

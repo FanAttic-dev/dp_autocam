@@ -85,7 +85,7 @@ class ParticleFilter(HasStats):
         for ball, ball_weight in zip(ball_centers, ball_weights):
             dist_ball = np.linalg.norm(self.particles - ball, axis=1)
 
-            # target is between players and ball (alpha factor)
+            # Target is between players and ball (alpha factor)
             dist_target = players_ball_alpha * dist_ball + \
                 (1-players_ball_alpha) * dist_players
 
@@ -103,9 +103,12 @@ class ParticleFilter(HasStats):
             # assert np.allclose(self.weights, 1/self.N)
 
     def draw_particles_(self, frame, color=Color.RED):
+        THICKNESS_SMALL = self.N
+        THICKNESS_BIG = self.N * 3
+
         for particle, weight in zip(self.particles, self.weights):
             x, y = particle
-            cv2.circle(frame, (int(x), int(y)), radius=int(weight * self.N),
+            cv2.circle(frame, (int(x), int(y)), radius=int(weight * THICKNESS_SMALL),
                        color=color, thickness=-1)
 
     def get_stats(self):

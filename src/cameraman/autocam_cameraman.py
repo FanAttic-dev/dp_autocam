@@ -45,7 +45,7 @@ class AutocamCameraman(Cameraman):
         self.ball_filter.init(players_center)
 
         self.ball_mu_last, self.ball_var_last = self.ball_filter.estimate
-        self._try_update_camera(self.ball_mu_last)
+        self.try_update_camera(self.ball_mu_last)
 
     def update_camera(self, bbs):
         bbs_ball = self._filter_bbs_ball(bbs)
@@ -76,7 +76,7 @@ class AutocamCameraman(Cameraman):
         # Update camera
         ball_mu, ball_var = self.ball_filter.estimate
         f = self._get_zoom_f(ball_var, bbs)
-        self._try_update_camera(ball_mu, f)
+        self.try_update_camera(ball_mu, f)
 
         # Update variables
         self.ball_mu_last = ball_mu
@@ -100,7 +100,7 @@ class AutocamCameraman(Cameraman):
         # Apply motion model with uncertainty to PF
         self.ball_filter.predict()
 
-    def _try_update_camera(self, center, f=None):
+    def try_update_camera(self, center, f=None):
         """Try to update the camera PID target.
 
         It first converts the points to PTZ,
