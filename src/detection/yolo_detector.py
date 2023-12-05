@@ -55,10 +55,13 @@ class YoloDetector(Detector):
         if bbs is None:
             return
 
+        THICKNESS_SMALL = 20
+        THICKNESS_BIG = 80
+
         for i, (bb, cls) in enumerate(zip(bbs["boxes"], bbs["cls"])):
             x1, y1, x2, y2 = bb
             bb_color = Color.cls2color[cls] if color is None else color
-            cv2.rectangle(img, (x1, y1), (x2, y2), bb_color, 80)
+            cv2.rectangle(img, (x1, y1), (x2, y2), bb_color, THICKNESS_SMALL)
 
             if i >= len(bbs["ids"]):
                 continue

@@ -41,11 +41,11 @@ debug:
   mouse_draw_camera_center: false # Draw the camera center in mouse mode.
   
   # Detection
-  draw_detections: false # Draw player and ball bounding boxes.
+  draw_detections: true # Draw player and ball bounding boxes.
   draw_players_bb: false # Draw the players' bounding box.
 
   # Particle filter
-  draw_PF: true
+  draw_PF: false
   
   # Top Down
   show_warped_frame: false # Show the original pitch in top-down view. 
@@ -54,7 +54,7 @@ debug:
 
 print_profiler_stats: true
 show_original: true # Show the original frame.
-show_top_down_window: true # Show the top-down pitch model with marked players.
+show_top_down_window: false # Show the top-down pitch model with marked players.
 
 # -----------------------------------------------------------------------------
 # Detection
