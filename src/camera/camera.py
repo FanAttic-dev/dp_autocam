@@ -118,6 +118,9 @@ class Camera(ABC, HasStats):
         return True
 
     def check_ptz(self, pan_deg, tilt_deg, zoom_f):
+        if zoom_f <= 0:
+            return False
+
         if self.ignore_bounds:
             return True
 
