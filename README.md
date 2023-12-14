@@ -1,6 +1,8 @@
 # Autocam
 
-Autocam is an automatic virtual cameraman. The input is a wide-angle recording of a soccer match containing the full pitch. Autocam automatically finds the interesting region of each frame, crops it so that it emulates pan-tilt-zoom of a camera on a tripod, and finally exports it as a new video.
+Autocam is an automatic virtual cameraman. The input is a wide-angle rectilinear video of a soccer match containing the full pitch. Autocam automatically finds the interesting region of each frame, crops it so that it emulates the pan-tilt-zoom (PTZ) of a camera on a tripod, and finally exports it as a new video.
+
+The system was developed as a part of a [diploma thesis](https://is.muni.cz/th/l78dh/?lang=en) by Attila Zsíros in 2023.
 
 ![Title main](assets/images/title_main.png)
 
@@ -15,17 +17,34 @@ Autocam is an automatic virtual cameraman. The input is a wide-angle recording o
     conda activate autocam
     ```
 
-2. Run Autocam on a sample video.
+2. Run Autocam on a provided sample video using the Makefile:
 
     ```shell
-    python src/main.py
+    # Run with debug visualizations.
+    make debug
+
+    # Run and control the camera by WASD keys.
+    # Use the `mouse_use_pid` option in config_autocam.yaml to control the camera by the mouse.
+    make debug_mouse
+
+    # Run without visualizations.
+    make no_debug
+
+    # Record the whole clip into the "./recordings folder".
+    make record
     ```
 
-    or using the provided Makefile:
+3. Use the `spacebar` to proceed to the next frame and `q` to exit.
 
-    ```shell
-    make run
-    ```
+## User control
+
+- `spacebar` — proceed to the next frame;
+- `q` — exit;
+- `-` and `+` — zoom (focal length);
+- `7` and `9` — pitch tilt correction angle;
+- `4` and `6` — original lens field of view;
+- `2` and `8` — sensor size;
+- `WASD` — camera movement (only in mouse mode, i.e., when executed by `make debug_mouse`);
 
 ## Config files
 
@@ -49,11 +68,11 @@ Under `/scripts`, you can find shell scripts for:
 - Recording folders of video clips (`record_clips.sh`).
   - It records all `*.mp4` files located in the specified folder.
 
-## TODO
+## Methods
 
-- [ ] Try running it on Windows
-- [ ] Mention spaces (ROI, Original frame, Top-down)
-- [ ] The application allows for visualization of the current state, including the region of interest (ROI) for each camera, detections
-      predicted camera center, and states for different modules , such as the PTZ or the PID. The presence of a particular visualization is controlled by the user in the configuration file.
-- [ ] Debug mode description
-- [ ] Our application assumes that the input is a rectilinear image. Thus, before running it on your dataset, make sure that you first undistort the input images.
+For a detailed description of the methods, refer to the [diploma thesis](https://is.muni.cz/th/l78dh/?lang=en).
+
+|              Detection Pipeline              |          Virtual Camera Algorithm          |
+| :------------------------------------------: | :----------------------------------------: |
+| ![](assets/images/Detection_pipeline@2x.png) | ![](assets/images/virtual_camera_algo.png) |
+

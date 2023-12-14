@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Optional
 import cv2
 import numpy as np
 
@@ -29,7 +30,7 @@ class Camera(ABC, HasStats):
         self,
         frame_orig,
         config: Config,
-        ignore_bounds=Config.autocam["debug"]["ignore_bounds"]
+        ignore_bounds: Optional[bool] = None,
     ):
         h, w, _ = frame_orig.shape
         self.frame_orig_size = np.array([w, h], dtype=DT_INT)
@@ -40,7 +41,7 @@ class Camera(ABC, HasStats):
             [Camera.FRAME_W, Camera.FRAME_H], dtype=DT_INT)
 
         self.config = config
-        self.ignore_bounds = ignore_bounds
+        self.ignore_bounds = ignore_bounds or config.ignore_bounds
         self.sensor_w = Camera.SENSOR_W
 
         self._init_ptz(config)

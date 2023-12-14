@@ -15,6 +15,7 @@ class Config:
         self.args = args
         self.dataset = utils.load_yaml(Config.autocam["dataset"]["config"])
         self.video_path = Config.get_video_path(self.dataset, args)
+        self.ignore_bounds = args.ignore_bounds or Config.autocam["debug"]["ignore_bounds"]
 
         if args.record:
             self.save_autocam_config()

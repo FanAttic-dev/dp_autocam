@@ -10,6 +10,7 @@ class AutocamArgsNamespace(argparse.Namespace):
     video_name: str
     hide_windows: bool
     no_debug: bool
+    ignore_bounds: bool
 
 
 def parse_args():
@@ -28,4 +29,6 @@ def parse_args():
                         help="Hide all windows while running.")
     parser.add_argument("--no-debug", action='store_true', default=False,
                         help="Do not generate debug frame.")
+    parser.add_argument("--ignore-bounds", action='store_true', default=False,
+                        help="Ignore camera PTZ bounds. May result in sampling outside of the original image.")
     return parser.parse_args(namespace=ns)

@@ -1,4 +1,5 @@
 from functools import cached_property
+from typing import Optional
 import cv2
 import numpy as np
 from camera.camera import Camera
@@ -16,7 +17,7 @@ class RectilinearCamera(Camera):
         self,
         frame_orig,
         config: Config,
-        ignore_bounds=Config.autocam["debug"]["ignore_bounds"]
+        ignore_bounds: Optional[bool] = None
     ):
         self.lens_fov_horiz_deg = config.dataset["camera_params"]["lens_fov_horiz_deg"]
         self.pitch_tilt_deg = config.dataset["camera_params"]["pitch_tilt_deg"]

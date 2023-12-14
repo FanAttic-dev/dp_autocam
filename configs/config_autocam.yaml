@@ -5,16 +5,16 @@
 # Dataset
 dataset:
   config: "./configs/config_trnava_zilina.yaml"
-  video: "p0_shot3.mp4"
+  video: "p0_shot4.mp4"
   # video: "main_p0.mp4"
 
 # -----------------------------------------------------------------------------
 # Recording
 recording:
-  rec_folder: "./recordings"
-  name: "2023-11-15_imgsz-640" # The name of the current recording.
+  # The final recording path is given by `rec_folder / name / (args.output_sub_dir)`.
 
-  # The final recording path is given by `rec_folder / name / (args.output_dir)?`.
+  rec_folder: "./recordings"
+  name: "single_detector" # The name of the current recording.  
   
 
 # -----------------------------------------------------------------------------
@@ -30,19 +30,19 @@ debug:
   # Frame splitter
   show_split_frames: false # Show the FrameSplitter frames with detections.
   show_frame_mask: false # Mask out everything outside of the pitch.
-  draw_frame_splitter_roi: false # Draw the ROIs of frame splitter cameras.
+  draw_frame_splitter_roi: true # Draw the ROIs of frame splitter cameras.
 
   # Camera
   draw_grid: false # Visualize the point grid of the used projection scheme.
   draw_roi: true # Draw the region-of-interest (ROI) of the main camera.
   print_camera_stats: false # Print the camera state (PTZ, PID, FoV).
-  ignore_bounds: true # Ignore the PTZ limits defined in the dataset config file.
+  ignore_bounds: false # Ignore the PTZ limits defined in the dataset config file.
   mouse_use_pid: false # Use PID in mouse mode. Otherwise uses free camera.
   mouse_draw_camera_center: false # Draw the camera center in mouse mode.
   
   # Detection
   draw_detections: true # Draw player and ball bounding boxes.
-  draw_players_bb: false # Draw the players' bounding box.
+  draw_players_bb: true # Draw the players' bounding box.
 
   # Particle filter
   draw_PF: true
@@ -72,7 +72,7 @@ detector:
   # Parameters for the ball detector
   ball:
     enabled: false # Whether to use a separate ball detector.
-    imgsz: 960 # [640, 960]
+    imgsz: 1280 # [640, 960, 1280]
     conf: 0.2
     max_det: 10 # Maximum number of detections for the ball.
 
