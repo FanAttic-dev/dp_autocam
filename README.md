@@ -2,7 +2,7 @@
 
 Autocam is an automatic virtual cameraman. The input is a wide-angle rectilinear video of a soccer match containing the full pitch. Autocam automatically finds the interesting region of each frame, crops it so that it emulates the pan-tilt-zoom (PTZ) of a camera on a tripod, and finally exports it as a new video.
 
-The system was developed as a part of a [diploma thesis](https://is.muni.cz/th/l78dh/?lang=en) by Attila Zsíros in 2023.
+The system was developed within the [diploma thesis](https://is.muni.cz/th/l78dh/?lang=en) by Attila Zsíros in 2023.
 
 ![Title main](assets/images/title_main.png)
 
@@ -44,7 +44,7 @@ The system was developed as a part of a [diploma thesis](https://is.muni.cz/th/l
 - `7` and `9` — pitch tilt correction angle;
 - `4` and `6` — original lens field of view;
 - `2` and `8` — sensor size;
-- `WASD` — camera movement (only in mouse mode, i.e., when executed by `make debug_mouse`);
+- `W`, `A`, `S`, `D` — camera movement (only in mouse mode, i.e., when executed by `make debug_mouse`);
 
 ## Config files
 
@@ -72,7 +72,18 @@ Under `/scripts`, you can find shell scripts for:
 
 For a detailed description of the methods, refer to the [diploma thesis](https://is.muni.cz/th/l78dh/?lang=en).
 
-|              Detection Pipeline              |          Virtual Camera Algorithm          |
-| :------------------------------------------: | :----------------------------------------: |
-| ![](assets/images/Detection_pipeline@2x.png) | ![](assets/images/virtual_camera_algo.png) |
+|                       Detection Pipeline                       |                          Virtual Camera Algorithm                           |
+| :------------------------------------------------------------: | :-------------------------------------------------------------------------: |
+| ![Detection Pipeline](assets/images/Detection_pipeline@2x.png) | ![Virtual Camera Sampling Algorithm](assets/images/virtual_camera_algo.png) |
 
+## Cite
+
+```bibtex
+@MastersThesis{Zsiros2023,
+  AUTHOR = "Zsíros, Attila",
+  TITLE = "Automatic virtual soccer camera",
+  YEAR = "2023",
+  SCHOOL = "Masarykova univerzita, Fakulta informatiky, Brno",
+  URL = "https://is.muni.cz/th/l78dh/",
+}
+```
