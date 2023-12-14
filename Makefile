@@ -1,10 +1,10 @@
-run: 
+debug: 
 	python src/main.py
 
-run_no_debug:
+no_debug:
 	python src/main.py --no-debug
 
-run_mouse:
+mouse:
 	python src/main.py --mouse
 
 record:
