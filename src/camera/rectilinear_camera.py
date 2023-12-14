@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 from camera.camera import Camera
 from utils.config import Config
-from utils.constants import DT_FLOAT, DT_INT, INTERPOLATION_TYPE, Color, DrawingMode
+from utils.constants import DT_FLOAT, DT_INT, EPS, INTERPOLATION_TYPE, Color, DrawingMode
 import utils.utils as utils
 
 
@@ -292,14 +292,15 @@ class RectilinearCamera(Camera):
     def draw_roi_(self, frame_orig, color=Color.VIOLET, drawing_mode=DrawingMode.LINES):
         THICKNESS_BIG = 40
         THICKNESS_SMALL = 10
+        thickness = THICKNESS_SMALL
 
         pts = self.get_pts_borders()
         if drawing_mode == DrawingMode.LINES:
             cv2.polylines(frame_orig, [pts], True,
-                          color, thickness=THICKNESS_BIG)
+                          color, thickness)
         elif drawing_mode == DrawingMode.CIRCLES:
             for x, y in pts:
-                cv2.circle(frame_orig, [x, y], radius=5,
+                cv2.circle(frame_orig, [x, y], radius=thickness,
                            color=color, thickness=-1)
 
     def draw_frame_mask(self, frame_orig):
@@ -310,18 +311,18 @@ class RectilinearCamera(Camera):
 
     def draw_grid_(self, frame_orig, color=Color.BLUE, drawing_mode=DrawingMode.LINES):
         THICKNESS = 8
-        RANGE = np.pi/2 if drawing_mode == DrawingMode.LINES else np.pi/2
-        STEPS = 20
+        RANGE = np.pi/3 if drawing_mode == DrawingMode.LINES else np.pi/2
+        STEPS = 33//3 if drawing_mode == DrawingMode.LINES else 66
 
         pan_rad = np.deg2rad(self.pan_deg)
         tilt_rad = np.deg2rad(self.tilt_deg)
 
         xx, yy = np.meshgrid(np.linspace(-RANGE, RANGE, STEPS),
                              np.linspace(-RANGE, RANGE, STEPS))
-        pts = np.array([xx.ravel() - pan_rad, yy.ravel() -
+        pts = np.array([xx.ravel() - pan_rad + EPS, yy.ravel() -
                        tilt_rad], dtype=DT_FLOAT).T
 
-        # pts = self._gnomonic(pts, (0, 0))
+        pts = self._gnomonic(pts, (0, 0))
         pts = self._gnomonic_inverse(pts, (0, self.pitch_tilt_deg))
         pts = self._gnomonic(pts)
 

@@ -265,9 +265,10 @@ class Camera(ABC, HasStats):
     def draw_center_(self, frame_orig, color=Color.RED):
         THICKNESS_BIG = 80
         THICKNESS_SMALL = 5
+        thickness = THICKNESS_SMALL
 
         cv2.circle(frame_orig, self.center,
-                   radius=5, color=color, thickness=THICKNESS_SMALL)
+                   radius=5, color=color, thickness=thickness)
     # endregion
 
     def process_input(self, key, mouse_pos):

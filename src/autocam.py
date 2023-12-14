@@ -260,7 +260,6 @@ class Autocam:
             return
 
         frame = frame_roi_debug if self.is_debug else frame_roi
-        frame = frame_roi
         self.player.show_frame(frame, "ROI")
 
     def write_roi(self, frame_roi, frame_roi_debug):

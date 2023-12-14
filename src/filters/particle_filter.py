@@ -105,10 +105,11 @@ class ParticleFilter(HasStats):
     def draw_particles_(self, frame, color=Color.RED):
         THICKNESS_SMALL = self.N
         THICKNESS_BIG = self.N * 3
+        thickness = THICKNESS_SMALL
 
         for particle, weight in zip(self.particles, self.weights):
             x, y = particle
-            cv2.circle(frame, (int(x), int(y)), radius=int(weight * THICKNESS_SMALL),
+            cv2.circle(frame, (int(x), int(y)), radius=int(weight * thickness),
                        color=color, thickness=-1)
 
     def get_stats(self):
