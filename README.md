@@ -2,15 +2,15 @@
 
 Autocam is an automatic virtual cameraman. The input is a wide-angle rectilinear video of a soccer match containing the full pitch. Autocam automatically finds the interesting region of each frame, crops it so that it emulates the pan-tilt-zoom (PTZ) of a camera on a tripod, and finally exports it as a new video.
 
-The system was developed within the [diploma thesis](https://is.muni.cz/th/l78dh/?lang=en) by Attila Zsíros in 2023.
+The system was developed within the [master's thesis](https://is.muni.cz/th/l78dh/?lang=en) by Attila Zsíros in 2023.
 
 ![Title main](assets/images/title_main.png)
 
 ![Title ROI](assets/images/title_roi.png)
 
-## Getting started
+## Getting Started
 
-1. Create a [Conda environment](https://docs.conda.io/en/latest/) by first installing, e.g., [Miniconda](https://docs.conda.io/projects/miniconda/en/latest/miniconda-install.html) and then running these commands:
+1. Create a [Conda environment](https://docs.conda.io/en/latest/) by first installing, e.g., [Miniconda](https://docs.conda.io/projects/miniconda/en/latest/miniconda-install.html) and then running:
 
     ```shell
     conda env create -f environment.yml
@@ -36,7 +36,7 @@ The system was developed within the [diploma thesis](https://is.muni.cz/th/l78dh
 
 3. Use the `spacebar` to proceed to the next frame and `q` to exit.
 
-## User control
+## User Control
 
 - `spacebar` — proceed to the next frame;
 - `q` — exit;
@@ -46,7 +46,7 @@ The system was developed within the [diploma thesis](https://is.muni.cz/th/l78dh
 - `2` and `8` — sensor size;
 - `W`, `A`, `S`, `D` — camera movement (only in mouse mode, i.e., when executed by `make debug_mouse`);
 
-## Config files
+## Config Files
 
 Under the `/configs` folder, there are two types of config files:
 
