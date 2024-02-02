@@ -70,7 +70,7 @@ Under `/scripts`, you can find shell scripts for:
 
 ## Methods
 
-For a detailed description of the methods, refer to the [diploma thesis](https://is.muni.cz/th/l78dh/?lang=en).
+For a detailed description of the methods, refer to the [master's thesis](https://is.muni.cz/th/l78dh/?lang=en).
 
 |                       Detection Pipeline                       |                          Virtual Camera Algorithm                           |
 | :------------------------------------------------------------: | :-------------------------------------------------------------------------: |
